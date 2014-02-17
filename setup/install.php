@@ -83,6 +83,13 @@ $lang_defaults_path = 'lang'.DIRECTORY_SEPARATOR.$config['default_lang'].DIRECTO
 $lang_defaults_fallback_path = $fallback_lang_path.DIRECTORY_SEPARATOR.'defaults'.DIRECTORY_SEPARATOR;
 test('Checking availability of default pages...', is_dir($lang_defaults_path), 'default pages not found at '.$lang_defaults_path, 0);
 
+/*
+ * Install Queries
+ * This is the first step in extracting these so that they can be used both
+ * here in setup and by tests.
+ */
+include('database.php');
+
 switch ($version)
 {
 // new installation
