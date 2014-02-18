@@ -26,24 +26,47 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
         global $wikkaTestConfig;
         self::$config = $wikkaTestConfig;
         
-        # create db connection
+        # Must set $config for setup/database.php
+        $config = self::$config;
+        require('setup/database.php');
+        
+        # Create db connection
         $host = sprintf('mysql:host=%s', self::$config['mysql_host']);
         self::$pdo = new PDO($host, self::$config['mysql_user'],
             self::$config['mysql_password']);
+        self::$pdo->setAttribute( PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION );
 
-        # create database
+        # Create database
+        self::$pdo->exec(sprintf('DROP DATABASE IF EXISTS `%s`',
+            self::$config['mysql_database']));
         self::$pdo->exec(sprintf('CREATE DATABASE `%s`',
             self::$config['mysql_database']));
+        self::$pdo->query(sprintf('USE %s', self::$config['mysql_database']));
         self::$wakka = new Wakka(self::$config);
+        
+        # Create tables
+        foreach ($install_queries as $key => $query) {
+            self::$pdo->exec($query);
+        }
     }
  
     public static function tearDownAfterClass() {
         self::$wakka = NULL;
         
-        # cleanup database
+        # Cleanup database
         self::$pdo->exec(sprintf('DROP DATABASE `%s`',
             self::$config['mysql_database']));
         self::$pdo = NULL;
+    }
+    
+    public function setUp() {
+    }
+    
+    public function tearDown() {
+        # Truncate all tables
+        foreach (self::$pdo->query('SHOW TABLES') as $row) {
+            self::$pdo->query(sprintf('TRUNCATE TABLE %s', $row[0]));
+        };
     }
     
     
@@ -52,14 +75,41 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
      */
     /**
      * @covers Wakka::Query
-     * @todo   Implement testQuery().
      */
     public function testQuery()
     {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
+        $page_tag = 'TestQuery';
+        $page_body = "A test of the Wakka::Query method";
+        $prefix = self::$wakka->GetConfigValue('table_prefix');
+        
+        # Insert Page
+        $sql_f = 'INSERT INTO %spages SET tag="%s", body="%s"';
+        $result = self::$wakka->query(sprintf($sql_f, $prefix, $page_tag, $page_body));
+        $this->assertTrue($result);
+        
+        # Select Page
+        $sql_f = 'SELECT tag, body FROM %spages WHERE tag="%s"';
+        $result = self::$wakka->query(sprintf($sql_f, $prefix, $page_tag));
+        $row = mysql_fetch_assoc($result);
+        $this->assertEquals($row['tag'], $page_tag);
+        $this->assertEquals($row['body'], $page_body);
+        
+        # Count Pages
+        $sql_f = 'SELECT COUNT(*) as count FROM %spages';
+        $result = self::$wakka->query(sprintf($sql_f, $prefix));
+        $row = mysql_fetch_assoc($result);
+        $this->assertEquals($row['count'], 1);
+        
+        # Delete Page
+        $sql_f = 'DELETE FROM %spages WHERE tag="%s"';
+        $result = self::$wakka->query(sprintf($sql_f, $prefix, $page_tag));
+        $this->assertTrue($result);
+        
+        # Count Pages
+        $sql_f = 'SELECT COUNT(*) as count FROM %spages';
+        $result = self::$wakka->query(sprintf($sql_f, $prefix));
+        $row = mysql_fetch_assoc($result);
+        $this->assertEquals($row['count'], 0);
     }
 
     /**

@@ -26,9 +26,10 @@ class DatabaseSetupTest extends PHPUnit_Framework_TestCase {
         global $wikkaTestConfig;
         self::$config = $wikkaTestConfig;
         
-        # must set $config for setup/database.php
+        # Must set $config for setup/database.php. Must use require rather than
+        # require_once to set up more than one test.
         $config = self::$config;
-        require_once('setup/database.php');
+        require('setup/database.php');
         
         # create db connection
         $host = sprintf('mysql:host=%s', self::$config['mysql_host']);
