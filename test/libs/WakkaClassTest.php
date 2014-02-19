@@ -61,6 +61,8 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
     }
     
     public function setUp() {
+        $this->save_pages();
+        $this->save_comments();
     }
     
     public function tearDown() {
@@ -70,9 +72,36 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
         };
     }
     
+    private function save_pages() {
+        # Page parameters
+        $page_tags = array('TestPage1', 'TestPage2', 'TestPage3');
+        $page_body = "A test in WakkaClassTest";
+        $prefix = self::$wakka->GetConfigValue('table_prefix');
+        $sql_f = 'INSERT INTO %spages SET tag="%s", body="%s"';
+        
+        # Save pages
+        foreach ($page_tags as $page_tag) {
+            self::$wakka->query(sprintf($sql_f, $prefix, $page_tag, $page_body));
+        }
+    }
+    
+    private function save_comments() {
+        # Page parameters
+        $page_tag = 'TestPage1';
+        $comment_f = "Comment #%d";
+        $prefix = self::$wakka->GetConfigValue('table_prefix');
+        $sql_f = 'INSERT INTO %scomments SET page_tag="%s", comment="%s"';
+        
+        # Save pages
+        for($num=1; $num<=10; $num++) {
+            $comment = sprintf($comment_f, $num);
+            self::$wakka->query(sprintf($sql_f, $prefix, $page_tag, $comment));
+        }
+    }
+    
     
     /**
-     * Tests
+     * SECTION: Query Tests
      */
     /**
      * @covers Wakka::Query
@@ -96,8 +125,8 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
         $this->assertEquals($row['body'], $page_body);
         
         # Count Pages
-        $sql_f = 'SELECT COUNT(*) as count FROM %spages';
-        $result = self::$wakka->query(sprintf($sql_f, $prefix));
+        $sql_f = 'SELECT COUNT(*) as count FROM %spages WHERE tag="%s"';
+        $result = self::$wakka->query(sprintf($sql_f, $prefix, $page_tag));
         $row = mysql_fetch_assoc($result);
         $this->assertEquals($row['count'], 1);
         
@@ -107,39 +136,21 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
         $this->assertTrue($result);
         
         # Count Pages
-        $sql_f = 'SELECT COUNT(*) as count FROM %spages';
-        $result = self::$wakka->query(sprintf($sql_f, $prefix));
+        $sql_f = 'SELECT COUNT(*) as count FROM %spages WHERE tag="%s"';
+        $result = self::$wakka->query(sprintf($sql_f, $prefix, $page_tag));
         $row = mysql_fetch_assoc($result);
         $this->assertEquals($row['count'], 0);
     }
 
     /**
-     * @covers Wakka::LoadSingle
      * @covers Wakka::LoadAll
      */
-    public function testLoad()
+    public function testLoadAll()
     {
-        # Page parameters
-        $page_tags = array('TestPage1', 'TestPage2', 'TestPage3');
-        $page_body = "A test in WakkaClassTest";
         $prefix = self::$wakka->GetConfigValue('table_prefix');
-        
-        # Save pages
-        foreach ($page_tags as $page_tag) {
-            $sql_f = 'INSERT INTO %spages SET tag="%s", body="%s"';
-            self::$wakka->query(sprintf($sql_f, $prefix, $page_tag, $page_body));
-        }
-        
-        # Load parameters
-        $sql_f = 'SELECT tag, body FROM %spages ORDER BY tag ASC';
-        
-        # Test LoadSingle
-        $data = self::$wakka->LoadSingle(sprintf($sql_f, $prefix));
-        $this->assertEquals($data['tag'], 'TestPage1');
-        $this->assertEquals($data['body'], 'A test in WakkaClassTest');
-        
-        # Test LoadAll
+        $sql_f = 'SELECT tag, body FROM %spages ORDER BY tag ASC';    
         $data = self::$wakka->LoadAll(sprintf($sql_f, $prefix));
+        
         $this->assertEquals(count($data), 3);
         $this->assertEquals($data[0]['tag'], 'TestPage1');
     }
@@ -150,26 +161,178 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
      */
     public function testGetCount()
     {
-        # Page parameters
-        $page_tag = 'TestPage';
-        $comment_f = "Comment #%d";
-        $prefix = self::$wakka->GetConfigValue('table_prefix');
-        
-        # Save pages
-        for($num=1; $num<=10; $num++) {
-            $comment = sprintf($comment_f, $num);
-            $sql_f = 'INSERT INTO %scomments SET page_tag="%s", comment="%s"';
-            self::$wakka->query(sprintf($sql_f, $prefix, $page_tag, $comment));
-        }
-        
-        # Test getCount
         $count = self::$wakka->getCount('comments', "status IS NULL");
         $this->assertEquals($count, 10);
     }
+    
+    /**
+     * @covers Wakka::SavePage
+     * @todo   Implement testSavePage().
+     */
+    public function testSavePage()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
 
     /**
+     * @covers Wakka::existsPage
+     * @todo   Implement testExistsPage().
+     */
+    public function testExistsPage()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::WriteLinkTable
+     * @todo   Implement testWriteLinkTable().
+     */
+    public function testWriteLinkTable()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::LogReferrer
+     * @todo   Implement testLogReferrer().
+     */
+    public function testLogReferrer()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::LogoutUser
+     * @todo   Implement testLogoutUser().
+     */
+    public function testLogoutUser()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::SaveComment
+     * @todo   Implement testSaveComment().
+     */
+    public function testSaveComment()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::deleteComment
+     * @todo   Implement testDeleteComment().
+     */
+    public function testDeleteComment()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::GetPageOwner
+     * @todo   Implement testGetPageOwner().
+     */
+    public function testGetPageOwner()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::SetPageOwner
+     * @todo   Implement testSetPageOwner().
+     */
+    public function testSetPageOwner()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::LoadAllACLs
+     * @todo   Implement testLoadAllACLs().
+     */
+    public function testLoadAllACLs()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::SaveACL
+     * @todo   Implement testSaveACL().
+     */
+    public function testSaveACL()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::Maintenance
+     * @todo   Implement testMaintenance().
+     */
+    public function testMaintenance()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+    
+    
+    /**
+     * SECTION: Load Tests
+     */
+    /**
+     * @covers Wakka::LoadSingle
+     * @covers Wakka::LoadAll
+     */
+    public function testLoadSingle()
+    {
+        $prefix = self::$wakka->GetConfigValue('table_prefix');
+        $sql_f = 'SELECT tag, body FROM %spages ORDER BY tag ASC';
+        $data = self::$wakka->LoadSingle(sprintf($sql_f, $prefix));
+        
+        $this->assertEquals($data['tag'], 'TestPage1');
+        $this->assertEquals($data['body'], 'A test in WakkaClassTest');
+    }
+    
+    
+    /**
+     * SECTION: Utility Tests
+     */
+    /**
      * @covers Wakka::CheckMySQLVersion
-     * @todo   Implement testCheckMySQLVersion().
      */
     public function testCheckMySQLVersion()
     {
@@ -178,7 +341,7 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
         $this->assertTrue((bool) $version_greater_than_1);
         $this->assertFalse((bool) $version_greater_than_1000);
     }
-
+    
     /**
      * @covers Wakka::GetMicroTime
      * @covers Wakka::microTimeDiff
@@ -698,18 +861,6 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
     }
 
     /**
-     * @covers Wakka::SavePage
-     * @todo   Implement testSavePage().
-     */
-    public function testSavePage()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
      * @covers Wakka::FullTextSearch
      * @todo   Implement testFullTextSearch().
      */
@@ -774,18 +925,6 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
      * @todo   Implement testParsePageTitle().
      */
     public function testParsePageTitle()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::existsPage
-     * @todo   Implement testExistsPage().
-     */
-    public function testExistsPage()
     {
         // Remove the following lines when you implement this test.
         $this->markTestIncomplete(
@@ -1046,18 +1185,6 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
     }
 
     /**
-     * @covers Wakka::WriteLinkTable
-     * @todo   Implement testWriteLinkTable().
-     */
-    public function testWriteLinkTable()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
      * @covers Wakka::AddCustomHeader
      * @todo   Implement testAddCustomHeader().
      */
@@ -1170,18 +1297,6 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
      * @todo   Implement testGetInterWikiUrl().
      */
     public function testGetInterWikiUrl()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::LogReferrer
-     * @todo   Implement testLogReferrer().
-     */
-    public function testLogReferrer()
     {
         // Remove the following lines when you implement this test.
         $this->markTestIncomplete(
@@ -1346,18 +1461,6 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
     }
 
     /**
-     * @covers Wakka::LogoutUser
-     * @todo   Implement testLogoutUser().
-     */
-    public function testLogoutUser()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
      * @covers Wakka::UserWantsComments
      * @todo   Implement testUserWantsComments().
      */
@@ -1478,30 +1581,6 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
     }
 
     /**
-     * @covers Wakka::SaveComment
-     * @todo   Implement testSaveComment().
-     */
-    public function testSaveComment()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::deleteComment
-     * @todo   Implement testDeleteComment().
-     */
-    public function testDeleteComment()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
      * @covers Wakka::UserIsOwner
      * @todo   Implement testUserIsOwner().
      */
@@ -1526,58 +1605,10 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
     }
 
     /**
-     * @covers Wakka::GetPageOwner
-     * @todo   Implement testGetPageOwner().
-     */
-    public function testGetPageOwner()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::SetPageOwner
-     * @todo   Implement testSetPageOwner().
-     */
-    public function testSetPageOwner()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
      * @covers Wakka::LoadACL
      * @todo   Implement testLoadACL().
      */
     public function testLoadACL()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::LoadAllACLs
-     * @todo   Implement testLoadAllACLs().
-     */
-    public function testLoadAllACLs()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::SaveACL
-     * @todo   Implement testSaveACL().
-     */
-    public function testSaveACL()
     {
         // Remove the following lines when you implement this test.
         $this->markTestIncomplete(
@@ -1674,18 +1705,6 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
      * @todo   Implement testBuildFullpathFromMultipath().
      */
     public function testBuildFullpathFromMultipath()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::Maintenance
-     * @todo   Implement testMaintenance().
-     */
-    public function testMaintenance()
     {
         // Remove the following lines when you implement this test.
         $this->markTestIncomplete(
