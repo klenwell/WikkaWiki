@@ -114,26 +114,33 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
 
     /**
      * @covers Wakka::LoadSingle
-     * @todo   Implement testLoadSingle().
-     */
-    public function testLoadSingle()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
      * @covers Wakka::LoadAll
-     * @todo   Implement testLoadAll().
      */
-    public function testLoadAll()
+    public function testLoad()
     {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
+        # Page parameters
+        $page_tags = array('TestPage1', 'TestPage2', 'TestPage3');
+        $page_body = "A test in WakkaClassTest";
+        $prefix = self::$wakka->GetConfigValue('table_prefix');
+        
+        # Save pages
+        foreach ($page_tags as $page_tag) {
+            $sql_f = 'INSERT INTO %spages SET tag="%s", body="%s"';
+            self::$wakka->query(sprintf($sql_f, $prefix, $page_tag, $page_body));
+        }
+        
+        # Load parameters
+        $sql_f = 'SELECT tag, body FROM %spages ORDER BY tag ASC';
+        
+        # Test LoadSingle
+        $data = self::$wakka->LoadSingle(sprintf($sql_f, $prefix));
+        $this->assertEquals($data['tag'], 'TestPage1');
+        $this->assertEquals($data['body'], 'A test in WakkaClassTest');
+        
+        # Test LoadAll
+        $data = self::$wakka->LoadAll(sprintf($sql_f, $prefix));
+        $this->assertEquals(count($data), 3);
+        $this->assertEquals($data[0]['tag'], 'TestPage1');
     }
 
     /**
@@ -142,10 +149,7 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
      */
     public function testGetCount()
     {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
+
     }
 
     /**
