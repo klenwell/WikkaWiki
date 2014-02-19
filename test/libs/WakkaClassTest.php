@@ -167,26 +167,17 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
     
     /**
      * @covers Wakka::SavePage
-     * @todo   Implement testSavePage().
-     */
-    public function testSavePage()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
      * @covers Wakka::existsPage
-     * @todo   Implement testExistsPage().
      */
-    public function testExistsPage()
+    public function testSavePageAndPageExists()
     {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
+        $prefix = self::$wakka->GetConfigValue('table_prefix');
+        $tag = 'TestSavePage';
+        $body = 'covers Wakka::SavePage';
+        $note = 'also covers Wakka::existsPage';
+        
+        self::$wakka->SavePage($tag, $body, $note);
+        $this->assertTrue(self::$wakka->existsPage($tag, $prefix));
     }
 
     /**
