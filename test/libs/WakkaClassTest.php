@@ -9,6 +9,7 @@
  * 
  */
 require_once('test/test.config.php');
+require_once('libs/Compatibility.lib.php');
 require_once('libs/Wakka.class.php');
 require_once('version.php');
 
@@ -180,26 +181,16 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
 
     /**
      * @covers Wakka::GetMicroTime
-     * @todo   Implement testGetMicroTime().
-     */
-    public function testGetMicroTime()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
      * @covers Wakka::microTimeDiff
-     * @todo   Implement testMicroTimeDiff().
      */
-    public function testMicroTimeDiff()
+    public function testMicroTime()
     {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
+        $utime_2000 = (float) DateTime::createFromFormat('Y-m-d', '2000-01-01')->format('U');
+        $microtime = self::$wakka->GetMicroTime();
+        $diff = self::$wakka->microTimeDiff($microtime);
+        
+        $this->assertGreaterThan($utime_2000, $microtime);
+        $this->assertLessThan(.01, $diff);
     }
 
     /**
