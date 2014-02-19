@@ -172,10 +172,10 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
      */
     public function testCheckMySQLVersion()
     {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
+        $version_greater_than_1 = self::$wakka->CheckMySQLVersion(1, 0, 0);
+        $version_greater_than_1000 = self::$wakka->CheckMySQLVersion(1000, 0, 0);
+        $this->assertTrue((bool) $version_greater_than_1);
+        $this->assertFalse((bool) $version_greater_than_1000);
     }
 
     /**
