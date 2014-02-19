@@ -149,7 +149,21 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
      */
     public function testGetCount()
     {
-
+        # Page parameters
+        $page_tag = 'TestPage';
+        $comment_f = "Comment #%d";
+        $prefix = self::$wakka->GetConfigValue('table_prefix');
+        
+        # Save pages
+        for($num=1; $num<=10; $num++) {
+            $comment = sprintf($comment_f, $num);
+            $sql_f = 'INSERT INTO %scomments SET page_tag="%s", comment="%s"';
+            self::$wakka->query(sprintf($sql_f, $prefix, $page_tag, $comment));
+        }
+        
+        # Test getCount
+        $count = self::$wakka->getCount('comments', "status IS NULL");
+        $this->assertEquals($count, 10);
     }
 
     /**
