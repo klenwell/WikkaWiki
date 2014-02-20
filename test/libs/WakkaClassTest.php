@@ -10,6 +10,7 @@
  */
 require_once('test/test.config.php');
 require_once('libs/Compatibility.lib.php');
+require_once('./3rdparty/core/php-gettext/gettext.inc');
 require_once('libs/Wakka.class.php');
 require_once('version.php');
 
@@ -61,8 +62,12 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
     }
     
     public function setUp() {
+        $this->save_users();
         $this->save_pages();
         $this->save_comments();
+        
+        $_SERVER['REMOTE_ADDR'] = ( isset($_SERVER['REMOTE_ADDR']) ) ?
+            $_SERVER['REMOTE_ADDR'] : '127.0.0.1';
     }
     
     public function tearDown() {
@@ -70,6 +75,24 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
         foreach (self::$pdo->query('SHOW TABLES') as $row) {
             self::$pdo->query(sprintf('TRUNCATE TABLE %s', $row[0]));
         };
+    }
+    
+    private function save_users() {
+        # User parameters
+        $users = array(
+            # name, status 
+            array('admin', 'active')
+        );
+        $prefix = self::$wakka->GetConfigValue('table_prefix');
+        $sql_f = 'INSERT INTO %susers SET name="%s", email="%s", status="%s"';
+        
+        # Save pages
+        foreach ($users as $user) {
+            list($name, $status) = each($user);
+            $email = sprintf('%s@test.wikkawiki.org', $name);
+            self::$wakka->query(sprintf($sql_f, $prefix,
+                $name, $email, $status));
+        }
     }
     
     private function save_pages() {
@@ -171,13 +194,29 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
      */
     public function testSavePageAndPageExists()
     {
+        # Test params
         $prefix = self::$wakka->GetConfigValue('table_prefix');
         $tag = 'TestSavePage';
         $body = 'covers Wakka::SavePage';
         $note = 'also covers Wakka::existsPage';
+        $owner = 'TestUser';
         
-        self::$wakka->SavePage($tag, $body, $note);
+        # Make page writeable
+        $sql_f = 'INSERT INTO %sacls SET page_tag="%s", write_acl="*"';
+        $result = self::$wakka->query(sprintf($sql_f, $prefix, $tag));
+        
+        # Save page
+        self::$wakka->SavePage($tag, $body, $note, $owner);
+        
+        # Verify page created
+        $sql_f = 'SELECT COUNT(*) as count FROM %spages WHERE tag="%s"';
+        $result = self::$wakka->query(sprintf($sql_f, $prefix, $tag));
+        $row = mysql_fetch_assoc($result);
+        $this->assertEquals($row['count'], 1);
+        
+        # Test existsPage
         $this->assertTrue(self::$wakka->existsPage($tag, $prefix));
+        $this->assertFalse(self::$wakka->existsPage('PageDoesNotExist', $prefix));
     }
 
     /**
