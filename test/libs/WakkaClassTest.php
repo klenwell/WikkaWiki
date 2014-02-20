@@ -202,6 +202,9 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
         $owner = 'TestUser';
         
         # Make page writeable
+        # TODO: Fix this. This is a bit unnatural as it implies a page already
+        # exists when this test should test creation of a new page, as well
+        # as an existing page.
         $sql_f = 'INSERT INTO %sacls SET page_tag="%s", write_acl="*"';
         $result = self::$wakka->query(sprintf($sql_f, $prefix, $tag));
         
@@ -222,6 +225,8 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
     /**
      * @covers Wakka::WriteLinkTable
      * @todo   Implement testWriteLinkTable().
+     *
+     * Not really sure what Wakka::WriteLinkTable is supposed to do.
      */
     public function testWriteLinkTable()
     {
@@ -233,14 +238,26 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
 
     /**
      * @covers Wakka::LogReferrer
-     * @todo   Implement testLogReferrer().
      */
     public function testLogReferrer()
     {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
+        # Test params
+        $prefix = self::$wakka->GetConfigValue('table_prefix');
+        $page_tag = 'TestReferredPage';
+        $referrer = 'http://delicious.com/';
+        
+        if ( ! defined('WIKKA_BASE_URL') ) {
+            define('WIKKA_BASE_URL', 'http://localhost/');
+        }
+        
+        # Log referrer
+        self::$wakka->LogReferrer($page_tag, $referrer);
+        
+        # Verify referrer logged
+        $sql_f = 'SELECT COUNT(*) as count FROM %sreferrers WHERE page_tag="%s"';
+        $result = self::$wakka->query(sprintf($sql_f, $prefix, $page_tag));
+        $row = mysql_fetch_assoc($result);
+        $this->assertEquals($row['count'], 1);
     }
 
     /**
@@ -357,6 +374,95 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
         $this->assertEquals($data['body'], 'A test in WakkaClassTest');
     }
     
+    
+    /**
+     * SECTION: User/Permission Tests
+     */
+    /**
+     * @covers Wakka::HasAccess
+     * @todo   Implement testHasAccess().
+     */
+    public function testHasAccess()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+    
+    
+
+    /**
+     * @covers Wakka::loadUserData
+     * @todo   Implement testLoadUserData().
+     */
+    public function testLoadUserData()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::LoadUser
+     * @todo   Implement testLoadUser().
+     */
+    public function testLoadUser()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::LoadUsers
+     * @todo   Implement testLoadUsers().
+     */
+    public function testLoadUsers()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::GetUserName
+     * @todo   Implement testGetUserName().
+     */
+    public function testGetUserName()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::GetUser
+     * @todo   Implement testGetUser().
+     */
+    public function testGetUser()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::SetUser
+     * @todo   Implement testSetUser().
+     */
+    public function testSetUser()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
     
     /**
      * SECTION: Utility Tests
@@ -1419,78 +1525,6 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
     }
 
     /**
-     * @covers Wakka::loadUserData
-     * @todo   Implement testLoadUserData().
-     */
-    public function testLoadUserData()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::LoadUser
-     * @todo   Implement testLoadUser().
-     */
-    public function testLoadUser()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::LoadUsers
-     * @todo   Implement testLoadUsers().
-     */
-    public function testLoadUsers()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::GetUserName
-     * @todo   Implement testGetUserName().
-     */
-    public function testGetUserName()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::GetUser
-     * @todo   Implement testGetUser().
-     */
-    public function testGetUser()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::SetUser
-     * @todo   Implement testSetUser().
-     */
-    public function testSetUser()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
      * @covers Wakka::UserWantsComments
      * @todo   Implement testUserWantsComments().
      */
@@ -1663,18 +1697,6 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
      * @todo   Implement testIsGroupMember().
      */
     public function testIsGroupMember()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::HasAccess
-     * @todo   Implement testHasAccess().
-     */
-    public function testHasAccess()
     {
         // Remove the following lines when you implement this test.
         $this->markTestIncomplete(
