@@ -19,9 +19,12 @@
 $wikkaTestConfig = array(
 
     # database
-    'mysql_host'        => 'localhost',
-    'mysql_user'        => '<DB_USER_NAME>',
-    'mysql_password'    => '<DB_USER_PASS>',
-    'mysql_database'    => 'wikkawiki_test_tmp',
+    'mysql_host'                => 'localhost',
+    'mysql_user'                => '<DB_USER_NAME>',
+    'mysql_password'            => '<DB_USER_PASS>',
+    'mysql_database'            => 'wikkawiki_test_tmp',
+    'table_prefix'              => '',
     
+    # other
+    'enable_user_host_lookup'   => false,
 );

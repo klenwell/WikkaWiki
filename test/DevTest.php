@@ -6,6 +6,9 @@
  * test practices for WikkaWiki project. PhpUnit must be installed.
  *
  * Usage (run from WikkaWiki root dir):
+ * > phpunit test/DevTest
+ *
+ * To run all tests:
  * > phpunit test
  *
  * For information on installing PhpUnit:
