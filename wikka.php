@@ -31,6 +31,29 @@
  *
  * @todo use templating class for page generation;
  * @todo add phpdoc documentation for configuration array elements;
+ *
+ *
+ * Klenwell Refactor Notes
+ *  Currently Marked Sections:
+ *  - DEBUGGING AND ERROR REPORTING
+ * 	- VERSIONING
+ * 	- BASIC CONSTANTS
+ * 	- HELPER FUNCTIONS
+ * 	- CRITICAL ERROR MESSAGES USED BEFORE LANG FILE LOADED
+ * 	- SANITY CHECKS
+ * 	- (Init / Default Configuration)
+ * 	- DEFINE URL DOMAIN / PATH
+ * 	- LOAD CONFIG
+ * 	- LANGUAGE DEFAULTS
+ * 	- (Multi-site Deployment)
+ * 	- (Installer / Setup)
+ * 	- (Start Session)
+ * 	- (Set $wakka location var)
+ * 	- (Set Page & Handler)
+ * 	- (Create Wakka object)
+ * 	- (Save session ID)
+ * 	- (Run the engine)
+ * 	- (Output page)
  */
 
 // ---------------------- DEBUGGING AND ERROR REPORTING -----------------------
