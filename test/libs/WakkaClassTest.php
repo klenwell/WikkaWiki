@@ -6,6 +6,21 @@
  *
  * Generated (in part) by PHPUnit_SkeletonGenerator 1.2.1 on 2014-01-09:
  * > phpunit-skelgen --test -- Wakka libs/Wakka.class.php
+ *
+ * Tests are divided into sections, which hints at possible paths for
+ * dismantling this ball of mud:
+ *
+ * - General Database Tests
+ * - User/Permission Tests
+ * - Page Tests
+ * - Comment Tests
+ * - ACL Tests
+ * - Referrer Tests
+ * - Spam Tests
+ * - Link Table Tests
+ * - Cookie/Session Tests
+ * - Environment Check Tests
+ * - Uncategorized Tests
  * 
  */
 require_once('test/test.config.php');
@@ -124,7 +139,7 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
     
     
     /**
-     * SECTION: Query Tests
+     * SECTION: General Database Tests
      */
     /**
      * @covers Wakka::Query
@@ -177,10 +192,22 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
         $this->assertEquals(count($data), 3);
         $this->assertEquals($data[0]['tag'], 'TestPage1');
     }
+    
+    /**
+     * @covers Wakka::LoadSingle
+     */
+    public function testLoadSingle()
+    {
+        $prefix = self::$wakka->GetConfigValue('table_prefix');
+        $sql_f = 'SELECT tag, body FROM %spages ORDER BY tag ASC';
+        $data = self::$wakka->LoadSingle(sprintf($sql_f, $prefix));
+        
+        $this->assertEquals($data['tag'], 'TestPage1');
+        $this->assertEquals($data['body'], 'A test in WakkaClassTest');
+    }
 
     /**
      * @covers Wakka::getCount
-     * @todo   Implement testGetCount().
      */
     public function testGetCount()
     {
@@ -188,76 +215,30 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
         $this->assertEquals($count, 10);
     }
     
+    
     /**
-     * @covers Wakka::SavePage
-     * @covers Wakka::existsPage
+     * SECTION: User/Permission Tests
      */
-    public function testSavePageAndPageExists()
-    {
-        # Test params
-        $prefix = self::$wakka->GetConfigValue('table_prefix');
-        $tag = 'TestSavePage';
-        $body = 'covers Wakka::SavePage';
-        $note = 'also covers Wakka::existsPage';
-        $owner = 'TestUser';
-        
-        # Make page writeable
-        # TODO: Fix this. This is a bit unnatural as it implies a page already
-        # exists when this test should test creation of a new page, as well
-        # as an existing page.
-        $sql_f = 'INSERT INTO %sacls SET page_tag="%s", write_acl="*"';
-        $result = self::$wakka->query(sprintf($sql_f, $prefix, $tag));
-        
-        # Save page
-        self::$wakka->SavePage($tag, $body, $note, $owner);
-        
-        # Verify page created
-        $sql_f = 'SELECT COUNT(*) as count FROM %spages WHERE tag="%s"';
-        $result = self::$wakka->query(sprintf($sql_f, $prefix, $tag));
-        $row = mysql_fetch_assoc($result);
-        $this->assertEquals($row['count'], 1);
-        
-        # Test existsPage
-        $this->assertTrue(self::$wakka->existsPage($tag, $prefix));
-        $this->assertFalse(self::$wakka->existsPage('PageDoesNotExist', $prefix));
-    }
-
     /**
-     * @covers Wakka::WriteLinkTable
-     * @todo   Implement testWriteLinkTable().
-     *
-     * Not really sure what Wakka::WriteLinkTable is supposed to do.
+     * @todo   Implement testRegisterUser().
      */
-    public function testWriteLinkTable()
+    public function testRegisterUser()
     {
         // Remove the following lines when you implement this test.
         $this->markTestIncomplete(
           'This test has not been implemented yet.'
         );
     }
-
+    
     /**
-     * @covers Wakka::LogReferrer
+     * @todo   Implement testLoginUser().
      */
-    public function testLogReferrer()
+    public function testLoginUser()
     {
-        # Test params
-        $prefix = self::$wakka->GetConfigValue('table_prefix');
-        $page_tag = 'TestReferredPage';
-        $referrer = 'http://delicious.com/';
-        
-        if ( ! defined('WIKKA_BASE_URL') ) {
-            define('WIKKA_BASE_URL', 'http://localhost/');
-        }
-        
-        # Log referrer
-        self::$wakka->LogReferrer($page_tag, $referrer);
-        
-        # Verify referrer logged
-        $sql_f = 'SELECT COUNT(*) as count FROM %sreferrers WHERE page_tag="%s"';
-        $result = self::$wakka->query(sprintf($sql_f, $prefix, $page_tag));
-        $row = mysql_fetch_assoc($result);
-        $this->assertEquals($row['count'], 1);
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
     }
 
     /**
@@ -271,113 +252,7 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
           'This test has not been implemented yet.'
         );
     }
-
-    /**
-     * @covers Wakka::SaveComment
-     * @todo   Implement testSaveComment().
-     */
-    public function testSaveComment()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::deleteComment
-     * @todo   Implement testDeleteComment().
-     */
-    public function testDeleteComment()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::GetPageOwner
-     * @todo   Implement testGetPageOwner().
-     */
-    public function testGetPageOwner()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::SetPageOwner
-     * @todo   Implement testSetPageOwner().
-     */
-    public function testSetPageOwner()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::LoadAllACLs
-     * @todo   Implement testLoadAllACLs().
-     */
-    public function testLoadAllACLs()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::SaveACL
-     * @todo   Implement testSaveACL().
-     */
-    public function testSaveACL()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::Maintenance
-     * @todo   Implement testMaintenance().
-     */
-    public function testMaintenance()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
     
-    
-    /**
-     * SECTION: Load Tests
-     */
-    /**
-     * @covers Wakka::LoadSingle
-     * @covers Wakka::LoadAll
-     */
-    public function testLoadSingle()
-    {
-        $prefix = self::$wakka->GetConfigValue('table_prefix');
-        $sql_f = 'SELECT tag, body FROM %spages ORDER BY tag ASC';
-        $data = self::$wakka->LoadSingle(sprintf($sql_f, $prefix));
-        
-        $this->assertEquals($data['tag'], 'TestPage1');
-        $this->assertEquals($data['body'], 'A test in WakkaClassTest');
-    }
-    
-    
-    /**
-     * SECTION: User/Permission Tests
-     */
     /**
      * @covers Wakka::HasAccess
      * @todo   Implement testHasAccess().
@@ -390,8 +265,6 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
         );
     }
     
-    
-
     /**
      * @covers Wakka::loadUserData
      * @todo   Implement testLoadUserData().
@@ -463,40 +336,110 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
           'This test has not been implemented yet.'
         );
     }
-    
+
     /**
-     * SECTION: Utility Tests
+     * @covers Wakka::UserWantsComments
+     * @todo   Implement testUserWantsComments().
      */
-    /**
-     * @covers Wakka::CheckMySQLVersion
-     */
-    public function testCheckMySQLVersion()
+    public function testUserWantsComments()
     {
-        $version_greater_than_1 = self::$wakka->CheckMySQLVersion(1, 0, 0);
-        $version_greater_than_1000 = self::$wakka->CheckMySQLVersion(1000, 0, 0);
-        $this->assertTrue((bool) $version_greater_than_1);
-        $this->assertFalse((bool) $version_greater_than_1000);
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::FormatUser
+     * @todo   Implement testFormatUser().
+     */
+    public function testFormatUser()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::existsUser
+     * @todo   Implement testExistsUser().
+     */
+    public function testExistsUser()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::UserIsOwner
+     * @todo   Implement testUserIsOwner().
+     */
+    public function testUserIsOwner()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::IsAdmin
+     * @todo   Implement testIsAdmin().
+     */
+    public function testIsAdmin()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
     }
     
+    
     /**
-     * @covers Wakka::GetMicroTime
-     * @covers Wakka::microTimeDiff
+     * SECTION: Page Tests
      */
-    public function testMicroTime()
+    /**
+     * @covers Wakka::SavePage
+     * @covers Wakka::existsPage
+     */
+    public function testSavePageAndPageExists()
     {
-        $utime_2000 = (float) DateTime::createFromFormat('Y-m-d', '2000-01-01')->format('U');
-        $microtime = self::$wakka->GetMicroTime();
-        $diff = self::$wakka->microTimeDiff($microtime);
+        # Test params
+        $prefix = self::$wakka->GetConfigValue('table_prefix');
+        $tag = 'TestSavePage';
+        $body = 'covers Wakka::SavePage';
+        $note = 'also covers Wakka::existsPage';
+        $owner = 'TestUser';
         
-        $this->assertGreaterThan($utime_2000, $microtime);
-        $this->assertLessThan(.01, $diff);
+        # Make page writeable
+        # TODO: Fix this. This is a bit unnatural as it implies a page already
+        # exists when this test should test creation of a new page, as well
+        # as an existing page.
+        $sql_f = 'INSERT INTO %sacls SET page_tag="%s", write_acl="*"';
+        $result = self::$wakka->query(sprintf($sql_f, $prefix, $tag));
+        
+        # Save page
+        self::$wakka->SavePage($tag, $body, $note, $owner);
+        
+        # Verify page created
+        $sql_f = 'SELECT COUNT(*) as count FROM %spages WHERE tag="%s"';
+        $result = self::$wakka->query(sprintf($sql_f, $prefix, $tag));
+        $row = mysql_fetch_assoc($result);
+        $this->assertEquals($row['count'], 1);
+        
+        # Test existsPage
+        $this->assertTrue(self::$wakka->existsPage($tag, $prefix));
+        $this->assertFalse(self::$wakka->existsPage('PageDoesNotExist', $prefix));
     }
 
     /**
-     * @covers Wakka::IncludeBuffered
-     * @todo   Implement testIncludeBuffered().
+     * @covers Wakka::GetPageOwner
+     * @todo   Implement testGetPageOwner().
      */
-    public function testIncludeBuffered()
+    public function testGetPageOwner()
     {
         // Remove the following lines when you implement this test.
         $this->markTestIncomplete(
@@ -505,94 +448,10 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
     }
 
     /**
-     * @covers Wakka::makeId
-     * @todo   Implement testMakeId().
+     * @covers Wakka::SetPageOwner
+     * @todo   Implement testSetPageOwner().
      */
-    public function testMakeId()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::ReturnSafeHTML
-     * @todo   Implement testReturnSafeHTML().
-     */
-    public function testReturnSafeHTML()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::cleanUrl
-     * @todo   Implement testCleanUrl().
-     */
-    public function testCleanUrl()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::htmlspecialchars_ent
-     * @todo   Implement testHtmlspecialchars_ent().
-     */
-    public function testHtmlspecialchars_ent()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::hsc_secure
-     * @todo   Implement testHsc_secure().
-     */
-    public function testHsc_secure()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::GetSafeVar
-     * @todo   Implement testGetSafeVar().
-     */
-    public function testGetSafeVar()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::GeSHi_Highlight
-     * @todo   Implement testGeSHi_Highlight().
-     */
-    public function testGeSHi_Highlight()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::normalizeLines
-     * @todo   Implement testNormalizeLines().
-     */
-    public function testNormalizeLines()
+    public function testSetPageOwner()
     {
         // Remove the following lines when you implement this test.
         $this->markTestIncomplete(
@@ -617,174 +476,6 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
      * @todo   Implement testGetPageTime().
      */
     public function testGetPageTime()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::GetHandler
-     * @todo   Implement testGetHandler().
-     */
-    public function testGetHandler()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::GetConfigValue
-     * @todo   Implement testGetConfigValue().
-     */
-    public function testGetConfigValue()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::SetConfigValue
-     * @todo   Implement testSetConfigValue().
-     */
-    public function testSetConfigValue()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::GetWakkaName
-     * @todo   Implement testGetWakkaName().
-     */
-    public function testGetWakkaName()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::GetWakkaVersion
-     * @todo   Implement testGetWakkaVersion().
-     */
-    public function testGetWakkaVersion()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::GetWikkaPatchLevel
-     * @todo   Implement testGetWikkaPatchLevel().
-     */
-    public function testGetWikkaPatchLevel()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::logSpamComment
-     * @todo   Implement testLogSpamComment().
-     */
-    public function testLogSpamComment()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::logSpamDocument
-     * @todo   Implement testLogSpamDocument().
-     */
-    public function testLogSpamDocument()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::logSpamFeedback
-     * @todo   Implement testLogSpamFeedback().
-     */
-    public function testLogSpamFeedback()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::logSpam
-     * @todo   Implement testLogSpam().
-     */
-    public function testLogSpam()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::getSpamlogSummary
-     * @todo   Implement testGetSpamlogSummary().
-     */
-    public function testGetSpamlogSummary()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::readFile
-     * @todo   Implement testReadFile().
-     */
-    public function testReadFile()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::writeFile
-     * @todo   Implement testWriteFile().
-     */
-    public function testWriteFile()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::appendFile
-     * @todo   Implement testAppendFile().
-     */
-    public function testAppendFile()
     {
         // Remove the following lines when you implement this test.
         $this->markTestIncomplete(
@@ -997,54 +688,6 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
     }
 
     /**
-     * @covers Wakka::FullTextSearch
-     * @todo   Implement testFullTextSearch().
-     */
-    public function testFullTextSearch()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::FullCategoryTextSearch
-     * @todo   Implement testFullCategoryTextSearch().
-     */
-    public function testFullCategoryTextSearch()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::CleanTextNode
-     * @todo   Implement testCleanTextNode().
-     */
-    public function testCleanTextNode()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::MakeMenu
-     * @todo   Implement testMakeMenu().
-     */
-    public function testMakeMenu()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
      * @covers Wakka::PageTitle
      * @todo   Implement testPageTitle().
      */
@@ -1067,12 +710,16 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
           'This test has not been implemented yet.'
         );
     }
-
+    
+    
     /**
-     * @covers Wakka::HTTPpost
-     * @todo   Implement testHTTPpost().
+     * SECTION: Comment Tests
      */
-    public function testHTTPpost()
+    /**
+     * @covers Wakka::SaveComment
+     * @todo   Implement testSaveComment().
+     */
+    public function testSaveComment()
     {
         // Remove the following lines when you implement this test.
         $this->markTestIncomplete(
@@ -1081,10 +728,10 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
     }
 
     /**
-     * @covers Wakka::WikiPing
-     * @todo   Implement testWikiPing().
+     * @covers Wakka::deleteComment
+     * @todo   Implement testDeleteComment().
      */
-    public function testWikiPing()
+    public function testDeleteComment()
     {
         // Remove the following lines when you implement this test.
         $this->markTestIncomplete(
@@ -1093,10 +740,10 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
     }
 
     /**
-     * @covers Wakka::GetPingParams
-     * @todo   Implement testGetPingParams().
+     * @covers Wakka::LoadComments
+     * @todo   Implement testLoadComments().
      */
-    public function testGetPingParams()
+    public function testLoadComments()
     {
         // Remove the following lines when you implement this test.
         $this->markTestIncomplete(
@@ -1104,6 +751,364 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
         );
     }
 
+    /**
+     * @covers Wakka::loadCommentId
+     * @todo   Implement testLoadCommentId().
+     */
+    public function testLoadCommentId()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::TraverseComments
+     * @todo   Implement testTraverseComments().
+     */
+    public function testTraverseComments()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::CountComments
+     * @todo   Implement testCountComments().
+     */
+    public function testCountComments()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::CountAllComments
+     * @todo   Implement testCountAllComments().
+     */
+    public function testCountAllComments()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::LoadRecentComments
+     * @todo   Implement testLoadRecentComments().
+     */
+    public function testLoadRecentComments()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::LoadRecentlyCommented
+     * @todo   Implement testLoadRecentlyCommented().
+     */
+    public function testLoadRecentlyCommented()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+    
+    
+    /**
+     * SECTION: ACL Tests
+     */
+    /**
+     * @covers Wakka::LoadAllACLs
+     * @todo   Implement testLoadAllACLs().
+     */
+    public function testLoadAllACLs()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::SaveACL
+     * @todo   Implement testSaveACL().
+     */
+    public function testSaveACL()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::LoadACL
+     * @todo   Implement testLoadACL().
+     */
+    public function testLoadACL()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::TrimACLs
+     * @todo   Implement testTrimACLs().
+     */
+    public function testTrimACLs()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+    
+    
+    /**
+     * SECTION: Referrer Tests
+     */
+    /**
+     * @covers Wakka::LogReferrer
+     */
+    public function testLogReferrer()
+    {
+        # Test params
+        $prefix = self::$wakka->GetConfigValue('table_prefix');
+        $page_tag = 'TestReferredPage';
+        $referrer = 'http://delicious.com/';
+        
+        if ( ! defined('WIKKA_BASE_URL') ) {
+            define('WIKKA_BASE_URL', 'http://localhost/');
+        }
+        
+        # Log referrer
+        self::$wakka->LogReferrer($page_tag, $referrer);
+        
+        # Verify referrer logged
+        $sql_f = 'SELECT COUNT(*) as count FROM %sreferrers WHERE page_tag="%s"';
+        $result = self::$wakka->query(sprintf($sql_f, $prefix, $page_tag));
+        $row = mysql_fetch_assoc($result);
+        $this->assertEquals($row['count'], 1);
+    }
+
+    /**
+     * @covers Wakka::LoadReferrers
+     * @todo   Implement testLoadReferrers().
+     */
+    public function testLoadReferrers()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+    
+    
+    /**
+     * SECTION: Spam Tests
+     */
+    /**
+     * @covers Wakka::logSpamDocument
+     * @todo   Implement testLogSpamDocument().
+     */
+    public function testLogSpamDocument()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::logSpamFeedback
+     * @todo   Implement testLogSpamFeedback().
+     */
+    public function testLogSpamFeedback()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::logSpam
+     * @todo   Implement testLogSpam().
+     */
+    public function testLogSpam()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::getSpamlogSummary
+     * @todo   Implement testGetSpamlogSummary().
+     */
+    public function testGetSpamlogSummary()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::logSpamComment
+     * @todo   Implement testLogSpamComment().
+     */
+    public function testLogSpamComment()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::readBadWords
+     * @todo   Implement testReadBadWords().
+     */
+    public function testReadBadWords()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::writeBadWords
+     * @todo   Implement testWriteBadWords().
+     */
+    public function testWriteBadWords()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::getBadWords
+     * @todo   Implement testGetBadWords().
+     */
+    public function testGetBadWords()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::hasBadWords
+     * @todo   Implement testHasBadWords().
+     */
+    public function testHasBadWords()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+    
+    
+    /**
+     * SECTION: Link Table Tests
+     */
+    /**
+     * @covers Wakka::WriteLinkTable
+     * @todo   Implement testWriteLinkTable().
+     *
+     * Not really sure what Wakka::WriteLinkTable is supposed to do.
+     */
+    public function testWriteLinkTable()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::TrackLinkTo
+     * @todo   Implement testTrackLinkTo().
+     */
+    public function testTrackLinkTo()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::GetLinkTable
+     * @todo   Implement testGetLinkTable().
+     */
+    public function testGetLinkTable()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::ClearLinkTable
+     * @todo   Implement testClearLinkTable().
+     */
+    public function testClearLinkTable()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::StartLinkTracking
+     * @todo   Implement testStartLinkTracking().
+     */
+    public function testStartLinkTracking()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::StopLinkTracking
+     * @todo   Implement testStopLinkTracking().
+     */
+    public function testStopLinkTracking()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+    
+    
+    /**
+     * SECTION: Cookie/Session Tests
+     */
     /**
      * @covers Wakka::SetSessionCookie
      * @todo   Implement testSetSessionCookie().
@@ -1153,6 +1158,113 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
     }
 
     /**
+     * @covers Wakka::authenticateUserFromCookies
+     * @todo   Implement testAuthenticateUserFromCookies().
+     */
+    public function testAuthenticateUserFromCookies()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+    
+    
+    /**
+     * SECTION: Environment Check Tests
+     */
+    /**
+     * @covers Wakka::CheckMySQLVersion
+     */
+    public function testCheckMySQLVersion()
+    {
+        $version_greater_than_1 = self::$wakka->CheckMySQLVersion(1, 0, 0);
+        $version_greater_than_1000 = self::$wakka->CheckMySQLVersion(1000, 0, 0);
+        $this->assertTrue((bool) $version_greater_than_1);
+        $this->assertFalse((bool) $version_greater_than_1000);
+    }
+
+    /**
+     * @covers Wakka::GetWakkaName
+     * @todo   Implement testGetWakkaName().
+     */
+    public function testGetWakkaName()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::GetWakkaVersion
+     * @todo   Implement testGetWakkaVersion().
+     */
+    public function testGetWakkaVersion()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::GetWikkaPatchLevel
+     * @todo   Implement testGetWikkaPatchLevel().
+     */
+    public function testGetWikkaPatchLevel()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+    
+    
+    /**
+     * SECTION: File Operation Tests
+     */
+    /**
+     * @covers Wakka::readFile
+     * @todo   Implement testReadFile().
+     */
+    public function testReadFile()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::writeFile
+     * @todo   Implement testWriteFile().
+     */
+    public function testWriteFile()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::appendFile
+     * @todo   Implement testAppendFile().
+     */
+    public function testAppendFile()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+    
+    
+    /**
+     * SECTION: Redirect Tests 
+     */
+    /**
      * @covers Wakka::SetRedirectMessage
      * @todo   Implement testSetRedirectMessage().
      */
@@ -1181,6 +1293,332 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
      * @todo   Implement testRedirect().
      */
     public function testRedirect()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+    
+    
+    /**
+     * SECTION: Interwiki Tests
+     */
+    /**
+     * @covers Wakka::ReadInterWikiConfig
+     * @todo   Implement testReadInterWikiConfig().
+     */
+    public function testReadInterWikiConfig()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::AddInterWiki
+     * @todo   Implement testAddInterWiki().
+     */
+    public function testAddInterWiki()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::GetInterWikiUrl
+     * @todo   Implement testGetInterWikiUrl().
+     */
+    public function testGetInterWikiUrl()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+    
+    
+    /**
+     * SECTION: Handler Tests
+     */
+    /**
+     * @covers Wakka::GetHandler
+     * @todo   Implement testGetHandler().
+     */
+    public function testGetHandler()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+    
+    /**
+     * @covers Wakka::Handler
+     * @todo   Implement testHandler().
+     */
+    public function testHandler()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::wrapHandlerError
+     * @todo   Implement testWrapHandlerError().
+     */
+    public function testWrapHandlerError()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::existsHandler
+     * @todo   Implement testExistsHandler().
+     */
+    public function testExistsHandler()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+    
+    
+    /**
+     * SECTION: Uncategorized Tests
+     */
+    /**
+     * @covers Wakka::GetMicroTime
+     * @covers Wakka::microTimeDiff
+     */
+    public function testMicroTime()
+    {
+        $utime_2000 = (float) DateTime::createFromFormat('Y-m-d', '2000-01-01')->format('U');
+        $microtime = self::$wakka->GetMicroTime();
+        $diff = self::$wakka->microTimeDiff($microtime);
+        
+        $this->assertGreaterThan($utime_2000, $microtime);
+        $this->assertLessThan(.01, $diff);
+    }
+
+    /**
+     * @covers Wakka::IncludeBuffered
+     * @todo   Implement testIncludeBuffered().
+     */
+    public function testIncludeBuffered()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::makeId
+     * @todo   Implement testMakeId().
+     */
+    public function testMakeId()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::ReturnSafeHTML
+     * @todo   Implement testReturnSafeHTML().
+     */
+    public function testReturnSafeHTML()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::cleanUrl
+     * @todo   Implement testCleanUrl().
+     */
+    public function testCleanUrl()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::htmlspecialchars_ent
+     * @todo   Implement testHtmlspecialchars_ent().
+     */
+    public function testHtmlspecialchars_ent()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::hsc_secure
+     * @todo   Implement testHsc_secure().
+     */
+    public function testHsc_secure()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::GetSafeVar
+     * @todo   Implement testGetSafeVar().
+     */
+    public function testGetSafeVar()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::GeSHi_Highlight
+     * @todo   Implement testGeSHi_Highlight().
+     */
+    public function testGeSHi_Highlight()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::normalizeLines
+     * @todo   Implement testNormalizeLines().
+     */
+    public function testNormalizeLines()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::GetConfigValue
+     * @todo   Implement testGetConfigValue().
+     */
+    public function testGetConfigValue()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::SetConfigValue
+     * @todo   Implement testSetConfigValue().
+     */
+    public function testSetConfigValue()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::FullTextSearch
+     * @todo   Implement testFullTextSearch().
+     */
+    public function testFullTextSearch()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::FullCategoryTextSearch
+     * @todo   Implement testFullCategoryTextSearch().
+     */
+    public function testFullCategoryTextSearch()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::CleanTextNode
+     * @todo   Implement testCleanTextNode().
+     */
+    public function testCleanTextNode()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::MakeMenu
+     * @todo   Implement testMakeMenu().
+     */
+    public function testMakeMenu()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+    
+    /**
+     * @covers Wakka::HTTPpost
+     * @todo   Implement testHTTPpost().
+     */
+    public function testHTTPpost()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::WikiPing
+     * @todo   Implement testWikiPing().
+     */
+    public function testWikiPing()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+
+    /**
+     * @covers Wakka::GetPingParams
+     * @todo   Implement testGetPingParams().
+     */
+    public function testGetPingParams()
     {
         // Remove the following lines when you implement this test.
         $this->markTestIncomplete(
@@ -1253,66 +1691,6 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
      * @todo   Implement testIsWikiName().
      */
     public function testIsWikiName()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::TrackLinkTo
-     * @todo   Implement testTrackLinkTo().
-     */
-    public function testTrackLinkTo()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::GetLinkTable
-     * @todo   Implement testGetLinkTable().
-     */
-    public function testGetLinkTable()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::ClearLinkTable
-     * @todo   Implement testClearLinkTable().
-     */
-    public function testClearLinkTable()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::StartLinkTracking
-     * @todo   Implement testStartLinkTracking().
-     */
-    public function testStartLinkTracking()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::StopLinkTracking
-     * @todo   Implement testStopLinkTracking().
-     */
-    public function testStopLinkTracking()
     {
         // Remove the following lines when you implement this test.
         $this->markTestIncomplete(
@@ -1405,94 +1783,10 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
     }
 
     /**
-     * @covers Wakka::ReadInterWikiConfig
-     * @todo   Implement testReadInterWikiConfig().
-     */
-    public function testReadInterWikiConfig()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::AddInterWiki
-     * @todo   Implement testAddInterWiki().
-     */
-    public function testAddInterWiki()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::GetInterWikiUrl
-     * @todo   Implement testGetInterWikiUrl().
-     */
-    public function testGetInterWikiUrl()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::LoadReferrers
-     * @todo   Implement testLoadReferrers().
-     */
-    public function testLoadReferrers()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
      * @covers Wakka::Action
      * @todo   Implement testAction().
      */
     public function testAction()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::Handler
-     * @todo   Implement testHandler().
-     */
-    public function testHandler()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::wrapHandlerError
-     * @todo   Implement testWrapHandlerError().
-     */
-    public function testWrapHandlerError()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::existsHandler
-     * @todo   Implement testExistsHandler().
-     */
-    public function testExistsHandler()
     {
         // Remove the following lines when you implement this test.
         $this->markTestIncomplete(
@@ -1513,238 +1807,10 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
     }
 
     /**
-     * @covers Wakka::authenticateUserFromCookies
-     * @todo   Implement testAuthenticateUserFromCookies().
-     */
-    public function testAuthenticateUserFromCookies()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::UserWantsComments
-     * @todo   Implement testUserWantsComments().
-     */
-    public function testUserWantsComments()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::FormatUser
-     * @todo   Implement testFormatUser().
-     */
-    public function testFormatUser()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::existsUser
-     * @todo   Implement testExistsUser().
-     */
-    public function testExistsUser()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::LoadComments
-     * @todo   Implement testLoadComments().
-     */
-    public function testLoadComments()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::loadCommentId
-     * @todo   Implement testLoadCommentId().
-     */
-    public function testLoadCommentId()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::TraverseComments
-     * @todo   Implement testTraverseComments().
-     */
-    public function testTraverseComments()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::CountComments
-     * @todo   Implement testCountComments().
-     */
-    public function testCountComments()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::CountAllComments
-     * @todo   Implement testCountAllComments().
-     */
-    public function testCountAllComments()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::LoadRecentComments
-     * @todo   Implement testLoadRecentComments().
-     */
-    public function testLoadRecentComments()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::LoadRecentlyCommented
-     * @todo   Implement testLoadRecentlyCommented().
-     */
-    public function testLoadRecentlyCommented()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::UserIsOwner
-     * @todo   Implement testUserIsOwner().
-     */
-    public function testUserIsOwner()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::IsAdmin
-     * @todo   Implement testIsAdmin().
-     */
-    public function testIsAdmin()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::LoadACL
-     * @todo   Implement testLoadACL().
-     */
-    public function testLoadACL()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::TrimACLs
-     * @todo   Implement testTrimACLs().
-     */
-    public function testTrimACLs()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
      * @covers Wakka::isGroupMember
      * @todo   Implement testIsGroupMember().
      */
     public function testIsGroupMember()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::readBadWords
-     * @todo   Implement testReadBadWords().
-     */
-    public function testReadBadWords()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::writeBadWords
-     * @todo   Implement testWriteBadWords().
-     */
-    public function testWriteBadWords()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::getBadWords
-     * @todo   Implement testGetBadWords().
-     */
-    public function testGetBadWords()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @covers Wakka::hasBadWords
-     * @todo   Implement testHasBadWords().
-     */
-    public function testHasBadWords()
     {
         // Remove the following lines when you implement this test.
         $this->markTestIncomplete(
@@ -1775,8 +1841,16 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
           'This test has not been implemented yet.'
         );
     }
-    
-    public function testInstantiation() {
-        $this->assertInstanceOf('Wakka', self::$wakka);
+
+    /**
+     * @covers Wakka::Maintenance
+     * @todo   Implement testMaintenance().
+     */
+    public function testMaintenance()
+    {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
     }
 }
