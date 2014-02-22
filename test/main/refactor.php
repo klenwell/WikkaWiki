@@ -8,16 +8,28 @@
  * This is not part of the phpunit suite. (I wasn't able to get phpunit to
  * play nicely with wikka.php's buffering.)
  *
+ * It is required that this script is run with php-cgi in order to check
+ * headers.
+ *
  * Usage (run from WikkaWiki root dir):
- * > php -f test/main/refactor.php
+ * > php-cgi -f test/main/refactor.php
  * 
  */
+#
+# Change working dir for php-cgi (else file_exists will fail)
+# See http://stackoverflow.com/questions/6369064/
+#
+if ( strpos(php_sapi_name(), 'cgi') > -1 ) {
+    $doc_root = dirname(dirname(__DIR__));
+    chdir($doc_root);
+}
+
 #
 # Imports
 #
 require_once('test/test.config.php');
 require_once('libs/Compatibility.lib.php');
-require_once('./3rdparty/core/php-gettext/gettext.inc');
+require_once('3rdparty/core/php-gettext/gettext.inc');
 require_once('libs/Wakka.class.php');
 require_once('version.php');
 
@@ -84,9 +96,9 @@ ob_start();
 # Run script
 require_once('wikka.php');
 
-# Capture Output
-$content =  ob_get_contents();
+# Clear buffer
 ob_end_clean();
+#print($WikkaMeta['page']['output']);
 
 
 #
@@ -94,40 +106,86 @@ ob_end_clean();
 #
 error_reporting(E_ALL);
 
-$expected_output = array(
-    # array(string, expected)
-    # Expected
-    array('<title>MyWikkaSite: HelloWorld</title>', true),
-    array('<!-- BEGIN PAGE WRAPPER -->', true),
-    array('<!-- BEGIN SYSTEM INFO -->', true),
-    array($page_body, true),
-    
-    # Unexpected
-    array("This page doesn't exist yet.", false),
-);
-
-foreach ( $expected_output as $expectation ) {
-    list($value, $expected) = $expectation;
-    
-    if ( $expected && strpos($content, $value) < 0) {
-        echo $content;
-        throw new Exception(sprintf("FAILED TO FIND: %s", $value));
-    }
-    elseif ( (! $expected) && strpos($content, $value) > -1 )  {
-        echo $content;
-        throw new Exception(sprintf("FAILED IN FINDING: %s", $value));
+function assert_true($assertion, $msg=null) {
+    if ( $assertion ) {
+        $msg = ( $msg ) ? $msg : 'assert_true passed';
+        assert_success($msg);
     }
     else {
-        printf("PASS: [%s] %s\n", $value, ($expected) ? 'found' : 'not found');
+        $msg = ( $msg ) ? $msg : 'assert_true failed';
+        assert_fail($msg);
     }
 }
 
-# This test may be too strict. Strlen should remain constant during refactoring
-# but could easily 
-#echo $content;
-$expected_strlen = 4559;
-assert('strlen($content) == $expected_strlen');
+function assert_equal($val1, $val2) {
+    if ( $val1 == $val2 ) {
+        assert_success("value [$val1] == [$val2]");
+    }
+    else {
+        assert_fail("value [$val1] != [$val2]");
+    }
+}
 
+function assert_found($needle, $haystack) {
+    if ( strpos($haystack, $needle) !== false ) {
+        assert_success("value [$needle] found");
+    }
+    else {
+        assert_fail("value [$needle] not found in:\n$haystack");
+    }
+}
+
+function assert_not_found($needle, $haystack) {
+    if ( strpos($haystack, $needle) === false ) {
+        assert_success("value [$needle] not found");
+    }
+    else {
+        assert_fail("value [$needle] found in:\n$haystack");
+    }
+}
+
+function assert_success($message='no message') {
+    $bt = debug_backtrace();
+    $caller = $bt[1];
+    printf("PASS: %s [%s:%s]\n", $message, basename($caller['file']), $caller['line']);
+}
+
+function assert_fail($message=null) {
+    $bt = debug_backtrace();
+    $caller = $bt[1];
+    printf("\nASSERTION FAILED at %s:%d\n", $caller['file'], $caller['line']);
+    if ( $message ) {
+        print "$message\n";
+    }
+    print "\nTEST FAILED\n";
+    exit(1);
+}
+
+$expected_output = array(
+    '<title>MyWikkaSite: HelloWorld</title>',
+    '<!-- BEGIN PAGE WRAPPER -->',
+    '<!-- BEGIN SYSTEM INFO -->',
+    $page_tag,
+    $page_body
+);
+foreach( $expected_output as $needle ) {
+    assert_found($needle, $WikkaMeta['page']['output']);
+}
+
+$unexpected_output = array(
+    "This page doesn't exist yet.",
+);
+foreach( $unexpected_output as $needle ) {
+    assert_not_found($needle, $WikkaMeta['page']['output']);
+}
+
+# Meta Tests
+assert_true($WikkaMeta["page"]["length"] > 4000, 'page length test');
+
+# Test headers sent (cgi version only)
+if ( strpos(php_sapi_name(), 'cgi') > -1 ) {
+    assert_equal($WikkaMeta["headers"]["length"], 5);
+}
 
 #
 # Passed!

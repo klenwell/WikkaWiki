@@ -746,6 +746,21 @@ $etag =  md5($content);
 header('ETag: '.$etag);
 header('Content-Length: '.$page_length);
 
+#
+# Collect data for regression testing
+#
+$WikkaMeta = array(
+    'headers' => array(
+        'sent' => (int) headers_sent(),
+        'list' => headers_list(),
+        'length' => count(headers_list())
+    ),
+    'page' => array(
+        'output' => $page_output,
+        'length' => $page_length,
+    ),
+);
+
 ob_end_clean();
 
 /**
