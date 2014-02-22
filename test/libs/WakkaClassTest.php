@@ -59,7 +59,6 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
         self::$pdo->exec(sprintf('CREATE DATABASE `%s`',
             self::$config['mysql_database']));
         self::$pdo->query(sprintf('USE %s', self::$config['mysql_database']));
-        self::$wakka = new Wakka(self::$config);
         
         # Create tables
         foreach ($install_queries as $key => $query) {
@@ -67,9 +66,7 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
         }
     }
  
-    public static function tearDownAfterClass() {
-        self::$wakka = NULL;
-        
+    public static function tearDownAfterClass() {       
         # Cleanup database
         self::$pdo->exec(sprintf('DROP DATABASE `%s`',
             self::$config['mysql_database']));
@@ -77,6 +74,9 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
     }
     
     public function setUp() {
+        self::$wakka = new Wakka(self::$config);
+        self::$wakka->handler = 'show';
+        
         $this->save_users();
         $this->save_pages();
         $this->save_comments();
@@ -86,6 +86,8 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
     }
     
     public function tearDown() {
+        self::$wakka = NULL;
+        
         # Truncate all tables
         foreach (self::$pdo->query('SHOW TABLES') as $row) {
             self::$pdo->query(sprintf('TRUNCATE TABLE %s', $row[0]));
