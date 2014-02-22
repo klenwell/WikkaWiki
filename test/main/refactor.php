@@ -1,6 +1,6 @@
 <?php
 /**
- * main/regression.php
+ * main/refactor.php
  * 
  * Provides a simple regression for testing wikka.php script while refactoring
  * main script.
@@ -9,7 +9,7 @@
  * play nicely with wikka.php's buffering.)
  *
  * Usage (run from WikkaWiki root dir):
- * > php -f test/main/regression.php
+ * > php -f test/main/refactor.php
  * 
  */
 #
