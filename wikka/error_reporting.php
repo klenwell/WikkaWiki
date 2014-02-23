@@ -1,6 +1,6 @@
 <?php
 /**
- * main/SECTION.php
+ * main/error_reporting.php
  * 
  * Module of main wikka.php script
  *

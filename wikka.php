@@ -61,31 +61,8 @@ require_once('wikka/error_reporting.php');
 # Define current Wikka version
 include_once('version.php');
 
+require_once('wikka/constants.php');
 
-// ----------------------------- BASIC CONSTANTS -------------------------------
-/**#@+
- * Simple constant. May be made a configurable value.
- */
-/**
- * Defines the default cookie name.
- */
-if (!defined('BASIC_COOKIE_NAME')) define('BASIC_COOKIE_NAME', 'Wikkawiki');
-/**
- * Length to use for generated part of id attribute.
- */
-define('ID_LENGTH',10);			// @@@ maybe make length configurable
-/**
- * Character used for multi-path lists
- */
-if(!defined('PATH_DIVIDER')) define('PATH_DIVIDER', ',');
-/**#@-*/
-/**#@+
- * Minimum version requirement.
- */
-if (!defined('MINIMUM_PHP_VERSION'))	define('MINIMUM_PHP_VERSION', '5.0');
-if (!defined('MINIMUM_MYSQL_VERSION'))	define('MINIMUM_MYSQL_VERSION', '4.1');
-/**#@-*/
-// ----------------------------- END BASIC CONSTANTS ---------------------------
 
 // ----------------------------- HELPER FUNCTIONS ---------------------------
 /**
