@@ -197,6 +197,14 @@ else {
     assert_equal(WIKKA_BASE_URL_PATH, 'test/main/refactor.php');
     assert_equal(WIKKA_COOKIE_PATH, 'test/main/refactor.ph');
 }
+
+#
+# Test Settings
+#
+# mysql_database should come from test/test.config.php -- change this as necessary
+assert_equal($wakkaConfig['mysql_database'], 'wikkawiki_test');
+assert_equal($wakkaConfig['action_path'], 'plugins/actions,actions');
+assert_true(! isset($wakkaConfig['stylesheet']));
     
 #
 # Meta Tests

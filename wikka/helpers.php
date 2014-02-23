@@ -83,3 +83,9 @@ function define_constant_if_not_defined($name, $value) {
         define($name, $value);
     }
 }
+
+function unset_if_isset($var) {
+    if ( isset($var) ) {
+        unset($var);
+    }
+}
