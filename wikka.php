@@ -77,94 +77,15 @@ require_once('wikka/load_config.php');
 
 require_once('wikka/language_defaults.php');
 
-/**
- * To activate multisite deployment capabilities, just create an empty file multi.config.php in
- * your Wikkawiki installation directory. This file can contain an array definition for
- * $multiConfig.
- * Relevant keys in the array are a global directory for local settings 'local_config' and
- * designated directories for different host requests, e.g. you may want http://example.com
- * and http://www.example.com using the same local config file.
- * 'http_www_example_com' => 'http.example.com'
- * 'http_example_com' => 'http.example.com'
-*/
-$multisite_configfile = 'multi.config.php';
-if (file_exists($multisite_configfile))
-{
-	$wakkaGlobalConfig = $wakkaConfig;	// copy config file, #878
-	$multiDefaultConfig = array(
-		'local_config'            => 'wikka.config' # path to local configs
-	);
-	$multiConfig = array();
-
-    include($multisite_configfile);
-
-    $multiConfig = array_merge($multiDefaultConfig, $multiConfig);    // merge default multi config with config from file
-
-    $configkey = str_replace('://','_',$t_scheme).str_replace('.','_',$t_domain);
-    if($t_port != '') $configkey .= '_'.$t_port;
-
-
-/**
- * Admin can decide to put a specific local config in a more readable and shorter directory.
- * The $configkey is created as 'protocol_thirdleveldomain_secondleveldomain_topleveldomain'
- * Subdirectories are not supported at the moment, but should be easy to implement.
- * If no designated directory is found in multi.config.php, the script uses the $configkey
- * value and replaces all underscore by dots:
- * protocol.thirdleveldomain.secondleveldomain.topleveldomain e.g.
- * http.www.example.com
-*/
-    if (isset($multiConfig[$configkey])) $configpath = $multiConfig[$configkey];
-    else
-    {
-        $requested_host = str_replace('_','.',$configkey);
-        $configpath = $multiConfig['local_config'].DIRECTORY_SEPARATOR.$requested_host;
-        $multiConfig[$configkey] = $requested_host;
-    }
-
-    $local_configfile = $configpath.DIRECTORY_SEPARATOR.'local.config.php';
-/**
- * As each site may differ in its configuration and capabilities, we should consider using
- * plugin directories below the $configpath. Effectively, this replaces the 1.1.6.6 plugins
- * folder. It goes even a little bit further by providing a site specific upload directory.
-*/
-
-    $localDefaultConfig = array(
-    	'menu_config_path'			=> $configpath.DIRECTORY_SEPARATOR.'config'.PATH_DIVIDER.'plugins'.DIRECTORY_SEPARATOR.'config'.PATH_DIVIDER.'config',
-        'action_path'				=> $configpath.DIRECTORY_SEPARATOR.'actions'.PATH_DIVIDER.'plugins'.DIRECTORY_SEPARATOR.'actions'.PATH_DIVIDER.'actions',
-        'handler_path'				=> $configpath.DIRECTORY_SEPARATOR.'handlers'.PATH_DIVIDER.'plugins'.DIRECTORY_SEPARATOR.'handlers'.PATH_DIVIDER.'handlers',
-        'wikka_formatter_path'		=> $configpath.DIRECTORY_SEPARATOR.'formatters'.PATH_DIVIDER.'plugins'.DIRECTORY_SEPARATOR.'formatters'.PATH_DIVIDER.'formatters',        # (location of Wikka formatter - REQUIRED)
-        'wikka_highlighters_path'	=> $configpath.DIRECTORY_SEPARATOR.'formatters'.PATH_DIVIDER.'plugins'.DIRECTORY_SEPARATOR.'formatters'.PATH_DIVIDER.'formatters',        # (location of Wikka code highlighters - REQUIRED)
-        'wikka_template_path'		=> $configpath.DIRECTORY_SEPARATOR.'templates'.PATH_DIVIDER.'plugins'.DIRECTORY_SEPARATOR.'templates'.PATH_DIVIDER.'templates',        # (location of Wikka template files - REQUIRED)
-        'upload_path'				=> $configpath.DIRECTORY_SEPARATOR.'uploads'
-    );
-    $localConfig = array();
-    if (!file_exists($configpath))
-    {
-        $path_parts = explode(DIRECTORY_SEPARATOR,$configpath);
-        $partialpath = '';
-        foreach($path_parts as $part)
-        {
-            $partialpath .= $part;
-            if (!file_exists($partialpath)) mkdir($partialpath,0755);
-            $partialpath .= DIRECTORY_SEPARATOR;
-        }
-        mkdir($configpath.DIRECTORY_SEPARATOR.'config',0700);
-        mkdir($configpath.DIRECTORY_SEPARATOR.'actions',0700);
-        mkdir($configpath.DIRECTORY_SEPARATOR.'handlers',0700);
-        mkdir($configpath.DIRECTORY_SEPARATOR.'handlers'.DIRECTORY_SEPARATOR.'page',0700);
-        mkdir($configpath.DIRECTORY_SEPARATOR.'formatters',0700);
-        mkdir($configpath.DIRECTORY_SEPARATOR.'templates',0700);
-        mkdir($configpath.DIRECTORY_SEPARATOR.'uploads',0755);
-//        if(file_exists($wakkaConfig['stylesheet'])) copy($wakkaConfig['stylesheet'],$localDefaultConfig['stylesheet']);
-    }
-    else if (file_exists($local_configfile)) include($local_configfile);
-
-    $wakkaGlobalConfig = array_merge($wakkaGlobalConfig, $localDefaultConfig);    // merge global config with default local config
-
-    $wakkaConfigLocation = $local_configfile;
-
-    $wakkaConfig = array_merge($wakkaGlobalConfig, $wakkaConfig);    // merge localized global config with local config from file
+#
+# TODO: refactor of this section has not been well tested. It was not tested
+# by the test/main/refactor.php script.
+#
+if ( file_exists('multi.config.php') ) {
+    require_once('wikka/multisite.php');
 }
+
+
 
 /**
  * Check for locking.

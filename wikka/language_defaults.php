@@ -59,6 +59,3 @@ HEREDOC;
 }
 
 define_constant_if_not_defined('WIKKA_LANG_PATH', $default_lang_path);
-
-if(!defined('WIKKA_LANG_PATH')) define();
-// ------------------------- END LANGUAGE DEFAULTS -----------------------------

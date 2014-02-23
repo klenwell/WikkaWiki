@@ -202,10 +202,14 @@ else {
 #
 # Test Settings
 #
-# mysql_database should come from test/test.config.php -- change this as necessary
-assert_equal($wakkaConfig['mysql_database'], 'wikkawiki_test');
 assert_equal($wakkaConfig['action_path'], 'plugins/actions,actions');
 assert_true(! isset($wakkaConfig['stylesheet']));
+
+# mysql_database should come from test/test.config.php -- change this as necessary
+assert_equal($wakkaConfig['mysql_database'], 'wikkawiki_test');
+
+# multisite module is not tested, so this should not be set
+assert_true(! isset($multiDefaultConfig));
     
 #
 # Meta Tests
