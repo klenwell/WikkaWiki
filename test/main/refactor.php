@@ -187,12 +187,13 @@ foreach( $unexpected_output as $needle ) {
 #
 # Test Constants
 #
+assert_equal(WIKKA_BASE_DOMAIN_URL, 'http://:');
+assert_equal(WIKKA_LANG_PATH, 'lang/en');
+
 if ( TESTING_AS_CGI ) {
-    assert_equal(WIKKA_BASE_DOMAIN_URL, 'http://:');
-    assert_equal(WIKKA_BASE_URL, 'http://:');
+    assert_equal(WIKKA_BASE_URL, 'http://:');  
 }
 else {
-    assert_equal(WIKKA_BASE_DOMAIN_URL, 'http://:');
     assert_equal(WIKKA_BASE_URL, 'http://:test/main/refactor.php');
     assert_equal(WIKKA_BASE_URL_PATH, 'test/main/refactor.php');
     assert_equal(WIKKA_COOKIE_PATH, 'test/main/refactor.ph');
