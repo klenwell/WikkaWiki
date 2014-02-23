@@ -69,105 +69,12 @@ $tstart = getmicrotime();
 
 require_once('wikka/magic_quotes.php');
 
+require_once('wikka/domain_path.php');
+
 
 /**
  * Default configuration.
  */
-// attempt to derive base URL fragments and whether rewrite mode is enabled (#438)
-$t_domain	= $_SERVER['SERVER_NAME'];
-$t_scheme = ((isset($_SERVER['HTTPS'])) && !empty($_SERVER['HTTPS']) && 'off' != $_SERVER['HTTPS']) ? 'https://' : 'http://';
-$t_port = ':'.$_SERVER['SERVER_PORT'];
-if ((('http://' == $t_scheme) && (':80' == $t_port)) || (('https://' == $t_scheme) && (':443' == $t_port)))
-{
-	$t_port = '';
-}
-$t_request	= $_SERVER['REQUEST_URI'];
-// append slash if $t_request does not end with either a slash or the string .php
-if (!preg_match('@(\\.php|/)$@i', $t_request))
-{
-//	$t_request .= '/';
-}
-
-if (preg_match('@\.php$@', $t_request) && !preg_match('@wikka\.php$@', $t_request))
-{
-	// handle "overridden" redirect from index.php
-	$t_request = preg_replace('@/[^.]+\.php@', '/wikka.php', $t_request);	// handle "overridden" redirect from index.php
-}
-
-if ( !preg_match('@wakka=@',$_SERVER['REQUEST_URI']) && isset($_SERVER['QUERY_STRING']) && preg_match('@wakka=@',$_SERVER['QUERY_STRING']))
-{
-	// looks like we got a rewritten request via .htaccess
-	// remove 'wikka.php' and request (page name) from 'request' part: should not be part of base_url!
-	$query_part = preg_replace('@wakka=@', '', $_SERVER['QUERY_STRING']);
-	$t_request  = preg_replace('@'.preg_quote('wikka.php').'@', '', $t_request);
-	$t_request  = preg_replace('@'.preg_quote($query_part).'@', '', $t_request);
-	$t_query = '';
-	$t_rewrite_mode = 1;
-}
-else
-{
-	// no rewritten request apparent
-	$t_query = '?wakka=';
-	$t_rewrite_mode = 0;
-}
-
-// ---------------------- DEFINE URL DOMAIN / PATH -----------------------------
-/**#@+*
- * URL or URL component, derived just once for later usage.
- */
-// first derive domain, path and base_url, as well as cookie path just once
-// so they are ready for later use.
-// detect actual scheme (might be https!)	@@@ TEST
-// please recopy modif into setup/test/test-mod-rewrite.php
-$scheme = ((isset($_SERVER['HTTPS'])) && !empty($_SERVER['HTTPS']) && 'off' != $_SERVER['HTTPS']) ? 'https://' : 'http://';
-$server_port = ':'.$_SERVER['SERVER_PORT'];
-if ((('http://' == $scheme) && (':80' == $server_port)) || (('https://' == $scheme) && (':443' == $server_port)))
-{
-	$server_port = '';
-}
-/**
- * URL fragment consisting of scheme + domain part.
- * Represents the domain URL where the current instance of Wikka is located.
- * This variable can be overriden in {@link override.config.php}
- *
- * @var string
- */
-if (!defined('WIKKA_BASE_DOMAIN_URL')) define('WIKKA_BASE_DOMAIN_URL', $scheme.$_SERVER['SERVER_NAME'].$server_port);
-/**
- * URL fragment consisting of a path component.
- * Points to the instance of Wikka within {@link WIKKA_BASE_DOMAIN_URL}.
- *
- * @var string
- */
-define('WIKKA_BASE_URL_PATH', preg_replace('/wikka\\.php/', '', $_SERVER['SCRIPT_NAME']));
-/**
- * Base URL consisting of {@link WIKKA_BASE_DOMAIN_URL} and {@link WIKKA_BASE_URL_PATH} concatenated.
- * Ready to append a relative path to a "static" file to.
- *
- * @var string
- */
-define('WIKKA_BASE_URL', WIKKA_BASE_DOMAIN_URL.WIKKA_BASE_URL_PATH);
-/**
- * Path to be used for cookies.
- * Derived from {@link WIKKA_BASE_URL_PATH}
- *
- * @var string
- */
-define('WIKKA_COOKIE_PATH', ('/' == WIKKA_BASE_URL_PATH) ? '/' : substr(WIKKA_BASE_URL_PATH, 0, -1));
-/**
- * Default number of hours after which a permanent cookie is to expire: corresponds to 90 days.
- */
-if (!defined('DEFAULT_COOKIE_EXPIRATION_HOURS')) define('DEFAULT_COOKIE_EXPIRATION_HOURS',90 * 24);
-/**
- * Path for Wikka libs
- *
- * @var string
- */
-if(!defined('WIKKA_LIBRARY_PATH')) define('WIKKA_LIBRARY_PATH', 'lib');
-
-/**#@-*/
-// ----------------------- END URL DOMAIN / PATH -------------------------------
-
 
 $wakkaDefaultConfig = array(
 	'mysql_host'				=> 'localhost',

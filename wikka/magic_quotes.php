@@ -10,6 +10,7 @@
 ini_set('magic_quotes_runtime', 0);
 
 if (get_magic_quotes_gpc()) {
+    # magicQuotesWorkaround is included during sanity checks
 	magicQuotesWorkaround($_POST);
 	magicQuotesWorkaround($_GET);
 	magicQuotesWorkaround($_COOKIE);

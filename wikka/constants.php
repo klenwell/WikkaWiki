@@ -13,6 +13,9 @@ define_constant_if_not_defined('MINIMUM_PHP_VERSION', '5.0');
 define_constant_if_not_defined('MINIMUM_MYSQL_VERSION', '4.1');
 define_constant_if_not_defined('ERROR_WRONG_PHP_VERSION',
     'Wikka requires PHP %s or higher!');
+define_constant_if_not_defined('DEFAULT_COOKIE_EXPIRATION_HOURS', 90 * 24);
+define_constant_if_not_defined('WIKKA_LIBRARY_PATH', 'lib');
+
 
 $ERROR_MYSQL_SUPPORT_MISSING = <<<HEREDOC
 PHP can't find MySQL support but Wikka requires MySQL. Please check the output
