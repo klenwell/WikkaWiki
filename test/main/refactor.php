@@ -19,7 +19,9 @@
 # Change working dir for php-cgi (else file_exists will fail)
 # See http://stackoverflow.com/questions/6369064/
 #
-if ( strpos(php_sapi_name(), 'cgi') > -1 ) {
+define('TESTING_AS_CGI', strpos(php_sapi_name(), 'cgi') > -1);
+
+if ( TESTING_AS_CGI ) {
     $doc_root = dirname(dirname(__DIR__));
     chdir($doc_root);
 }
@@ -161,6 +163,9 @@ function assert_fail($message=null) {
     exit(1);
 }
 
+#
+# Test Page Content
+#
 $expected_output = array(
     '<title>MyWikkaSite: HelloWorld</title>',
     '<!-- BEGIN PAGE WRAPPER -->',
@@ -179,11 +184,27 @@ foreach( $unexpected_output as $needle ) {
     assert_not_found($needle, $WikkaMeta['page']['output']);
 }
 
+#
+# Test Constants
+#
+if ( TESTING_AS_CGI ) {
+    assert_equal(WIKKA_BASE_DOMAIN_URL, 'http://:');
+    assert_equal(WIKKA_BASE_URL, 'http://:');
+}
+else {
+    assert_equal(WIKKA_BASE_DOMAIN_URL, 'http://:');
+    assert_equal(WIKKA_BASE_URL, 'http://:test/main/refactor.php');
+    assert_equal(WIKKA_BASE_URL_PATH, 'test/main/refactor.php');
+    assert_equal(WIKKA_COOKIE_PATH, 'test/main/refactor.ph');
+}
+    
+#
 # Meta Tests
+#
 assert_true($WikkaMeta["page"]["length"] > 4000, 'page length test');
 
 # Test headers sent (cgi version only)
-if ( strpos(php_sapi_name(), 'cgi') > -1 ) {
+if ( TESTING_AS_CGI ) {
     assert_equal($WikkaMeta["headers"]["length"], 5);
 }
 
