@@ -33,11 +33,12 @@ if ( TESTING_AS_CGI ) {
 #
 # Imports
 #
-require_once('test/test.config.php');
 require_once('libs/Compatibility.lib.php');
 require_once('3rdparty/core/php-gettext/gettext.inc');
 require_once('libs/Wakka.class.php');
 require_once('version.php');
+require_once('test/test.config.php');
+require_once('test/helpers.php');
 
 
 #
@@ -51,7 +52,7 @@ require('setup/database.php');
 $host = sprintf('mysql:host=%s', $config['mysql_host']);
 $pdo = new PDO($host, $config['mysql_user'],
     $config['mysql_password']);
-$pdo->setAttribute( PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION );
+$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
 # Create database
 $pdo->exec(sprintf('DROP DATABASE IF EXISTS `%s`',
@@ -71,6 +72,7 @@ foreach ($install_queries as $key => $query) {
 #
 # Requires a wikka object: $mikka
 $mikka = new Wakka($config);
+$mikka->handler = 'show';
 
 # Page Parameters
 $page_tag = 'HelloWorld';
@@ -111,61 +113,6 @@ ob_end_clean();
 # Tests
 #
 error_reporting(E_ALL);
-
-function assert_true($assertion, $msg=null) {
-    if ( $assertion ) {
-        $msg = ( $msg ) ? $msg : 'assert_true passed';
-        assert_success($msg);
-    }
-    else {
-        $msg = ( $msg ) ? $msg : 'assert_true failed';
-        assert_fail($msg);
-    }
-}
-
-function assert_equal($val1, $val2) {
-    if ( $val1 == $val2 ) {
-        assert_success("value [$val1] == [$val2]");
-    }
-    else {
-        assert_fail("value [$val1] != [$val2]");
-    }
-}
-
-function assert_found($needle, $haystack) {
-    if ( strpos($haystack, $needle) !== false ) {
-        assert_success("value [$needle] found");
-    }
-    else {
-        assert_fail("value [$needle] not found in:\n$haystack");
-    }
-}
-
-function assert_not_found($needle, $haystack) {
-    if ( strpos($haystack, $needle) === false ) {
-        assert_success("value [$needle] not found");
-    }
-    else {
-        assert_fail("value [$needle] found in:\n$haystack");
-    }
-}
-
-function assert_success($message='no message') {
-    $bt = debug_backtrace();
-    $caller = $bt[1];
-    printf("PASS: %s [%s:%s]\n", $message, basename($caller['file']), $caller['line']);
-}
-
-function assert_fail($message=null) {
-    $bt = debug_backtrace();
-    $caller = $bt[1];
-    printf("\nASSERTION FAILED at %s:%d\n", $caller['file'], $caller['line']);
-    if ( $message ) {
-        print "$message\n";
-    }
-    print "\nTEST FAILED\n";
-    exit(1);
-}
 
 #
 # Test Page Content
