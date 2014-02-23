@@ -56,18 +56,11 @@
  * 	- (Output page)
  */
 
-// ---------------------- DEBUGGING AND ERROR REPORTING -----------------------
-if(version_compare(phpversion(),'5.3','<'))
-	error_reporting(E_ALL);
-else
-	error_reporting(E_ALL & !E_DEPRECATED);
-// ---------------------- END DEBUGGING AND ERROR REPORTING -------------------
+require_once('wikka/error_reporting.php');
 
-// ---------------------------- VERSIONING ------------------------------------
-/**#@+
- * Defines current Wikka version.
- */
+# Define current Wikka version
 include_once('version.php');
+
 
 // ----------------------------- BASIC CONSTANTS -------------------------------
 /**#@+
