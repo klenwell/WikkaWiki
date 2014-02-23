@@ -35,7 +35,6 @@
  *
  * Klenwell Refactor Notes
  *  Currently Marked Sections:
- * 	- SANITY CHECKS
  * 	- (Init / Default Configuration)
  * 	- DEFINE URL DOMAIN / PATH
  * 	- LOAD CONFIG
@@ -61,18 +60,15 @@ require_once('wikka/constants.php');
 
 require_once('wikka/sanity_checks.php');
 
-
-
+#
+# Start buffering and a timer (why start timer here and not sooner?)
+#
 ob_start();
 global $tstart;
 $tstart = getmicrotime();
-ini_set('magic_quotes_runtime', 0);
-if (get_magic_quotes_gpc())
-{
-	magicQuotesWorkaround($_POST);
-	magicQuotesWorkaround($_GET);
-	magicQuotesWorkaround($_COOKIE);
-}
+
+require_once('wikka/magic_quotes.php');
+
 
 /**
  * Default configuration.
