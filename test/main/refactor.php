@@ -11,6 +11,10 @@
  * It is required that this script is run with php-cgi in order to check
  * headers.
  *
+ * This script does not test the following modules:
+ *  - wikka/multisite.php
+ *  - wikka/install.php
+ *
  * Usage (run from WikkaWiki root dir):
  * > php-cgi -f test/main/refactor.php
  * 
@@ -210,6 +214,9 @@ assert_equal($wakkaConfig['mysql_database'], 'wikkawiki_test');
 
 # multisite module is not tested, so this should not be set
 assert_true(! isset($multiDefaultConfig));
+
+# install module is not tested, so this should not be set
+assert_true(! isset($installAction));
     
 #
 # Meta Tests

@@ -35,12 +35,6 @@
  *
  * Klenwell Refactor Notes
  *  Currently Marked Sections:
- * 	- (Init / Default Configuration)
- * 	- DEFINE URL DOMAIN / PATH
- * 	- LOAD CONFIG
- * 	- LANGUAGE DEFAULTS
- * 	- (Multi-site Deployment)
- * 	- (Installer / Setup)
  * 	- (Start Session)
  * 	- (Set $wakka location var)
  * 	- (Set Page & Handler)
@@ -85,58 +79,13 @@ if ( file_exists('multi.config.php') ) {
     require_once('wikka/multisite.php');
 }
 
+#
+# TODO: refactor of this section has not been well tested. It was not tested
+# by the test/main/refactor.php script.
+#
+require_once('wikka/install.php');
 
 
-/**
- * Check for locking.
- */
-if (file_exists('locked'))
-{
-	// read password from lockfile
-	$lines = file("locked");
-	$lockpw = trim($lines[0]);
-
-	// is authentification given?
-	$ask = false;
-	if (isset($_SERVER["PHP_AUTH_USER"])) {
-		if (!(($_SERVER["PHP_AUTH_USER"] == "admin") && ($_SERVER["PHP_AUTH_PW"] == $lockpw))) {
-			$ask = true;
-		}
-	} else {
-		$ask = true;
-	}
-
-	if ($ask) {
-		header("WWW-Authenticate: Basic realm=\"".$wakkaConfig["wakka_name"]." Install/Upgrade Interface\"");
-		header("HTTP/1.0 401 Unauthorized");
-		print T_("This site is currently being upgraded. Please try again later.");
-		exit;
-	}
-}
-
-/**
- * Compare versions, start installer if necessary.
- */
-if (!isset($wakkaConfig['wakka_version'])) $wakkaConfig['wakka_version'] = 0;
-if ($wakkaConfig['wakka_version'] !== WAKKA_VERSION)
-{
-	/**
-	 * Start installer.
-	 *
-	 * Data entered by the user is submitted in $_POST, next action for the
-	 * installer (which will receive this data) is passed as a $_GET parameter!
-	 */
-	$installAction = 'default';
-	if (isset($_GET['installAction'])) $installAction = trim(GetSafeVar('installAction'));	#312
-	if (file_exists('setup'.DIRECTORY_SEPARATOR.'header.php'))
-	include('setup'.DIRECTORY_SEPARATOR.'header.php'); else print '<em class="error">'.ERROR_SETUP_HEADER_MISSING.'</em>'; #89
-	if
-	(file_exists('setup'.DIRECTORY_SEPARATOR.$installAction.'.php'))
-	include('setup'.DIRECTORY_SEPARATOR.$installAction.'.php'); else print '<em class="error">'.ERROR_SETUP_FILE_MISSING.'</em>'; #89
-	if (file_exists('setup'.DIRECTORY_SEPARATOR.'footer.php'))
-	include('setup'.DIRECTORY_SEPARATOR.'footer.php'); else print '<em class="error">'.ERROR_SETUP_FOOTER_MISSING.'</em>'; #89
-	exit;
-}
 
 /**
  * Start session.
