@@ -53,47 +53,15 @@
 
 require_once('wikka/error_reporting.php');
 
-# Define current Wikka version
-include_once('version.php');
+require_once('version.php');    # Define current Wikka version
 
 require_once('wikka/helpers.php');
 
 require_once('wikka/constants.php');
 
+require_once('wikka/sanity_checks.php');
 
 
-// ----------------------------- SANITY CHECKS ---------------------------------
-
-// More intelligent version check, more intelligently placed ;)
-if (!function_exists('version_compare') ||
-	version_compare(phpversion(),MINIMUM_PHP_VERSION,'<')	// < PHP minimum version??
-   )
-{
-	$php_version_error = sprintf(ERROR_WRONG_PHP_VERSION,MINIMUM_PHP_VERSION);
-	die($php_version_error);		# fatalerror	!!! default error in English
-}
-// MySQL needs to be installed and available
-// @@@ message could be refined by detecting detect OS (mention module name) and maybe server name
-if (!function_exists('mysql_connect'))
-{
-	die(ERROR_MYSQL_SUPPORT_MISSING);
-}
-
-/**
- * Include main library if it exists.
- * @see libs/Wakka.class.php
- */
-if (file_exists('libs/Wakka.class.php'))
-{
-	require_once('libs/Compatibility.lib.php');
-	require_once('libs/Wakka.class.php');
-}
-else
-{
-	die(ERROR_WAKKA_LIBRARY_MISSING);
-}
-
-// ----------------------------- END SANITY CHECKS ----------------------------
 
 ob_start();
 global $tstart;
