@@ -87,54 +87,19 @@ require_once('wikka/install.php');
 
 require_once('wikka/session.php');
 
+require_once('wikka/page_handler.php');
 
 
+#
+# Create Wakka object and assert database access
+#
+$wakka = instantiate('Wakka', $wakkaConfig);
 
-// fetch wakka location
-/**
- * Fetch wakka location (requested page + parameters)
- *
- * @todo files action uses POST, everything else uses GET #312
- */
-$wakka = GetSafeVar('wakka'); #312
-
-/**
- * Remove leading slash.
- */
-$wakka = preg_replace("/^\//", "", $wakka);
-
-/**
- * Extract pagename and handler from URL
- *
- * Note this splits at the FIRST / so $handler may contain one or more slashes;
- * this is not allowed, and ultimately handled in the Handler() method. [SEC]
- */
-if (preg_match("#^(.+?)/(.*)$#", $wakka, $matches)) list(, $page, $handler) = $matches;
-else if (preg_match("#^(.*)$#", $wakka, $matches)) list(, $page) = $matches;
-//Fix lowercase mod_rewrite bug: URL rewriting makes pagename lowercase. #135
-if ((strtolower($page) == $page) && (isset($_SERVER['REQUEST_URI']))) #38
-{
-	$pattern = preg_quote($page, '/');
-	if (preg_match("/($pattern)/i", urldecode($_SERVER['REQUEST_URI']), $match_url))
-	{
-		$page = $match_url[1];
-	}
+if ( ! $wakka->dblink ) {
+    die(sprintf('<em class="error">%s</em>',
+        T_("Error: Unable to connect to the database.")));
 }
-//$page = preg_replace('/_/', ' ', $page);
 
-/**
- * Create Wakka object
- */
-$wakka = instantiate('Wakka',$wakkaConfig);
-
-/**
- * Check for database access.
- */
-if (!$wakka->dblink)
-{
-	echo '<em class="error">'.T_("Error: Unable to connect to the database.").'</em>';
-	exit;
-}
 
 /**
  * Save session ID

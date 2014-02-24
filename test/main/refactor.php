@@ -141,7 +141,6 @@ foreach( $unexpected_output as $needle ) {
 assert_equal(WIKKA_BASE_DOMAIN_URL, 'http://:');
 assert_equal(WIKKA_LANG_PATH, 'lang/en');
 assert_equal(BASIC_COOKIE_NAME, 'Wikkawiki');
-assert_equal(session_name(), '96522b217a86eca82f6d72ef88c4c7f4');
 
 if ( TESTING_AS_CGI ) {
     assert_equal(WIKKA_BASE_URL, 'http://:');  
@@ -157,6 +156,9 @@ else {
 #
 assert_equal($wakkaConfig['action_path'], 'plugins/actions,actions');
 assert_true(! isset($wakkaConfig['stylesheet']));
+assert_equal(session_name(), '96522b217a86eca82f6d72ef88c4c7f4');
+assert_equal($page, 'HelloWorld');
+assert_equal($handler, '');
 
 # mysql_database should come from test/test.config.php -- change this as necessary
 assert_equal($wakkaConfig['mysql_database'], 'wikkawiki_test');
@@ -180,4 +182,5 @@ if ( TESTING_AS_CGI ) {
 #
 # Passed!
 #
-echo "\nNo errors: TEST PASSED!\n";
+echo "\nTEST PASSED!\n";
+exit(0);
