@@ -100,31 +100,16 @@ if ( ! $wakka->dblink ) {
         T_("Error: Unable to connect to the database.")));
 }
 
+#
+# TODO: refactor of this section has not been well tested. It was not tested
+# by the test/main/refactor.php script. Need to test with a user.
+#
+require_once('wikka/save_session_id.php');
 
-/**
- * Save session ID
- */
-$user = $wakka->GetUser();
-// Only store sessions for real users!
-if(NULL != $user)
-{
-	$res = $wakka->LoadSingle("SELECT * FROM ".$wakka->config['table_prefix']."sessions WHERE sessionid='".session_id()."' AND userid='".$user['name']."'");
-	if(isset($res))
-	{
-		// Just update the session_start time
-		$wakka->Query("UPDATE ".$wakka->config['table_prefix']."sessions SET session_start=FROM_UNIXTIME(".$wakka->GetMicroTime().") WHERE sessionid='".session_id()."' AND userid='".$user['name']."'");
-	}
-	else
-	{
-		// Create new session record
-		$wakka->Query("INSERT INTO ".$wakka->config['table_prefix']."sessions (sessionid, userid, session_start) VALUES('".session_id()."', '".$user['name']."', FROM_UNIXTIME(".$wakka->GetMicroTime()."))");
-	}
-}
 
 /**
  * Run the engine.
  */
-if (!isset($handler)) $handler='';
 
 # Add Content-Type header (can be overridden by handlers)
 header('Content-Type: text/html; charset=utf-8');

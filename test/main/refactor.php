@@ -159,6 +159,7 @@ assert_true(! isset($wakkaConfig['stylesheet']));
 assert_equal(session_name(), '96522b217a86eca82f6d72ef88c4c7f4');
 assert_equal($page, 'HelloWorld');
 assert_equal($handler, '');
+assert(is_null($user));
 
 # mysql_database should come from test/test.config.php -- change this as necessary
 assert_equal($wakkaConfig['mysql_database'], 'wikkawiki_test');
@@ -168,7 +169,7 @@ assert_true(! isset($multiDefaultConfig));
 
 # install module is not tested, so this should not be set
 assert_true(! isset($installAction));
-    
+
 #
 # Meta Tests
 #
