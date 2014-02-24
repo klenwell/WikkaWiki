@@ -35,14 +35,8 @@
  *
  *
  * Klenwell Refactor Notes
- *  Currently Marked Sections:
- * 	- (Start Session)
- * 	- (Set $wakka location var)
- * 	- (Set Page & Handler)
- * 	- (Create Wakka object)
- * 	- (Save session ID)
- * 	- (Run the engine)
- * 	- (Output page)
+ *  Code has been farmed out to modules in wikka dir for cleaner organization.
+ *  
  */
 
 require_once('wikka/error_reporting.php');
@@ -72,10 +66,6 @@ require_once('wikka/load_config.php');
 
 require_once('wikka/language_defaults.php');
 
-#
-# TODO: refactor of this section has not been well tested. It was not tested
-# by the test/main/refactor.php script.
-#
 if ( file_exists('multi.config.php') ) {
     require_once('wikka/multisite.php');
 }

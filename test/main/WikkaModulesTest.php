@@ -1,0 +1,186 @@
+<?php
+/**
+ * main/WikkaModulesTest.php
+ * 
+ * A test of the wikka main modules (post wikka refactor).
+ *
+ * Usage (run from WikkaWiki root dir):
+ * > phpunit test/main/WikkaTest
+ *
+ * To run all tests:
+ * > phpunit test
+ */
+require_once('test/test.config.php');
+require_once('libs/Compatibility.lib.php');
+require_once('3rdparty/core/php-gettext/gettext.inc');
+require_once('libs/Wakka.class.php');
+require_once('version.php');
+
+class WikkaModulesTest extends PHPUnit_Framework_TestCase {
+    
+    protected static $pdo;
+    protected static $wakka;
+    protected static $config;
+    protected static $test_paths;
+ 
+    /**
+     * Test Fixtures
+     */
+    public static function setUpBeforeClass() {
+        global $wikkaTestConfig;
+        self::$config = $wikkaTestConfig;
+        
+        # Must set $config for setup/database.php
+        $config = self::$config;
+        require('setup/database.php');
+        
+        # Create db connection
+        $host = sprintf('mysql:host=%s', self::$config['mysql_host']);
+        self::$pdo = new PDO($host, self::$config['mysql_user'],
+            self::$config['mysql_password']);
+        self::$pdo->setAttribute( PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION );
+
+        # Create database
+        self::$pdo->exec(sprintf('DROP DATABASE IF EXISTS `%s`',
+            self::$config['mysql_database']));
+        self::$pdo->exec(sprintf('CREATE DATABASE `%s`',
+            self::$config['mysql_database']));
+        self::$pdo->query(sprintf('USE %s', self::$config['mysql_database']));
+        
+        # Create tables
+        foreach ($install_queries as $key => $query) {
+            self::$pdo->exec($query);
+        }
+        
+        # Required modules
+        require_once('wikka/helpers.php');
+        require_once('wikka/constants.php');
+        
+        # Path settings
+        self::$test_paths = array(
+            'configpath' => '/tmp',
+        );
+    }
+ 
+    public static function tearDownAfterClass() {       
+        # Cleanup database
+        self::$pdo->exec(sprintf('DROP DATABASE `%s`',
+            self::$config['mysql_database']));
+        self::$pdo = NULL;
+    }
+    
+    public function setUp() {
+        self::$wakka = new Wakka(self::$config);
+        self::$wakka->handler = 'show';
+        
+        $this->multisite_config = 'multi.config.php';
+        
+        $this->save_users();
+        $this->save_pages();
+        $this->save_comments();
+        
+        $_SERVER['REMOTE_ADDR'] = ( isset($_SERVER['REMOTE_ADDR']) ) ?
+            $_SERVER['REMOTE_ADDR'] : '127.0.0.1';
+    }
+    
+    public function tearDown() {
+        self::$wakka = NULL;
+        
+        # Delete multisite file if exists
+        if ( file_exists($this->multisite_config) ) {
+            unlink($this->multisite_config);
+        }
+        
+        # Truncate all tables
+        foreach (self::$pdo->query('SHOW TABLES') as $row) {
+            self::$pdo->query(sprintf('TRUNCATE TABLE %s', $row[0]));
+        };
+    }
+    
+    private function save_users() {
+        # User parameters
+        $users = array(
+            # name, status 
+            array('admin', 'active')
+        );
+        $prefix = self::$wakka->GetConfigValue('table_prefix');
+        $sql_f = 'INSERT INTO %susers SET name="%s", email="%s", status="%s"';
+        
+        # Save pages
+        foreach ($users as $user) {
+            list($name, $status) = each($user);
+            $email = sprintf('%s@test.wikkawiki.org', $name);
+            self::$wakka->query(sprintf($sql_f, $prefix,
+                $name, $email, $status));
+        }
+    }
+    
+    private function save_pages() {
+        # Page parameters
+        $page_tags = array('TestPage1', 'TestPage2', 'TestPage3');
+        $page_body = "A test in WakkaClassTest";
+        $prefix = self::$wakka->GetConfigValue('table_prefix');
+        $sql_f = 'INSERT INTO %spages SET tag="%s", body="%s"';
+        
+        # Save pages
+        foreach ($page_tags as $page_tag) {
+            self::$wakka->query(sprintf($sql_f, $prefix, $page_tag, $page_body));
+        }
+    }
+    
+    private function save_comments() {
+        # Page parameters
+        $page_tag = 'TestPage1';
+        $comment_f = "Comment #%d";
+        $prefix = self::$wakka->GetConfigValue('table_prefix');
+        $sql_f = 'INSERT INTO %scomments SET page_tag="%s", comment="%s"';
+        
+        # Save pages
+        for($num=1; $num<=10; $num++) {
+            $comment = sprintf($comment_f, $num);
+            self::$wakka->query(sprintf($sql_f, $prefix, $page_tag, $comment));
+        }
+    }
+    
+    
+    /**
+     * Tests
+     */
+    public function testMultiSiteModule() {
+        # Create multisite config (copy test to expected location)
+        copy('test/test.config.php', $this->multisite_config);
+        
+        # Required params
+        $t_scheme = 'http://';
+        $t_port = '';
+        $t_domain = 'wikkawiki.org';
+        $wakkaConfig = array(
+            'http_wikkawiki_org' => self::$test_paths['configpath'],
+        );
+
+        # Load Module
+        require('wikka/multisite.php');
+        
+        # Asserts
+        $this->assertEquals($configpath, $multiConfig['http_wikkawiki_org']);
+        $this->assertEquals($multiConfig['local_config'], 'wikka.config');
+        $this->assertEquals($multiConfig['http_wikkawiki_org'], '/tmp/wikkawiki-test');
+        $this->assertEquals($localDefaultConfig['upload_path'],
+            '/tmp/wikkawiki-test/uploads');
+        $this->assertEquals($wakkaConfig['http_wikkawiki_org'], '/tmp');
+        $this->assertEquals($wakkaConfig['upload_path'],
+            $localDefaultConfig['upload_path']);
+        $this->assertTrue(file_exists($multiConfig['http_wikkawiki_org']));
+        $this->assertTrue(file_exists(
+            sprintf('%s/actions', $multiConfig['http_wikkawiki_org'])));
+        
+        # Remove tmp dir
+        if ( strpos($multiConfig['http_wikkawiki_org'], '/tmp/') === 0 ) {
+            shell_exec(sprintf('rm %s -R', $multiConfig['http_wikkawiki_org']));
+        };
+    }
+    
+    public function testWikkaPresence() {
+        $this->assertInstanceOf('Wakka', self::$wakka);
+    }
+}

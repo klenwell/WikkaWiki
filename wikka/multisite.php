@@ -40,7 +40,6 @@ if( $t_port != '' ) {
     $configkey .= '_'.$t_port;
 }
 
-
 /**
  * Admin can decide to put a specific local config in a more readable and
  * shorter directory. The $configkey is created as
@@ -70,6 +69,7 @@ $local_configfile = $configpath.DIRECTORY_SEPARATOR.'local.config.php';
  * providing a site specific upload directory.
 */
 function build_local_config_path($dirname) {
+    global $configpath;
     $path_f = $configpath.DIRECTORY_SEPARATOR.'%s' . PATH_DIVIDER .
         'plugins'.DIRECTORY_SEPARATOR.'%s' . PATH_DIVIDER . '%s';
     return sprintf($path_f, $dirname, $dirname, $dirname);
@@ -88,13 +88,7 @@ $localDefaultConfig = array(
 $localConfig = array();
 if ( ! file_exists($configpath) )
 {
-    $path_parts = explode(DIRECTORY_SEPARATOR, $configpath);
-    $partialpath = '';
-    foreach( $path_parts as $part ) {
-        $partialpath .= $part;
-        if (!file_exists($partialpath)) mkdir($partialpath,0755);
-        $partialpath .= DIRECTORY_SEPARATOR;
-    }
+    mkdir($configpath, 0755, true);
     mkdir($configpath.DIRECTORY_SEPARATOR.'config',0700);
     mkdir($configpath.DIRECTORY_SEPARATOR.'actions',0700);
     mkdir($configpath.DIRECTORY_SEPARATOR.'handlers',0700);
