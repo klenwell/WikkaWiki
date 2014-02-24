@@ -24,10 +24,11 @@
  * @author	{@link http://wikkawiki.org/DarTar Dario Taraborelli}
  * @author	{@link http://wikkawiki.org/BrianKoontz Brian Koontz}
  * @author	{@link http://wikkawiki.org/TormodHaugen Tormod Haugen}
+ * @author	{@link https://github.com/klenwell/WikkaWiki Tom Atwell}
  *
  * @copyright Copyright 2002-2003, Hendrik Mans <hendrik@mans.de>
  * @copyright Copyright 2004-2005, Jason Tourtelotte <wikka-admin@jsnx.com>
- * @copyright Copyright 2006-2010, {@link http://wikkawiki.org/CreditsPage Wikka Development Team}
+ * @copyright Copyright 2006-2014, {@link http://wikkawiki.org/CreditsPage Wikka Development Team}
  *
  * @todo use templating class for page generation;
  * @todo add phpdoc documentation for configuration array elements;
@@ -107,43 +108,23 @@ if ( ! $wakka->dblink ) {
 require_once('wikka/save_session_id.php');
 
 
-/**
- * Run the engine.
- */
-
+#
+# Run engine to generate page output
+#
 # Add Content-Type header (can be overridden by handlers)
 header('Content-Type: text/html; charset=utf-8');
 
+# Run Wikka engine and collect output
 $wakka->Run($page, $handler);
-$content =  ob_get_contents();
-/**
- * Use gzip compression if possible.
- */
-/*
-if ( isset($_SERVER['HTTP_ACCEPT_ENCODING']) && strstr ($_SERVER['HTTP_ACCEPT_ENCODING'], 'gzip') && function_exists('gzencode') ) #38
-{
-	// Tell the browser the content is compressed with gzip
-	header ("Content-Encoding: gzip");
-	$page_output = gzencode($content);
-	$page_length = strlen($page_output);
-} else {
- */
-	$page_output = $content;
-	$page_length = strlen($page_output);
-//}
+$page_output = ob_get_contents();
+$page_length = strlen($page_output);
 
-// header("Cache-Control: pre-check=0");
+# Send headers
 header("Cache-Control: no-cache");
-// header("Pragma: ");
-// header("Expires: ");
+header('ETag: ' . md5($page_output));
+header('Content-Length: ' . $page_length);
 
-$etag =  md5($content);
-header('ETag: '.$etag);
-header('Content-Length: '.$page_length);
-
-#
 # Collect data for regression testing
-#
 $WikkaMeta = array(
     'headers' => array(
         'sent' => (int) headers_sent(),
@@ -156,10 +137,8 @@ $WikkaMeta = array(
     ),
 );
 
+#
+# Clean buffer and output page 
+#
 ob_end_clean();
-
-/**
- * Output the page.
- */
 echo $page_output;
-?>
