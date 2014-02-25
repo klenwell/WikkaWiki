@@ -4,8 +4,13 @@
  * 
  * Module of main wikka.php script
  *
+ * The constant WIKKA_INSTALL_TEST is defined by tests to circumvent exits
+ * to allow for testing.
+ *
  * TODO: replace this module with a method within a request handling object.
  */
+
+$testing_in_progress = defined('WIKKA_INSTALL_TEST') && WIKKA_INSTALL_TEST;
 
 /**
  * Check for locking.
@@ -33,7 +38,13 @@ if ( file_exists('locked') ) {
 		header($auth_header);
 		header("HTTP/1.0 401 Unauthorized");
 		print T_("This site is currently being upgraded. Please try again later.");
-		exit;
+		
+		if ( $testing_in_progress ) {
+			return;
+		}
+		else {
+			exit;
+		}
 	}
 }
 
@@ -78,5 +89,7 @@ if ( $wakkaConfig['wakka_version'] !== WAKKA_VERSION ) {
         print '<em class="error">'.ERROR_SETUP_FOOTER_MISSING.'</em>'; #89
     }
     
-	exit;
+	if ( ! $testing_in_progress ) {
+		exit;
+	}
 }

@@ -5,30 +5,44 @@
  * A test of the wikka main modules (post wikka refactor).
  *
  * Usage (run from WikkaWiki root dir):
- * > phpunit test/main/WikkaTest
+ * > phpunit --stderr test/main/WikkaModulesTest
+ *
+ * NOTE: must run with --stderr to avoid error:
+ *  session_start(): Cannot send session cookie
  *
  * To run all tests:
- * > phpunit test
+ * > phpunit --stderr test
  */
+define('TESTING_AS_CGI', strpos(php_sapi_name(), 'cgi') > -1);
+ 
 require_once('test/test.config.php');
 require_once('libs/Compatibility.lib.php');
 require_once('3rdparty/core/php-gettext/gettext.inc');
 require_once('libs/Wakka.class.php');
 require_once('version.php');
 
+
 class WikkaModulesTest extends PHPUnit_Framework_TestCase {
     
     protected static $pdo;
     protected static $wakka;
     protected static $config;
+    protected static $default_config;
     protected static $test_paths;
  
     /**
      * Test Fixtures
      */
     public static function setUpBeforeClass() {
-        global $wikkaTestConfig;
+        global $wikkaTestConfig, $wakkaDefaultConfig;
         self::$config = $wikkaTestConfig;
+        
+        # Load default config
+        $t_rewrite_mode = 0;    # required by default.config.php
+        require_once('wikka/helpers.php');
+        require_once('wikka/constants.php');
+        require_once('wikka/default.config.php');
+        self::$default_config = $wakkaDefaultConfig;
         
         # Must set $config for setup/database.php
         $config = self::$config;
@@ -60,6 +74,11 @@ class WikkaModulesTest extends PHPUnit_Framework_TestCase {
         self::$test_paths = array(
             'configpath' => '/tmp',
         );
+        
+        # Define Test Flags
+        if (! defined('WIKKA_INSTALL_TEST')) {
+            define('WIKKA_INSTALL_TEST', 1);
+        }
     }
  
     public static function tearDownAfterClass() {       
@@ -74,6 +93,7 @@ class WikkaModulesTest extends PHPUnit_Framework_TestCase {
         self::$wakka->handler = 'show';
         
         $this->multisite_config = 'multi.config.php';
+        $this->install_lock_file = 'locked';
         
         $this->save_users();
         $this->save_pages();
@@ -86,15 +106,26 @@ class WikkaModulesTest extends PHPUnit_Framework_TestCase {
     public function tearDown() {
         self::$wakka = NULL;
         
+        # Truncate all tables
+        foreach (self::$pdo->query('SHOW TABLES') as $row) {
+            self::$pdo->query(sprintf('TRUNCATE TABLE %s', $row[0]));
+        };
+        
         # Delete multisite file if exists
         if ( file_exists($this->multisite_config) ) {
             unlink($this->multisite_config);
         }
         
-        # Truncate all tables
-        foreach (self::$pdo->query('SHOW TABLES') as $row) {
-            self::$pdo->query(sprintf('TRUNCATE TABLE %s', $row[0]));
-        };
+        # Delete install lock file if exists
+        if ( file_exists($this->install_lock_file) ) {
+            unlink($this->install_lock_file);
+        }
+        
+        # End session
+        if ( session_id() || isset($_SESSION) ) {
+            $_SESSION = array();
+            session_destroy();
+        }
     }
     
     private function save_users() {
@@ -146,6 +177,54 @@ class WikkaModulesTest extends PHPUnit_Framework_TestCase {
     /**
      * Tests
      */
+    /**
+     */
+    public function testInstallModuleWithoutLockedFile() {
+        # Load config
+        $wakkaConfig = array_merge(self::$config, self::$default_config);
+        
+        # Set wakka version to trigger install
+        $wakkaConfig['wakka_version'] = 0;
+        
+        # Set additional required values
+        $_SERVER["REQUEST_URI"] = '/path?page=HelloWorld';
+        
+        # Load Module
+        ob_start();
+        require('wikka/install.php');
+        $output = ob_get_contents();
+        ob_end_clean();
+        
+        # Asserts
+        $this->assertContains('<title>Wikka Installation</title>', $output);
+    }
+    
+    public function testInstallModulePreAuth() {
+        # Load config
+        $wakkaConfig = array_merge(self::$config, self::$default_config);
+        
+        # Set wakka version to trigger install
+        $wakkaConfig['wakka_version'] = 0;
+        
+        # Set additional required values
+        $_SERVER["REQUEST_URI"] = '/path?page=HelloWorld';
+        
+        # Create lock file
+        $lock_file_pw = 'password';
+        file_put_contents($this->install_lock_file, $lock_file_pw);
+        
+        # Load Module
+        ob_start();
+        require('wikka/install.php');
+        $output = ob_get_contents();
+        ob_end_clean();
+        
+        # Asserts ($ask and $lockpw set by wikka/install.php)
+        $this->assertTrue($ask);
+        $this->assertEquals($lockpw, $lock_file_pw);
+        $this->assertContains('This site is currently being upgraded', $output);
+    }
+    
     public function testMultiSiteModule() {
         # Create multisite config (copy test to expected location)
         copy('test/test.config.php', $this->multisite_config);

@@ -138,4 +138,87 @@ function Language_selectbox($default_lang)
 	}
 	echo '</select>';
 }
-?>
+
+// utility functions
+function test($text, $condition, $errorText = '<em class="error">Please use your browser\'s back button to correct any errors on the previous page.</em>', $stopOnError = 1) {
+	echo $text;
+	if ($condition)
+	{
+		echo ' <span class="ok">OK</span><br />'."\n";
+	}
+	else
+	{
+		echo ' <span class="failed">FAILED</span>';
+		if ($errorText) echo '<p>'.$errorText.'</p>'."\n";
+		echo '<br />'."\n";
+		if ($stopOnError)
+		{
+			include('setup/footer.php');
+			exit;
+		}
+	}
+}
+
+function myLocation()
+{
+	list($url, ) = explode("?", $_SERVER["REQUEST_URI"]);
+	return $url;
+}
+
+/**
+ * Delete a file, or a folder and its contents
+ *
+ * @author      Aidan Lister <aidan@php.net>
+ * @version     1.0.2
+ * @param       string   $dirname    Directory to delete
+ * @return      bool     Returns TRUE on success, FALSE on failure
+ */
+function rmdirr($dirname)
+{
+    // Sanity check
+    if (!file_exists($dirname)) {
+        return false;
+    }
+ 
+    // Simple delete for a file
+    if (is_file($dirname)) {
+        return unlink($dirname);
+    }
+ 
+    // Loop through the folder
+    $dir = dir($dirname);
+    while (false !== $entry = $dir->read()) {
+        // Skip pointers
+        if ($entry == '.' || $entry == '..') {
+            continue;
+        }
+ 
+        // Recurse
+        rmdirr("$dirname/$entry");
+    }
+ 
+    // Clean up
+    $dir->close();
+    return rmdir($dirname);
+}
+
+function DeleteCookie($name) { SetCookie($name, "", 1, "/"); $_COOKIE[$name] = ""; }
+
+function SelectTheme($default_theme='light')
+{
+	echo '<select name="config[theme]">';
+	// use configured path
+	$hdl = opendir('templates');
+	while ($f = readdir($hdl))
+	{
+		if ($f[0] == '.') continue;
+		// use configured path
+		else
+		{
+			echo "\n ".'<option value="'.$f.'"';
+			if ($f == $default_theme) echo ' selected="selected"';
+			echo '>'.$f.'</option>';
+		}
+	}
+	echo '</select>';
+}
