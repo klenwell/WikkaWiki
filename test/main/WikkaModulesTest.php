@@ -177,8 +177,6 @@ class WikkaModulesTest extends PHPUnit_Framework_TestCase {
     /**
      * Tests
      */
-    /**
-     */
     public function testInstallModuleWithoutLockedFile() {
         # Load config
         $wakkaConfig = array_merge(self::$config, self::$default_config);

@@ -70,10 +70,6 @@ if ( file_exists('multi.config.php') ) {
     require_once('wikka/multisite.php');
 }
 
-#
-# TODO: refactor of this section has not been well tested. It was not tested
-# by the test/main/refactor.php script.
-#
 require_once('wikka/install.php');
 
 require_once('wikka/session.php');
