@@ -7,14 +7,14 @@
  * TODO: replace this module with a method within a request handling object.
  */
 
-$user = $wakka->GetUser();
+$user_name = $wakka->GetUser();
 
 # Only store sessions for real users! 
-if( NULL != $user ) {
+if( NULL != $user_name ) {
     $query = sprintf('SELECT * FROM %ssessions WHERE sessionid="%s" AND userid="%s"',
         $wakka->config['table_prefix'],
         session_id(),
-        $user['name']
+        $user_name
     );
     
 	$res = $wakka->LoadSingle($query);
@@ -25,7 +25,7 @@ if( NULL != $user ) {
             $wakka->config['table_prefix'],
             $wakka->GetMicroTime(),
             session_id(),
-            $user['name']
+            $user_name
         );
 	}
 	else {
@@ -38,7 +38,7 @@ SQLDOC;
         $query = sprintf($query_f,
             $wakka->config['table_prefix'],
             session_id(),
-            $user['name'],
+            $user_name,
             $wakka->GetMicroTime()
         );
 	}

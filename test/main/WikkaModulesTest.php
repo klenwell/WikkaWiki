@@ -122,8 +122,10 @@ class WikkaModulesTest extends PHPUnit_Framework_TestCase {
         }
         
         # End session
-        if ( session_id() || isset($_SESSION) ) {
+        if ( isset($_SESSION) ) {
             $_SESSION = array();
+        }
+        if ( session_id() ) {
             session_destroy();
         }
     }
@@ -132,14 +134,14 @@ class WikkaModulesTest extends PHPUnit_Framework_TestCase {
         # User parameters
         $users = array(
             # name, status 
-            array('admin', 'active')
+            array('TestAdmin', 'active')
         );
         $prefix = self::$wakka->GetConfigValue('table_prefix');
         $sql_f = 'INSERT INTO %susers SET name="%s", email="%s", status="%s"';
         
         # Save pages
         foreach ($users as $user) {
-            list($name, $status) = each($user);
+            list($name, $status) = $user;
             $email = sprintf('%s@test.wikkawiki.org', $name);
             self::$wakka->query(sprintf($sql_f, $prefix,
                 $name, $email, $status));
@@ -177,6 +179,57 @@ class WikkaModulesTest extends PHPUnit_Framework_TestCase {
     /**
      * Tests
      */
+    public function testSaveSessionIdWithUser() {
+        # Set Session to Null
+        session_start();
+        $_SESSION['user'] = 'TestAdmin';
+        
+        # Load Session module: Creates new sessions       
+        $wakka = self::$wakka;
+        require('wikka/save_session_id.php');
+        
+        # Get sessions
+        $query = sprintf('SELECT * FROM %ssessions',
+            self::$wakka->config['table_prefix']);
+        $sessions = self::$wakka->LoadAll($query);
+        $first_session = $sessions[0];
+        
+        # Asserts
+        $this->assertCount(1, $sessions);
+        $this->assertEquals($first_session['sessionid'], session_id());
+        $this->assertEquals($first_session['userid'], $_SESSION['user']);
+        
+        # Load Session module: Updates session
+        require('wikka/save_session_id.php');
+        
+        # Get sessions
+        $query = sprintf('SELECT * FROM %ssessions',
+            self::$wakka->config['table_prefix']);
+        $sessions = self::$wakka->LoadAll($query);
+        $second_session = $sessions[0];
+        
+        # Asserts
+        $this->assertCount(1, $sessions);
+        $this->assertEquals($second_session['sessionid'], session_id());
+        $this->assertEquals($second_session['userid'], $_SESSION['user']);
+        $this->assertGreaterThanOrEqual($first_session['session_start'],
+            $second_session['session_start']);
+    }
+    
+    public function testSaveSessionIdWithNoUser() {
+        # Set Session to Null
+        session_start();
+        $_SESSION['user'] = NULL;
+        
+        # Get sessions
+        $query = sprintf('SELECT * FROM %ssessions',
+            self::$wakka->config['table_prefix']);
+        $sessions = self::$wakka->LoadAll($query);
+        
+        # Assert no session
+        $this->assertEmpty($sessions);
+    }
+    
     public function testInstallModuleWithoutLockedFile() {
         # Load config
         $wakkaConfig = array_merge(self::$config, self::$default_config);

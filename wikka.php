@@ -76,7 +76,6 @@ require_once('wikka/session.php');
 
 require_once('wikka/page_handler.php');
 
-
 #
 # Create Wakka object and assert database access
 #
@@ -87,12 +86,7 @@ if ( ! $wakka->dblink ) {
         T_("Error: Unable to connect to the database.")));
 }
 
-#
-# TODO: refactor of this section has not been well tested. It was not tested
-# by the test/main/refactor.php script. Need to test with a user.
-#
 require_once('wikka/save_session_id.php');
-
 
 #
 # Run engine to generate page output
