@@ -118,7 +118,7 @@ error_reporting(E_ALL);
 # Test Page Content
 #
 $expected_output = array(
-    '<title>MyWikkaSite: HelloWorld</title>',
+    '<title>WakkaWikiTesting: HelloWorld</title>',
     '<!-- BEGIN PAGE WRAPPER -->',
     '<!-- BEGIN SYSTEM INFO -->',
     $page_tag,

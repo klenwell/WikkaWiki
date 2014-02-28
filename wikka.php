@@ -38,6 +38,8 @@
  *  Code has been farmed out to modules in wikka dir for cleaner organization.
  *  
  */
+# Starts timer
+global $tstart; $tstart = getmicrotime();
 
 require_once('wikka/error_reporting.php');
 
@@ -50,11 +52,9 @@ require_once('wikka/constants.php');
 require_once('wikka/sanity_checks.php');
 
 #
-# Start buffering and a timer (why start timer here and not sooner?)
+# Start buffering
 #
 ob_start();
-global $tstart;
-$tstart = getmicrotime();
 
 require_once('wikka/magic_quotes.php');
 
