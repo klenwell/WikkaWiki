@@ -70,6 +70,12 @@ HTML;
             return $this->show_error();
         }
         
+        if ( $this->double_click_is_active() ) {
+            $this->double_click_edit = sprintf(' ondblclick="document.location=\'%s\'"',
+                $this->Href('edit', '', 'id='.$this->wikka->page['id'])
+            );
+        }
+        
         if ( ! $this->page_is_latest() ) {
             $this->revision_info = $this->format_revision_info();
         }
@@ -142,6 +148,12 @@ HTML;
     /*
      * Status Methods
      */
+    public function double_click_is_active() {
+        $user = $this->wikka->GetUser();
+        return $user && ($user['doubleclickedit'] == 'Y') &&
+            ($this->wikka->HasAccess('write'));
+    }
+     
     public function raw_page_requested() {
         # TODO(klenwell): make this less insane.
         # (bool) works as expected with '0' and '1'
@@ -174,15 +186,15 @@ HTML;
     public function format_revision_info() {
         # Format vars
         $format = <<<HTML
-<div class="revisioninfo">
-    <h4 class="clear">%s</h4>
-    <div class="message">%s</div>
-    <div class="buttons">
-        %s
-        %s
+    <div class="revisioninfo">
+        <h4 class="clear">%s</h4>
+        <div class="message">%s</div>
+        <div class="buttons">
+            %s
+            %s
+        </div>
+        <div class="clear"></div>
     </div>
-    <div class="clear"></div>
-</div>
 HTML;
         $revision_header = '';
         $revision_message = '';
@@ -216,11 +228,11 @@ HTML;
         
         # Show formatting form
         $formatting_form_f = <<<XHTML
-        %s
-            <input type="hidden" name="time" value="%s" />
-            <input type="hidden" name="raw" value="%s" />
-            <input type="submit" value="%s" />
-		%s	
+            %s
+                <input type="hidden" name="time" value="%s" />
+                <input type="hidden" name="raw" value="%s" />
+                <input type="submit" value="%s" />
+            %s	
 XHTML;
         if ( $page_data ) {
             $show_formatting_form = sprintf($formatting_form_f,
@@ -234,11 +246,11 @@ XHTML;
         
         # Edit revision form
         $revision_form_f = <<<XHTML
-        %s
-            <input type="hidden" name="previous" value="%s" />
-            <input type="hidden" name="body" value="%s" />
-            <input type="submit" name="submit" value="%s" />
-		%s	
+            %s
+                <input type="hidden" name="previous" value="%s" />
+                <input type="hidden" name="body" value="%s" />
+                <input type="submit" name="submit" value="%s" />
+            %s
 XHTML;
         if ( $page_data && $this->wikka->HasAccess('write') ) {
             $edit_revision_form = sprintf($revision_form_f,
@@ -260,9 +272,9 @@ XHTML;
     
     public function format_raw_page_content() {
         $format = <<<XHTML
-        <div class="wikisource">
-            %s
-        </div>
+            <div class="wikisource">
+                %s
+            </div>
 XHTML;
         return sprintf($format,
             nl2br($this->wikka->htmlspecialchars_ent(
@@ -277,6 +289,6 @@ XHTML;
     }
     
     public function format_comments() {
-        trigger_error('TODO: implement commetns as a library module', E_USER_NOTICE);
+        trigger_error('TODO: implement comments as a library module', E_USER_NOTICE);
     }
 }
