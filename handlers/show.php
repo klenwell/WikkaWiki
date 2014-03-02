@@ -34,7 +34,7 @@ class ShowHandler {
     
     # Template
     public $template = <<<HTML
-<div id="content%s">
+<div id="content"%s>
     %s
     %s
     <div style="clear: both"></div>
@@ -72,7 +72,7 @@ HTML;
         
         if ( $this->double_click_is_active() ) {
             $this->double_click_edit = sprintf(' ondblclick="document.location=\'%s\'"',
-                $this->Href('edit', '', 'id='.$this->wikka->page['id'])
+                $this->wikka->Href('edit', '', 'id='.$this->wikka->page['id'])
             );
         }
         
@@ -111,7 +111,7 @@ HTML;
             return $this->show_error($error);
         }
         
-        if ( ! $this->page_is_set() ) {
+        if ( ! $this->page_exists() ) {
             $create_link = sprintf('<a href="%s">%s</a>',
                 $this->wikka->Href('edit'),
                 T_("create"));
@@ -142,7 +142,7 @@ HTML;
     
     public function page_is_latest() {
         return isset($this->wikka->page['latest']) &&
-            ($this->wikka->page['latest'] == 'N');
+            ($this->wikka->page['latest'] == 'Y');
     }
     
     /*
@@ -202,7 +202,7 @@ HTML;
         $edit_revision_form = '';
         
         # Params
-        $page_data = $this->LoadPage($this->GetPageTag());
+        $page_data = $this->wikka->LoadPage($this->wikka->GetPageTag());
         $wants_raw_page = $this->raw_page_requested();
         
         # Set revision header
@@ -236,11 +236,11 @@ HTML;
 XHTML;
         if ( $page_data ) {
             $show_formatting_form = sprintf($formatting_form_f,
-                $this->FormOpen('show', '', 'GET', '', 'left'),
-                $this->GetSafeVar('time', 'get'),
+                $this->wikka->FormOpen('show', '', 'GET', '', 'left'),
+                $this->wikka->GetSafeVar('time', 'get'),
                 ($wants_raw_page) ? '0' :'1',
                 ($wants_raw_page) ? T_("Show formatted") : T_("Show source"),
-                $this->FormClose()
+                $this->wikka->FormClose()
             );
         }
         
@@ -254,11 +254,11 @@ XHTML;
 XHTML;
         if ( $page_data && $this->wikka->HasAccess('write') ) {
             $edit_revision_form = sprintf($revision_form_f,
-                $this->FormOpen('edit'),
+                $this->wikka->FormOpen('edit'),
                 $page_data['id'],
                 $this->wikka->htmlspecialchars_ent($this->wikka->page['body']),
                 T_("Re-edit this old revision"),
-                $this->FormClose()
+                $this->wikka->FormClose()
             );
         }
         
