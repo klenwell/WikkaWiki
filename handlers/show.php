@@ -172,7 +172,90 @@ HTML;
     }
     
     public function format_revision_info() {
-        trigger_error('in dev', E_USER_ERROR);
+        # Format vars
+        $format = <<<HTML
+<div class="revisioninfo">
+    <h4 class="clear">%s</h4>
+    <div class="message">%s</div>
+    <div class="buttons">
+        %s
+        %s
+    </div>
+    <div class="clear"></div>
+</div>
+HTML;
+        $revision_header = '';
+        $revision_message = '';
+        $show_formatting_form = '';
+        $edit_revision_form = '';
+        
+        # Params
+        $page_data = $this->LoadPage($this->GetPageTag());
+        $wants_raw_page = $this->raw_page_requested();
+        
+        # Set revision header
+        $link_param = sprintf('time=%s', urlencode($this->wikka->page['time']));
+        $revision_link = sprintf('<a href="%s">[%s]</a>',
+            $this->wikka->Href('', '', $link_param),
+            $this->wikka->page['id']
+        );
+        $revision_header = sprintf(T_('Revision %s'), $revision_link);
+        
+        # Set revision message
+        $page_link = sprintf('<a href="%s">%s</a>',
+            $this->wikka->Href(),
+            $this->wikka->GetPageTag()
+        );
+        $revision_message = sprintf(
+            T_("This is an old revision of %s made by %s on %s."),
+            $page_link,
+            $this->wikka->FormatUser($this->wikka->page['user']),
+            $this->wikka->Link($this->wikka->GetPageTag(), 'revisions',
+                $this->wikka->page['time'], TRUE, TRUE, '', 'datetime')
+        );
+        
+        # Show formatting form
+        $formatting_form_f = <<<XHTML
+        %s
+            <input type="hidden" name="time" value="%s" />
+            <input type="hidden" name="raw" value="%s" />
+            <input type="submit" value="%s" />
+		%s	
+XHTML;
+        if ( $page_data ) {
+            $show_formatting_form = sprintf($formatting_form_f,
+                $this->FormOpen('show', '', 'GET', '', 'left'),
+                $this->GetSafeVar('time', 'get'),
+                ($wants_raw_page) ? '0' :'1',
+                ($wants_raw_page) ? T_("Show formatted") : T_("Show source"),
+                $this->FormClose()
+            );
+        }
+        
+        # Edit revision form
+        $revision_form_f = <<<XHTML
+        %s
+            <input type="hidden" name="previous" value="%s" />
+            <input type="hidden" name="body" value="%s" />
+            <input type="submit" name="submit" value="%s" />
+		%s	
+XHTML;
+        if ( $page_data && $this->wikka->HasAccess('write') ) {
+            $edit_revision_form = sprintf($revision_form_f,
+                $this->FormOpen('edit'),
+                $page_data['id'],
+                $this->wikka->htmlspecialchars_ent($this->wikka->page['body']),
+                T_("Re-edit this old revision"),
+                $this->FormClose()
+            );
+        }
+        
+        return sprintf($format,
+            $revision_header,
+            $revision_message,
+            $show_formatting_form,
+            $edit_revision_form
+        );
     }
     
     public function format_raw_page_content() {
