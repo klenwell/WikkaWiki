@@ -5,8 +5,6 @@ session_set_cookie_params(0, '/');
 session_name(md5('WikkaWiki'));
 session_start();
 
-require_once('setup/inc/functions.inc.php');
-
 // Copy POST params from SESSION, then destroy SESSION
 if(isset($_SESSION['post']))
 {

@@ -12,6 +12,8 @@
 
 $testing_in_progress = defined('WIKKA_INSTALL_TEST') && WIKKA_INSTALL_TEST;
 
+require_once('setup/inc/functions.inc.php');
+
 /**
  * Check for locking.
  */
