@@ -259,14 +259,24 @@ XHTML;
     }
     
     public function format_raw_page_content() {
-        trigger_error('in dev', E_USER_ERROR);
+        $format = <<<XHTML
+        <div class="wikisource">
+            %s
+        </div>
+XHTML;
+        return sprintf($format,
+            nl2br($this->wikka->htmlspecialchars_ent(
+                $this->wikka->page["body"],
+                ENT_QUOTES
+            ))
+        );
     }
     
     public function format_page_content() {
-        trigger_error('in dev', E_USER_ERROR);
+        return $this->wikka->Format($this->wikka->page['body'], 'wakka', 'page');
     }
     
     public function format_comments() {
-        trigger_error('in dev', E_USER_ERROR);
+        trigger_error('TODO: implement commetns as a library module', E_USER_NOTICE);
     }
 }
