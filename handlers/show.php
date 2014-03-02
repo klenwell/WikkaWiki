@@ -17,14 +17,10 @@
  * A refactor of the Wikka show handler to function as a more independent
  * modular unit that can be more effectively tested.
  *
- * It looks like it should return the following data:
- *  - html
- *  - header type
- *
  * @package		Handlers
  * @license		http://www.gnu.org/copyleft/gpl.html GNU General Public License
  * @author      {@link https://github.com/klenwell/WikkaWiki Tom Atwell}
- * @copyright   Copyright 2014       Tom Atwell <klenwell@gmail.com>
+ * @copyright   Copyright 2014  Tom Atwell <klenwell@gmail.com>
  *
  */
 
@@ -33,6 +29,9 @@ class ShowHandler {
     /*
      * Properties
      */
+    # For Content-type header
+    public $content_type = 'text/html';
+    
     # Template
     public $template = <<<HTML
 <div id="content%s">
@@ -93,7 +92,7 @@ HTML;
      * Validation Methods
      */
     public function request_is_valid() {
-        if ( ! $this->user_has_access() ) {
+        if ( ! $this->user_has_read_access() ) {
             $this->error = T_("You are not allowed to read this page.");
             return false;
         }
@@ -123,31 +122,36 @@ HTML;
         return true;
     }
     
-    /*
-     * Status Methods
-     */
-    public function user_has_access() {
-        trigger_error('in dev', E_USER_ERROR);
+    public function user_has_read_access() {
+        return $this->wikka->HasAccess('read');
     }
     
     public function page_name_is_valid() {
-        trigger_error('in dev', E_USER_ERROR);
+        return $this->wikka->IsWikiName($this->wikka->GetPageTag());
     }
     
-    public function page_is_set() {
-        trigger_error('in dev', E_USER_ERROR);
+    public function page_exists() {
+        return isset($this->wikka->page) && (! empty($this->wikka->page));
     }
     
     public function page_is_latest() {
-        trigger_error('in dev', E_USER_ERROR);
+        return isset($this->wikka->page['latest']) &&
+            ($this->wikka->page['latest'] == 'N');
     }
     
+    /*
+     * Status Methods
+     */
     public function raw_page_requested() {
-        trigger_error('in dev', E_USER_ERROR);
+        # TODO(klenwell): make this less insane.
+        # (bool) works as expected with '0' and '1'
+        return (! empty($_GET['raw'])) &&
+            ((bool) $this->wikka->GetSafeVar('raw', 'get'));
     }
     
     public function show_comments() {
-        trigger_error('in dev', E_USER_ERROR);
+        return ($this->wikka->GetConfigValue('hide_comments') != 1) &&
+			$this->wikka->HasAccess('comment_read');
     }
     
     /*
