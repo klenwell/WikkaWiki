@@ -136,6 +136,26 @@ class ShowHandlerTest extends PHPUnit_Framework_TestCase {
     /**
      * Tests
      */
+    public function testPageWithComments() {
+        $this->markTestIncomplete('TODO');
+    }
+    
+    public function testPageDoesNotExist() {
+        $this->markTestIncomplete('TODO');
+    }
+    
+    public function testInvalidPageName() {
+        $this->markTestIncomplete('TODO');
+    }
+    
+    public function testNoReadAccess() {
+        $this->markTestIncomplete('TODO');
+    }
+    
+    public function testPageWithRevisionInfo() {
+        $this->markTestIncomplete('TODO');
+    }
+    
     public function testValidRequest() {
         # Params
         $page_tag = 'TestPage1';
