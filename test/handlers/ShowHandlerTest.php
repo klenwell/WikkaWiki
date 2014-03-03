@@ -141,7 +141,23 @@ class ShowHandlerTest extends PHPUnit_Framework_TestCase {
     }
     
     public function testPageDoesNotExist() {
-        $this->markTestIncomplete('TODO');
+        # Params
+        $page_tag = 'PageNotFound';
+        $expects = 'This page doesn\'t exist yet. Maybe you want to ' .
+            '<a href="/edit">create</a> it?';
+        
+        # Set page and ACLs
+        $this->wikka->SetPage($this->wikka->LoadPage(
+            $page_tag, $this->wikka->GetSafeVar('time', 'get')));
+        $this->wikka->ACLs = $this->wikka->LoadAllACLs($this->wikka->GetPageTag());
+        $this->wikka->ACLs['read_acl'] = '*';
+        
+        # Test handle
+        $content = $this->show_handler->handle();
+        
+        # Test results
+        $this->assertFalse($this->wikka->existsPage($page_tag));
+        $this->assertContains($expects, $content);
     }
     
     public function testInvalidPageName() {

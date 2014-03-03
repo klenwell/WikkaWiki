@@ -23,8 +23,9 @@
  * @copyright   Copyright 2014  Tom Atwell <klenwell@gmail.com>
  *
  */
+require_once('handlers/base.php');
 
-class ShowHandler {
+class ShowHandler extends WikkaHandler {
     
     /*
      * Properties
@@ -48,19 +49,6 @@ HTML;
     public $revision_info = '';
     public $page_content = '';
     public $comments = '';
-    
-    # Error output
-    public $error = 'There was an unspecified error.';
-    
-    # Wikka object
-    public $wikka = null;
-    
-    /*
-     * Constructor
-     */
-    public function __construct($wikka_object) {
-        $this->wikka = $wikka_object;
-    }
     
     /*
      * Main Handler Method
@@ -169,12 +157,6 @@ HTML;
     /*
      * Format Methods
      */
-    public function show_error() {
-        $this->page_content = sprintf('<div class="handler-error">%s</div>',
-            $this->error);
-        return $this->format_content();
-    }
-    
     public function format_content() {
         return sprintf($this->template,
             $this->double_click_edit,
