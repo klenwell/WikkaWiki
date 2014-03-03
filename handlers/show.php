@@ -108,7 +108,7 @@ HTML;
                 T_("This page name is invalid. " +
                    "Valid page names must not contain the characters %s."),
                 SHOW_INVALID_CHARS);
-            return $this->show_error($error);
+            return false;
         }
         
         if ( ! $this->page_exists() ) {
@@ -119,10 +119,10 @@ HTML;
             $this->error = sprintf("<p>%s</p>\n",
                 sprintf(
                     T_("This page doesn't exist yet. Maybe you want to %s it?"),
-                    $createlink
+                    $create_link
                 )
             );
-            return $this->show_error($error);
+            return false;
         }
         
         return true;

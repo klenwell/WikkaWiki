@@ -6,7 +6,7 @@
  * to run Wikka.
  *
  * @package        Wikka
- * @subpackage    Libs
+ * @subpackage     Libs
  * @version        $Id: Wakka.class.php 1346 2009-03-03 03:38:17Z BrianKoontz $
  * @license        http://www.gnu.org/copyleft/gpl.html GNU General Public License
  * @filesource
@@ -74,8 +74,8 @@ if (!defined('WIKKA_URL_EXTENSION')) define('WIKKA_URL_EXTENSION', 'wikka.php?wa
  *
  * This class contains all the core methods used to run Wikka.
  * @name        Wakka
- * @package        Wikka
- * @subpackage    Libs
+ * @package     Wikka
+ * @subpackage  Libs
  *
  */
 class Wakka
