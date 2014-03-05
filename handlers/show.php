@@ -48,7 +48,15 @@ HTML;
     public $double_click_edit = '';
     public $revision_info = '';
     public $page_content = '';
-    public $comments = '';
+    public $comment_block = '';
+    
+    # Comment display modes (str => int)
+    public $comment_display_modes = array(
+        'none' => COMMENT_NO_DISPLAY,
+        'date_asc' => COMMENT_ORDER_DATE_ASC,
+        'date_desc' => COMMENT_ORDER_DATE_DESC,
+        'threaded' => COMMENT_ORDER_THREADED,
+    );
     
     /*
      * Main Handler Method
@@ -76,7 +84,8 @@ HTML;
         }
         
         if ( $this->show_comments() ) {
-            $this->comments = $this->format_comments();
+            $comments = $this->load_comments();
+            $this->comment_block = $this->format_comments($comments);
         }
         
         return $this->format_content();
@@ -137,7 +146,7 @@ HTML;
      * Status Methods
      */
     public function double_click_is_active() {
-        $user = $this->wikka->GetUser();
+        $user = $this->user;
         return $user && ($user['doubleclickedit'] == 'Y') &&
             ($this->wikka->HasAccess('write'));
     }
@@ -149,9 +158,76 @@ HTML;
             ((bool) $this->wikka->GetSafeVar('raw', 'get'));
     }
     
+    /*
+     * Comment Methods
+     */
     public function show_comments() {
         return ($this->wikka->GetConfigValue('hide_comments') != 1) &&
 			$this->wikka->HasAccess('comment_read');
+    }
+    
+    private function load_comments() {
+        $page_tag = $this->page_tag;
+        $order = $this->get_requested_comment_display_mode();
+        return $this->wikka->LoadComments($page_tag, $order);
+    }
+    
+    private function get_requested_comment_display_mode() {
+        $display_mode = null;
+        $display_modes = array_values($this->comment_display_modes);
+        
+        # Params
+        $page_tag = $this->page_tag;
+        $wants_comments = $this->wikka->UserWantsComments($page_tag);
+        
+        # Init display mode
+        if ( isset($_SESSION['show_comments'][$page_tag]) ) {
+            $display_mode = $_SESSION['show_comments'][$page_tag];
+        }
+        
+        if ( !(isset($_SESSION['show_comments'][$page_tag])) &&
+            $wants_comments !== FALSE ) {
+			$display_mode = $wants_comments;
+		}
+        
+        # GET value holds precedence
+        if ( isset($_GET['show_comments']) ) {
+            $requested_mode = $this->wikka->GetSafeVar('show_comments', 'get');
+            if ( in_array($requested_mode, $display_modes) ) {
+                $display_mode = $requested_mode;
+            }
+        }
+        
+        $_SESSION['show_comments'][$page_tag] = $display_mode;
+        return $display_mode;
+    }
+    
+    private function get_preferred_comment_display_mode() {
+        $display_mode = null;
+        
+        # Params
+        $user = $this->user;
+        $configured_display = $this->wikka->GetConfigValue('default_comment_display');
+        
+        # Determine preference
+        if ( isset($user['default_comment_display']) ) {
+            $display_mode = $user['default_comment_display'];
+        }
+        elseif ( !(is_null($configured_display)) ) {
+            $display_mode = $configured_display;
+        }
+        
+        if ( isset($this->comment_display_modes[$display_mode]) ) {
+            return $this->comment_display_modes[$display_mode];
+        }
+        else {
+            return COMMENT_ORDER_THREADED;
+        }
+    }
+    
+    private function collapse_comments() {
+        $display_mode = $this->get_requested_comment_display_mode();
+        return $display_mode == COMMENT_NO_DISPLAY;
     }
     
     /*
@@ -162,7 +238,7 @@ HTML;
             $this->double_click_edit,
             $this->revision_info,
             $this->page_content,
-            $this->comments);
+            $this->comment_block);
     }
     
     public function format_revision_info() {
@@ -270,7 +346,155 @@ XHTML;
         return $this->wikka->Format($this->wikka->page['body'], 'wakka', 'page');
     }
     
-    public function format_comments() {
-        trigger_error('TODO: implement comments as a library module', E_USER_NOTICE);
+    /*
+     * Comment Format Methods
+     */
+    public function format_comments($comments) {
+        $format = <<<XHTML
+            <!-- starting comments block-->
+            <div id="comments">
+                %s
+                %s
+            </div>
+            <!--closing comments block-->
+XHTML;
+        $comment_header = $this->format_comment_header();
+        $comment_list = $this->format_comment_list($comments);
+        
+        return sprintf($format, $comment_header, $comment_list);
+    }
+    
+    public function format_comment_header() {
+        $format = <<<XHTML
+                <div id="commentheader">
+                    %s %s
+                    %s
+                </div>
+XHTML;
+        $header_title = '';
+        $display_link = '';
+        $comment_form = '';
+
+        if ( $this->collapse_comments() ) {
+            $comment_count = $this->wikka->CountComments($this->page_tag);
+            $display_mode = $this->get_preferred_comment_display_mode();
+            $header_title = $this->format_comment_count($comment_count);
+            
+            if ( $comment_count < 1 ) {
+                if ( $this->wikka->HasAccess('comment_post') ) {
+                    $comment_form = $this->format_comment_form();
+                }
+            }
+            else {
+                $params = sprintf('show_comments=%s#comments', $display_mode);
+                $label = ($comment_count == 1) ? T_("Show comment") : T_("Show comments");
+                $display_link = sprintf('[<a href="%s">%s</a>]',
+                    $this->wikka->Href('', '', $params),
+                    $label
+                );
+            }
+        }
+        else {
+            $header_title = T_("Comments");
+            $display_link = sprintf('[<a href="%s">%s</a>]',
+                $this->wikka->Href('', '', 'show_comments=0'),
+                T_("Hide comments")
+            );
+            
+            if ( $this->wikka->HasAccess('comment_post') ) {
+                $comment_form = $this->format_comment_form();
+            }
+        }
+
+        return sprintf($format, $header_title, $display_link, $comment_form);
+    }
+    
+    private function format_comment_count($comment_count) {
+        if ( $comment_count < 1 ) {
+            return T_("There are no comments on this page.");
+        }
+        elseif ( $comment_count == 1 ) {
+            return T_("There is one comment on this page.");
+        }
+        else {
+            return sprintf(T_("There are %d comments on this page."), $comment_count);
+        }
+    }
+    
+    private function format_comment_form() {
+        $format = <<<XHTML
+                    %s
+                    <input type="submit" name="submit" value="%s" />
+                    %s
+XHTML;
+        $open_form_tag = $this->wikka->FormOpen("processcomment", "", "post",
+            "", "", FALSE, "#comments");
+        $submit_value = T_("New Comment");
+        $close_form_tag = $this->wikka->FormClose();
+        
+        return sprintf($format, $open_form_tag, $submit_value, $close_form_tag);
+    }
+    
+    public function format_comment_list($comments) {
+        $format = <<<XHTML
+                <div class="commentscontainer">
+                    %s
+                </div>
+XHTML;
+        $comment_list = '';
+        
+        
+        if ( $this->collapse_comments() ) {
+            $comment_list = '';
+        }
+        else {
+            $formatted_comments = array();
+            foreach( $comments as $comment ) {
+                $formatted_comments[] = $this->format_comment($comment);
+            }
+            $comment_list = implode($formatted_comments);
+        }
+        
+        return sprintf($format, $comment_list);
+    }
+    
+    public function format_comment($comment) {
+        $format = <<<XHTML
+                    <div id="comment_%s" class="%s" >
+                        <div class="commentheader">
+                            <div class="commentauthor">%s</div>
+                            <div class="commentinfo">%s</div>
+                        </div>
+                        <div class="commentbody">
+                            %s
+                        </div>
+                        %s
+                    </div>
+XHTML;
+
+        #TODO: alternate comment classes as in original code
+        $comment_class = 'comment-layout-2';
+        $comment_author = $this->wikka->FormatUser($comment['user']);
+        $comment_byline = T_("Comment by ") . $comment_author;
+        $comment_ts = sprintf("%s", $comment['time']);
+        $comment_action = $this->format_comment_action($comment);
+
+        return sprintf($format,
+            $comment['id'],
+            $comment_class,
+            $comment_byline,
+            $comment_ts,
+            $comment['comment'],
+            $comment_action
+        ); 
+    }
+    
+    public function format_comment_action($comment) {
+        $format = <<<XHTML
+                        <div class="commentaction">
+                        </div>
+XHTML;
+        
+        return '';
     }
 }

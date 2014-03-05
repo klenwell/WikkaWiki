@@ -4104,6 +4104,10 @@ class Wakka
      * @param    integer    $order    optional: order of comments. Default: COMMENT_ORDER_DATE_ASC
      * @return    array    All the comments for this page ordered by $order
      * @todo    make single exit point to enable profiling
+     *
+     *  TODO(klenwell):
+     *  Notice: if $order is NULL, commments may be returned. But if it is,
+     *  for example, COMMENT_NO_DISPLAY, nothing will be returned. Ay yay yay! 
      */
     function LoadComments($tag, $order=NULL)
     {

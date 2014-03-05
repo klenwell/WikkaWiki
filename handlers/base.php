@@ -25,6 +25,9 @@ class WikkaHandler {
     /*
      * Properties
      */
+    # Set this to true to display errors
+    public $debug = true;
+    
     # Handler should specify a type for Content-type header
     public $content_type = 'text/html';
     
@@ -45,11 +48,21 @@ HTML;
     # Wikka object
     public $wikka = null;
     
+    # Wikka parameters
+    public $user = null;
+    public $page_tag = null;
+    
     /*
      * Constructor
      */
     public function __construct($wikka_object) {
         $this->wikka = $wikka_object;
+        $this->user = $this->wikka->GetUser();
+        $this->page_tag = $this->wikka->GetPageTag();
+        
+        if ( $this->debug ) {
+            error_reporting(E_ALL);
+        }
     }
     
     /*

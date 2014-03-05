@@ -152,7 +152,7 @@ else
 				}
 			}
 
-			// display comments!
+			// display comments! (i.e. uncollapsed)
 			if (isset($_SESSION['show_comments'][$tag]) && $_SESSION['show_comments'][$tag] != COMMENT_NO_DISPLAY)
 			{
 				// load comments for this page
@@ -173,7 +173,7 @@ else
 					<input type="submit" name="submit" value="<?php echo T_("New Comment") ?>" />
 					<?php echo $this->FormClose() ?>
 <?php
-			}
+				}
 ?>
 				</div><!--closing commentheader (show)-->
 
@@ -184,6 +184,8 @@ else
 					displayComments($this, $comments, $tag);
 				}
 			}
+			
+			// collapse comments
 			else
 			{
 
