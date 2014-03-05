@@ -230,6 +230,33 @@ HTML;
         return $display_mode == COMMENT_NO_DISPLAY;
     }
     
+    private function show_delete_button_for_comment($comment) {
+        /*
+         * Conditions for which delete button is displayed:
+         * 1. Current user owns the page the comment is on:
+         * 2. Current user owns the comment;
+         * 3. Current non-logged-in user matches IP or hostname of comment
+         */
+        $is_logged_in = $this->wikka->GetUser();
+        $is_page_owner = $this->wikka->UserIsOwner();
+        $current_user = $this->wikka->GetUserName();
+        $is_comment_owner = ($current_user == $comment['user']);
+        
+        if ( $is_logged_in && $is_page_owner ) {
+            return true;
+        }
+        elseif ( $is_logged_in && $is_comment_owner ) {
+            return true;
+        }
+        elseif ( $this->wikka->config['anony_delete_own_comments'] &&
+            $is_comment_owner ) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+    
     /*
      * Format Methods
      */
@@ -450,12 +477,30 @@ XHTML;
         else {
             $formatted_comments = array();
             foreach( $comments as $comment ) {
-                $formatted_comments[] = $this->format_comment($comment);
+                if ( $comment['status'] == 'deleted' ) {
+                    $formatted_comments[] = $this->format_deleted_comment();
+                }
+                else {
+                    $formatted_comments[] = $this->format_comment($comment);
+                }
             }
             $comment_list = implode($formatted_comments);
         }
         
         return sprintf($format, $comment_list);
+    }
+    
+    public function format_deleted_comment() {
+        $format = <<<XHTML
+                    <div class="%s">
+                        <div class="commentdeleted">
+                            %s
+                        </div>
+                    </div>
+XHTML;
+        $comment_class = 'comment-layout-2';
+        $comment_body = T_("[Comment deleted]");
+        return sprintf($format, $comment_class, $comment_body);
     }
     
     public function format_comment($comment) {
@@ -477,7 +522,10 @@ XHTML;
         $comment_author = $this->wikka->FormatUser($comment['user']);
         $comment_byline = T_("Comment by ") . $comment_author;
         $comment_ts = sprintf("%s", $comment['time']);
-        $comment_action = $this->format_comment_action($comment);
+        
+        if ( $this->wikka->HasAccess('comment_post') ) {
+            $comment_action = $this->format_comment_action($comment);
+        }
 
         return sprintf($format,
             $comment['id'],
@@ -492,9 +540,33 @@ XHTML;
     public function format_comment_action($comment) {
         $format = <<<XHTML
                         <div class="commentaction">
+                            %s
+                                <input type="hidden" name="comment_id" value="%s" />
+                                <input type="submit" name="submit" value="%s" />
+                                %s
+                            %s
                         </div>
 XHTML;
+        $open_form_tag = $this->wikka->FormOpen("processcomment","","post",
+            "","",FALSE,"#comments");
+        $comment_id = $comment['id'];
+        $submit_button_label = T_("Reply");
+        $delete_button = '';
+        $close_form_tag = $this->wikka->FormClose();
         
-        return '';
+        if ( $this->show_delete_button_for_comment($comment) ) {
+            $delete_button = sprintf(
+                '<input type="submit" name="submit" value="%s" />',
+                T_("Delete")
+            );
+        }
+        
+        return sprintf($format,
+            $open_form_tag,
+            $comment_id,
+            $submit_button_label,
+            $delete_button,
+            $close_form_tag
+        );
     }
 }
