@@ -198,6 +198,7 @@ HTML;
             }
         }
         
+        $display_mode = (int) $display_mode;
         $_SESSION['show_comments'][$page_tag] = $display_mode;
         return $display_mode;
     }
@@ -386,9 +387,74 @@ XHTML;
             <!--closing comments block-->
 XHTML;
         $comment_header = $this->format_comment_header();
-        $comment_list = $this->format_comment_list($comments);
+        
+        if ( $this->collapse_comments() ) {
+            $comment_list = '';
+        }
+        elseif ( $this->get_requested_comment_display_mode() == COMMENT_ORDER_THREADED ) {
+            $comment_list = $this->format_threaded_comment_list($comments);
+        }
+        else {
+            $comment_list = $this->format_comment_list($comments);
+        }
         
         return sprintf($format, $comment_header, $comment_list);
+    }
+    
+    public function format_threaded_comment_list($comments) {
+        $format = <<<XHTML
+                <div class="commentscontainer">
+                    %s
+                </div>
+XHTML;
+        $comment_list = '';
+        
+        $html = array();
+        $previous = array('level' => -1);
+        
+        # Nests comments. Assume comments are ordered in COMMENT_ORDER_THREADED mode.
+        foreach( $comments as $comment ) {
+            $comment['level'] = isset($comment['level']) ? $comment['level'] : 0;
+            $html[] = $this->close_parent_comments($comment, $previous);
+            
+            if ( $comment['status'] == 'deleted' ) {
+                $html[] = $this->format_deleted_comment($comment, true);
+            }
+            else {
+                $html[] = $this->format_threaded_comment($comment);
+            }
+            
+            $previous = $comment;
+        }
+        
+        # Close final comments
+        $comment = array('level' => 0);
+        $html[] = $this->close_parent_comments($comment, $previous);
+        
+        $comment_list = implode($html);
+        return sprintf($format, $comment_list);
+    }
+    
+    public function format_comment_list($comments) {
+        $format = <<<XHTML
+                <div class="commentscontainer">
+                    %s
+                </div>
+XHTML;
+        $comment_list = '';
+        
+        $formatted_comments = array();
+        foreach( $comments as $comment ) {
+            if ( $comment['status'] == 'deleted' ) {
+                $formatted_comments[] = $this->format_deleted_comment($comment);
+            }
+            else {
+                $formatted_comments[] = $this->format_comment($comment);
+            }
+        }
+        $comment_list = implode('', $formatted_comments);
+        
+        return sprintf($format, $comment_list);
     }
     
     public function format_comment_header() {
@@ -436,6 +502,65 @@ XHTML;
         return sprintf($format, $header_title, $display_link, $comment_form);
     }
     
+    public function format_threaded_comment($comment) {
+        # Notice it leaves the div unclosed
+        $format = <<<XHTML
+                    <div id="comment_%s" class="%s" >
+                        <div class="commentheader">
+                            <div class="commentauthor">%s</div>
+                            <div class="commentinfo">%s</div>
+                        </div>
+                        <div class="commentbody">
+                            %s
+                        </div>
+                        %s
+XHTML;
+
+        $comment_level = (isset($comment['level'])) ? $comment['level'] : 0;
+        $comment_class = sprintf('comment-layout-%d', (($comment_level + 1) % 2) + 1);
+        $comment_author = $this->wikka->FormatUser($comment['user']);
+        $comment_byline = T_("Comment by ") . $comment_author;
+        $comment_ts = sprintf("%s", $comment['time']);
+        
+        if ( $this->wikka->HasAccess('comment_post') ) {
+            $comment_action = $this->format_comment_action($comment);
+        }
+
+        return sprintf($format,
+            $comment['id'],
+            $comment_class,
+            $comment_byline,
+            $comment_ts,
+            $comment['comment'],
+            $comment_action
+        ); 
+    }
+    
+    public function format_comment($comment) {
+        $html = $this->format_threaded_comment($comment);
+        return sprintf("%s%s</div>\n",
+            $html,
+            str_repeat(' ', 20)
+        );
+    }
+    
+    
+    private function close_parent_comments($comment, $previous) {
+        # If depth is greater, don't close yet
+        if ( $comment['level'] > $previous['level'] ) {
+            return '';
+        }
+        
+        $diff = $previous['level'] - $comment['level'];
+        
+        $end_divs = array();
+        foreach( range(0,$diff) as $n ) {
+            $end_divs[] = '</div>';
+        }
+        
+        return implode("\n", $end_divs);
+    }
+    
     private function format_comment_count($comment_count) {
         if ( $comment_count < 1 ) {
             return T_("There are no comments on this page.");
@@ -462,79 +587,22 @@ XHTML;
         return sprintf($format, $open_form_tag, $submit_value, $close_form_tag);
     }
     
-    public function format_comment_list($comments) {
-        $format = <<<XHTML
-                <div class="commentscontainer">
-                    %s
-                </div>
-XHTML;
-        $comment_list = '';
-        
-        
-        if ( $this->collapse_comments() ) {
-            $comment_list = '';
-        }
-        else {
-            $formatted_comments = array();
-            foreach( $comments as $comment ) {
-                if ( $comment['status'] == 'deleted' ) {
-                    $formatted_comments[] = $this->format_deleted_comment();
-                }
-                else {
-                    $formatted_comments[] = $this->format_comment($comment);
-                }
-            }
-            $comment_list = implode($formatted_comments);
-        }
-        
-        return sprintf($format, $comment_list);
-    }
-    
-    public function format_deleted_comment() {
+    public function format_deleted_comment($comment, $is_threaded=false) {
         $format = <<<XHTML
                     <div class="%s">
                         <div class="commentdeleted">
                             %s
                         </div>
-                    </div>
+                    %s
 XHTML;
-        $comment_class = 'comment-layout-2';
+        $comment_class = '';
         $comment_body = T_("[Comment deleted]");
-        return sprintf($format, $comment_class, $comment_body);
-    }
-    
-    public function format_comment($comment) {
-        $format = <<<XHTML
-                    <div id="comment_%s" class="%s" >
-                        <div class="commentheader">
-                            <div class="commentauthor">%s</div>
-                            <div class="commentinfo">%s</div>
-                        </div>
-                        <div class="commentbody">
-                            %s
-                        </div>
-                        %s
-                    </div>
-XHTML;
-
-        #TODO: alternate comment classes as in original code
-        $comment_class = 'comment-layout-2';
-        $comment_author = $this->wikka->FormatUser($comment['user']);
-        $comment_byline = T_("Comment by ") . $comment_author;
-        $comment_ts = sprintf("%s", $comment['time']);
+        $end_div = ($is_threaded) ? '' : '</div>';
         
-        if ( $this->wikka->HasAccess('comment_post') ) {
-            $comment_action = $this->format_comment_action($comment);
-        }
-
-        return sprintf($format,
-            $comment['id'],
-            $comment_class,
-            $comment_byline,
-            $comment_ts,
-            $comment['comment'],
-            $comment_action
-        ); 
+        $comment_level = (isset($comment['level'])) ? $comment['level'] : 0;
+        $comment_class = sprintf('comment-layout-%d', (($comment_level + 1) % 2) + 1);
+        
+        return sprintf($format, $comment_class, $comment_body, $end_div);
     }
     
     public function format_comment_action($comment) {
