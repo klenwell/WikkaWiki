@@ -544,7 +544,6 @@ XHTML;
         );
     }
     
-    
     private function close_parent_comments($comment, $previous) {
         # If depth is greater, don't close yet
         if ( $comment['level'] > $previous['level'] ) {
