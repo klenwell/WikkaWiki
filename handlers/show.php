@@ -17,8 +17,8 @@
  * A refactor of the Wikka show handler to function as a more independent
  * modular unit that can be more effectively tested.
  *
- * @package		Handlers
- * @license		http://www.gnu.org/copyleft/gpl.html GNU General Public License
+ * @package     Handlers
+ * @license     http://www.gnu.org/copyleft/gpl.html GNU General Public License
  * @author      {@link https://github.com/klenwell/WikkaWiki Tom Atwell}
  * @copyright   Copyright 2014  Tom Atwell <klenwell@gmail.com>
  *
@@ -163,7 +163,7 @@ HTML;
      */
     public function show_comments() {
         return ($this->wikka->GetConfigValue('hide_comments') != 1) &&
-			$this->wikka->HasAccess('comment_read');
+            $this->wikka->HasAccess('comment_read');
     }
     
     private function load_comments() {
@@ -187,8 +187,8 @@ HTML;
         
         if ( !(isset($_SESSION['show_comments'][$page_tag])) &&
             $wants_comments !== FALSE ) {
-			$display_mode = $wants_comments;
-		}
+            $display_mode = $wants_comments;
+        }
         
         # GET value holds precedence
         if ( isset($_GET['show_comments']) ) {
@@ -318,7 +318,7 @@ HTML;
                 <input type="hidden" name="time" value="%s" />
                 <input type="hidden" name="raw" value="%s" />
                 <input type="submit" value="%s" />
-            %s	
+            %s    
 XHTML;
         if ( $page_data ) {
             $show_formatting_form = sprintf($formatting_form_f,
