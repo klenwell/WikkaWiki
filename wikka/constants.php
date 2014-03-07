@@ -15,6 +15,7 @@ define_constant_if_not_defined('ERROR_WRONG_PHP_VERSION',
     'Wikka requires PHP %s or higher!');
 define_constant_if_not_defined('DEFAULT_COOKIE_EXPIRATION_HOURS', 90 * 24);
 define_constant_if_not_defined('WIKKA_LIBRARY_PATH', 'lib');
+define_constant_if_not_defined('SHOW_INVALID_CHARS', '| ? = &lt; &gt; / \ " % &amp;');
 
 
 $ERROR_MYSQL_SUPPORT_MISSING = <<<HEREDOC

@@ -38,9 +38,6 @@
  *  Code has been farmed out to modules in wikka dir for cleaner organization.
  *  
  */
-# Starts timer
-global $tstart; $tstart = getmicrotime();
-
 require_once('wikka/error_reporting.php');
 
 require_once('version.php');    # Define current Wikka version
@@ -52,8 +49,11 @@ require_once('wikka/constants.php');
 require_once('wikka/sanity_checks.php');
 
 #
-# Start buffering
+# Start timer and buffer
+# getmicrotime comes from libs/Compatibility.lib.php
 #
+global $tstart;
+$tstart = getmicrotime();
 ob_start();
 
 require_once('wikka/magic_quotes.php');

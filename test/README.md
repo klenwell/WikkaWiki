@@ -24,9 +24,9 @@ Then manually update the file `test/test.config.php`.
 
 
 ## To Run
-Tests are run from the command line using `phpunit`. From the root WikkaWiki directory, run the following command:
+Tests are run from the command line using `phpunit`. From the root WikkaWiki directory, run the following command (use `--stderr` to avoid buffering issues):
 
-    phpunit test
+    phpunit --stderr test
     
 You should see something like this:
 
@@ -41,6 +41,11 @@ You should see something like this:
     OK, but incomplete or skipped tests!
     Tests: 137, Assertions: 3, Incomplete: 134.
 
+To generate coverage reports, install Xdebug following [[http://xdebug.org/docs/install installation instructions]] and run like so:
+
+    phpunit --coverage-html ./test/reports --stderr test
+    
+HTML reports will be published to the directory `reports` in `test`.
 
 ## To Do
 There is much to be done. Some areas that need to be addressed:
