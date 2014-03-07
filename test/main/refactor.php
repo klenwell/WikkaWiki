@@ -82,6 +82,7 @@ $page_owner = 'TestUser';
 
 # Additional Params
 $prefix = $mikka->GetConfigValue('table_prefix');
+$_SERVER['SERVER_NAME'] = 'localhost';
 $_SERVER['REMOTE_ADDR'] = '127.0.0.1';  # Need to set this manually
 $_GET['wakka'] = $page_tag;             # How wikka knows what page is wanted
 
@@ -138,15 +139,15 @@ foreach( $unexpected_output as $needle ) {
 #
 # Test Constants
 #
-assert_equal(WIKKA_BASE_DOMAIN_URL, 'http://:');
+assert_equal(WIKKA_BASE_DOMAIN_URL, 'http://localhost:');
 assert_equal(WIKKA_LANG_PATH, 'lang/en');
 assert_equal(BASIC_COOKIE_NAME, 'Wikkawiki');
 
 if ( TESTING_AS_CGI ) {
-    assert_equal(WIKKA_BASE_URL, 'http://:');  
+    assert_equal(WIKKA_BASE_URL, 'http://localhost:');  
 }
 else {
-    assert_equal(WIKKA_BASE_URL, 'http://:test/main/refactor.php');
+    assert_equal(WIKKA_BASE_URL, 'http://localhost:test/main/refactor.php');
     assert_equal(WIKKA_BASE_URL_PATH, 'test/main/refactor.php');
     assert_equal(WIKKA_COOKIE_PATH, 'test/main/refactor.ph');
 }
@@ -159,7 +160,7 @@ assert_true(! isset($wakkaConfig['stylesheet']));
 assert_equal(session_name(), '96522b217a86eca82f6d72ef88c4c7f4');
 assert_equal($page, 'HelloWorld');
 assert_equal($handler, '');
-assert(is_null($user));
+assert(is_null($user_name));
 
 # mysql_database should come from test/test.config.php -- change this as necessary
 assert_equal($wakkaConfig['mysql_database'], 'wikkawiki_test');
@@ -173,7 +174,7 @@ assert_true(! isset($installAction));
 #
 # Meta Tests
 #
-assert_true($WikkaMeta["page"]["length"] > 4000, 'page length test');
+assert_true($WikkaMeta["page"]["length"] > 3800, 'page length test');
 
 # Test headers sent (cgi version only)
 if ( TESTING_AS_CGI ) {

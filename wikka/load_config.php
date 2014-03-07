@@ -6,40 +6,43 @@
  *
  * TODO: replace this module with a method within a request handling object.
  */
-
-$wakkaConfig = array();
-
-# Upgrade from Wakka
-if ( file_exists('wakka.config.php') ) {
-    rename('wakka.config.php', 'wikka.config.php"');
-}
-
 #
-# Set $wakkaConfigLocation and load if exists
+# Imports
 #
-if ( defined('WAKKA_CONFIG') ) {
-	$configfile = WAKKA_CONFIG;
+require_once('version.php');    # Define current Wikka version
+ 
+#
+# Config error reporting
+#
+if ( version_compare(phpversion(),'5.3','<') ) {
+    error_reporting(E_ALL);
 }
 else {
-	$configfile = 'wikka.config.php';
-}
-
-$wakkaConfigLocation = $configfile;
-
-# Include emits a warning if file not found (hence the exists check)
-if ( file_exists($configfile) ) {
-    include($configfile);
+    error_reporting(E_ALL & !E_DEPRECATED);
 }
 
 #
-# Remove obsolete config settings (should come before merge!)
+# Load config files
 #
-# TODO move these checks to a directive file to be used by the
-# installer/upgrader, #97
-#
-unset_if_isset($wakkaConfig['header_action']);  # since 1.1.6.4
-unset_if_isset($wakkaConfig['footer_action']);  # since 1.1.6.4
-unset_if_isset($wakkaConfig['stylesheet']);     # since 1.2 (#6)
+# Config object 
+$wakkaConfig = array();
+
+# Load default config values: $wakkaDefaultConfig
+require_once('wikka/default.config.php');
+
+# WAKKA_CONFIG is used by refactor test
+if ( defined('WAKKA_CONFIG') ) {
+    $config_file = WAKKA_CONFIG;
+}
+else {
+    $config_file = 'wikka.config.php';
+}
+
+# If this is fresh install, config file may not yet exist. This will overwrite
+# $wakkaConfig
+if ( file_exists($config_file) ) {
+    include($config_file);
+}
 
 #
 # Add plugin paths if they do not already exist
@@ -83,3 +86,28 @@ if ( isset($wakkaConfig['menu_config_path']) &&
 # Merge defaults with config from file: config file settings will overwrite defaults
 #
 $wakkaConfig = array_merge($wakkaDefaultConfig, $wakkaConfig);
+
+#
+# Load Language Defaults
+#
+require_once('wikka/language_defaults.php');
+
+#
+# Multisite Config
+#
+if ( file_exists('multi.config.php') ) {
+    require_once('wikka/multisite.php');
+}
+
+#
+# Sanity Checks
+#
+if ( ! function_exists('version_compare') ||
+    version_compare(phpversion(),MINIMUM_PHP_VERSION,'<') ) {
+	$php_version_error = sprintf(ERROR_WRONG_PHP_VERSION, MINIMUM_PHP_VERSION);
+	die($php_version_error);
+}
+
+if ( ! function_exists('mysql_connect') ) {
+	die(ERROR_MYSQL_SUPPORT_MISSING);
+}

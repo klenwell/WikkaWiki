@@ -38,54 +38,34 @@
  *  Code has been farmed out to modules in wikka dir for cleaner organization.
  *  
  */
-#
+
 # Imports
-#
 require_once('libs/Compatibility.lib.php');
 require_once('libs/Wakka.class.php');
 require_once('wikka/helpers.php');
- 
-# Load Config
-require_once('wikka/error_reporting.php');
-require_once('version.php');    # Define current Wikka version
 require_once('wikka/constants.php');
 
-# Sanity Checks
-require_once('wikka/sanity_checks.php');
-
-# Process Request
-
-#
-# Start timer and buffer
-# getmicrotime comes from libs/Compatibility.lib.php
-#
+# Start time: getmicrotime comes from libs/Compatibility.lib.php
 global $tstart;
 $tstart = getmicrotime();
-ob_start();
+ 
+# Load Config
+include('wikka/load_config.php');
 
-require_once('wikka/magic_quotes.php');
-
-require_once('wikka/domain_path.php');
-
-require_once('wikka/default.config.php');
-
-require_once('wikka/load_config.php');
-
-require_once('wikka/language_defaults.php');
-
-if ( file_exists('multi.config.php') ) {
-    require_once('wikka/multisite.php');
-}
-
+# Check Install
 require_once('wikka/install.php');
 
+# Process Request
+ob_start();
+require_once('wikka/magic_quotes.php');
+require_once('wikka/domain_path.php');
 require_once('wikka/session.php');
-
 require_once('wikka/page_handler.php');
 
 #
-# Create Wakka object and assert database access
+# Prepare Response
 #
+# Create Wakka object and assert database access
 $wakka = instantiate('Wakka', $wakkaConfig);
 
 if ( ! $wakka->dblink ) {

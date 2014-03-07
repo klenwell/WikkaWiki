@@ -15,14 +15,14 @@ $wakkaDefaultConfig = array(
 
 	'root_page'					=> 'HomePage',
 	'wakka_name'				=> 'MyWikkaSite',
-	'rewrite_mode'				=> $t_rewrite_mode,
+	'rewrite_mode'				=> '0',
 	'wiki_suffix'				=> '@wikka',
     
     # enable (1) or disable (0, default) lookup of user hostname from IP address
 	'enable_user_host_lookup'	=> '0',	
 
-	'action_path'				=> 'plugins/actions'.PATH_DIVIDER.'actions',
-	'handler_path'				=> 'plugins/handlers'.PATH_DIVIDER.'handlers',
+	'action_path'				=> 'plugins/actions,actions',
+	'handler_path'				=> 'plugins/handlers,handlers',
 	'lang_path'					=> 'plugins/lang',
 	'gui_editor'				=> '1',
 	'default_comment_display'	=> 'threaded',
@@ -32,7 +32,7 @@ $wakkaDefaultConfig = array(
     # formatter and code highlighting paths
     #
     # (location of Wikka formatter - REQUIRED)
-	'wikka_formatter_path' 		=> 'plugins/formatters'.PATH_DIVIDER.'formatters',
+	'wikka_formatter_path' 		=> 'plugins/formatters,formatters',
     
     # (location of Wikka code highlighters - REQUIRED)
 	'wikka_highlighters_path'	=> 'formatters',
@@ -47,9 +47,9 @@ $wakkaDefaultConfig = array(
     # template
     #
     # (location of Wikka template files - REQUIRED)
-	'wikka_template_path' 		=> 'plugins/templates'.PATH_DIVIDER.'templates',		
+	'wikka_template_path' 		=> 'plugins/templates,templates',		
 	'feedcreator_path'			=> '3rdparty/core/feedcreator',
-   	'menu_config_path'			=> 'plugins/config'.PATH_DIVIDER.'config', #858
+   	'menu_config_path'			=> 'plugins/config,config', #858
 	'safehtml_path'				=> '3rdparty/core/safehtml',
 	'referrers_purge_time'		=> '30',
 	'pages_purge_time'			=> '0',
