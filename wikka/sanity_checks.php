@@ -17,12 +17,3 @@ if ( ! function_exists('version_compare') ||
 if ( ! function_exists('mysql_connect') ) {
 	die(ERROR_MYSQL_SUPPORT_MISSING);
 }
-
-
-if ( file_exists('libs/Wakka.class.php') ) {
-	require_once('libs/Compatibility.lib.php');
-	require_once('libs/Wakka.class.php');
-}
-else {
-	die(ERROR_WAKKA_LIBRARY_MISSING);
-}

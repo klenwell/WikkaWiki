@@ -38,15 +38,22 @@
  *  Code has been farmed out to modules in wikka dir for cleaner organization.
  *  
  */
-require_once('wikka/error_reporting.php');
-
-require_once('version.php');    # Define current Wikka version
-
+#
+# Imports
+#
+require_once('libs/Compatibility.lib.php');
+require_once('libs/Wakka.class.php');
 require_once('wikka/helpers.php');
-
+ 
+# Load Config
+require_once('wikka/error_reporting.php');
+require_once('version.php');    # Define current Wikka version
 require_once('wikka/constants.php');
 
+# Sanity Checks
 require_once('wikka/sanity_checks.php');
+
+# Process Request
 
 #
 # Start timer and buffer
