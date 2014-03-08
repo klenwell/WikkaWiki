@@ -101,7 +101,6 @@ $mikka->SavePage($page_tag, $page_body, $page_note, $page_owner);
 
 # Create output buffer
 ob_start();
-ob_start();
 
 # Run script
 require_once('wikka.php');
@@ -163,7 +162,6 @@ assert_true(! isset($wakkaConfig['stylesheet']));
 assert_equal(session_name(), '96522b217a86eca82f6d72ef88c4c7f4');
 assert_equal($page, 'HelloWorld');
 assert_equal($handler, '');
-assert(is_null($user_name));
 
 # mysql_database should come from test/test.config.php -- change this as necessary
 assert_equal($wakkaConfig['mysql_database'], 'wikkawiki_test');
