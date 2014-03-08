@@ -77,11 +77,7 @@ header('Content-Type: text/html; charset=utf-8');
 
 # Create Wakka object and assert database access
 $wakka = instantiate('Wakka', $wakkaConfig);
-
-if ( ! $wakka->dblink ) {
-    die(sprintf('<em class="error">%s</em>',
-        T_("Error: Unable to connect to the database.")));
-}
+$wakka->assert_db_link();
 
 require_once('wikka/save_session_id.php');
 

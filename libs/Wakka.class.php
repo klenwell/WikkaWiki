@@ -259,6 +259,16 @@ class Wakka
      * @category    Database
      * @todo    move into a database class.
      */
+    function assert_db_link() {
+        if ( ! $this->dblink ) {
+            die(sprintf('<em class="error">%s</em>',
+                T_("Error: Unable to connect to the database.")
+            ));
+        }
+        else {
+            return true;
+        }
+    }
 
     /**
      * Send a query to the database.
