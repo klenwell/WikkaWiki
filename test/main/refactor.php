@@ -83,7 +83,8 @@ $page_owner = 'TestUser';
 # Additional Params
 $prefix = $mikka->GetConfigValue('table_prefix');
 $_SERVER['SERVER_NAME'] = 'localhost';
-$_SERVER['REMOTE_ADDR'] = '127.0.0.1';  # Need to set this manually
+$_SERVER['REMOTE_ADDR'] = '127.0.0.1';
+$_SERVER['SERVER_PORT'] = '80';
 $_GET['wakka'] = $page_tag;             # How wikka knows what page is wanted
 
 # Need to set some constants
@@ -139,15 +140,17 @@ foreach( $unexpected_output as $needle ) {
 #
 # Test Constants
 #
-assert_equal(WIKKA_BASE_DOMAIN_URL, 'http://localhost:');
+assert_equal(WIKKA_BASE_DOMAIN_URL, 'http://localhost');
 assert_equal(WIKKA_LANG_PATH, 'lang/en');
 assert_equal(BASIC_COOKIE_NAME, 'Wikkawiki');
 
 if ( TESTING_AS_CGI ) {
-    assert_equal(WIKKA_BASE_URL, 'http://localhost:');  
+    assert_equal(WIKKA_BASE_URL, 'http://localhost');  
 }
 else {
-    assert_equal(WIKKA_BASE_URL, 'http://localhost:test/main/refactor.php');
+    # TODO(klenwell): Why the missing / after domain? Doesn't seem to be a
+    # issue in production. Root problem is probably a missing $_SERVER var.
+    assert_equal(WIKKA_BASE_URL, 'http://localhosttest/main/refactor.php');
     assert_equal(WIKKA_BASE_URL_PATH, 'test/main/refactor.php');
     assert_equal(WIKKA_COOKIE_PATH, 'test/main/refactor.ph');
 }

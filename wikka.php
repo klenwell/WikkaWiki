@@ -56,13 +56,10 @@ include('wikka/load_config.php');
 if ( install_or_update_required() ) {
     require_once('wikka/install.php');
 }
-    
+
 # Process Request
 ob_start();
-require_once('wikka/magic_quotes.php');
-require_once('wikka/domain_path.php');
-require_once('wikka/session.php');
-require_once('wikka/page_handler.php');
+require_once('wikka/process_request.php');
 
 #
 # Prepare Response
