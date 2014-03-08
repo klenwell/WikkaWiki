@@ -324,8 +324,12 @@ class Wakka
      */
     function LoadSingle($query)
     {
-        if ($data = $this->LoadAll($query))
-        return $data[0];
+        if ($data = $this->LoadAll($query)) {
+            return $data[0];
+        }
+        else {
+            return null;
+        }
     }
 
     /**

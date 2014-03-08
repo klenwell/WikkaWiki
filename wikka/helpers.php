@@ -212,3 +212,58 @@ function wikka_parse_page_and_handler() {
     
     return array($page, $handler);
 }
+
+function save_session_id_to_db($wikka) {
+    $user_name = $wikka->GetUser();
+    
+    # Only store sessions for logged in users
+    if ( is_null($user_name) ) {
+        return null;
+    }
+    
+    $table_prefix = $wikka->config['table_prefix'];
+    $session_id = session_id();
+    
+    # Look for current session record
+    $query = sprintf('SELECT * FROM %ssessions WHERE sessionid="%s" AND userid="%s"',
+        $table_prefix, $session_id, $user_name
+    );
+    
+    $record = $wikka->LoadSingle($query);
+    
+    # Update session start time
+    if ( $record ) {
+        $query_f = <<<SQLDOC
+UPDATE %ssessions
+    SET session_start=FROM_UNIXTIME(%s)
+    WHERE sessionid="%s" AND userid="%s"
+SQLDOC;
+
+        $query = sprintf($query,
+            $table_prefix,
+            $wikka->GetMicroTime(),
+            $session_id,
+            $user_name
+        );
+    }
+    
+    # Insert new session
+    else {
+        $query_f = <<<SQLDOC
+INSERT INTO %ssessions (sessionid, userid, session_start)
+    VALUES("%s", "%s", FROM_UNIXTIME(%s))
+SQLDOC;
+    
+        $query = sprintf($query_f,
+            $table_prefix,
+            $session_id,
+            $user_name,
+            $wikka->GetMicroTime()
+        );
+    }
+    
+    # Write to db
+    $wikka->Query($query);
+    
+    return $session_id;
+}
