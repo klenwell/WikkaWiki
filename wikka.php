@@ -38,13 +38,17 @@
  *  Code has been farmed out to modules in wikka dir for cleaner organization.
  *  
  */
-
+#
 # Imports
+#
 require_once('libs/Compatibility.lib.php');
 require_once('libs/Wakka.class.php');
 require_once('wikka/helpers.php');
 require_once('wikka/constants.php');
 
+#
+# Load Config (sets $wakkaConfig)
+#
 # Start time: getmicrotime comes from libs/Compatibility.lib.php
 global $tstart;
 $tstart = getmicrotime();
@@ -52,18 +56,25 @@ $tstart = getmicrotime();
 # Load Config
 include('wikka/load_config.php');
 
+#
 # Check Install
+#
 if ( install_or_update_required() ) {
     require_once('wikka/install.php');
 }
 
-# Process Request
-ob_start();
+#
+# Process Request (sets $page and $handler)
+#
 require_once('wikka/process_request.php');
 
 #
 # Prepare Response
 #
+# Start buffer and set Content-Type header (can be overridden by handlers)
+ob_start();
+header('Content-Type: text/html; charset=utf-8');
+
 # Create Wakka object and assert database access
 $wakka = instantiate('Wakka', $wakkaConfig);
 
@@ -73,12 +84,6 @@ if ( ! $wakka->dblink ) {
 }
 
 require_once('wikka/save_session_id.php');
-
-#
-# Run engine to generate page output
-#
-# Add Content-Type header (can be overridden by handlers)
-header('Content-Type: text/html; charset=utf-8');
 
 # Run Wikka engine and collect output
 $wakka->Run($page, $handler);
