@@ -186,7 +186,7 @@ class WikkaModulesTest extends PHPUnit_Framework_TestCase {
         
         # Load Session module: Creates new sessions       
         $wakka = self::$wakka;
-        require('wikka/save_session_id.php');
+        wakka_save_session_id_to_db($wakka);
         
         # Get sessions
         $query = sprintf('SELECT * FROM %ssessions',
@@ -200,7 +200,7 @@ class WikkaModulesTest extends PHPUnit_Framework_TestCase {
         $this->assertEquals($first_session['userid'], $_SESSION['user']);
         
         # Load Session module: Updates session
-        require('wikka/save_session_id.php');
+        wakka_save_session_id_to_db($wakka);
         
         # Get sessions
         $query = sprintf('SELECT * FROM %ssessions',

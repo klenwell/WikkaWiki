@@ -213,7 +213,7 @@ function wikka_parse_page_and_handler() {
     return array($page, $handler);
 }
 
-function save_session_id_to_db($wikka) {
+function wakka_save_session_id_to_db($wikka) {
     $user_name = $wikka->GetUser();
     
     # Only store sessions for logged in users

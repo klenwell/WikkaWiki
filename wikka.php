@@ -78,7 +78,7 @@ header('Content-Type: text/html; charset=utf-8');
 # Create Wakka object and assert database access
 $wakka = instantiate('Wakka', $wakkaConfig);
 $wakka->assert_db_link();
-save_session_id_to_db($wakka);
+wakka_save_session_id_to_db($wakka);
 
 # Run Wikka engine and collect output
 $wakka->Run($page, $handler);
