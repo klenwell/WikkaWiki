@@ -57,7 +57,7 @@ $tstart = getmicrotime();
 include('wikka/load_config.php');
 
 #
-# Check Install
+# Install or Upgrade
 #
 if ( install_or_update_required() ) {
     require_once('wikka/install.php');
