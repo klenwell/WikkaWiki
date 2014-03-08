@@ -8,6 +8,8 @@
  */
 
 $wakkaDefaultConfig = array(
+    'wakka_version'             => 0,
+    
 	'mysql_host'				=> 'localhost',
 	'mysql_database'			=> 'wikka',
 	'mysql_user'				=> 'wikka',

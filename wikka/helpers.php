@@ -89,3 +89,12 @@ function unset_if_isset($var) {
         unset($var);
     }
 }
+
+function install_or_update_required() {
+	global $wakkaConfig;
+	return ($wakkaConfig['wakka_version'] !== WAKKA_VERSION);
+}
+
+function site_is_locked_for_update() {
+	return file_exists('locked');
+}

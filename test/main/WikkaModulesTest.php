@@ -254,9 +254,6 @@ class WikkaModulesTest extends PHPUnit_Framework_TestCase {
         # Load config
         $wakkaConfig = array_merge(self::$config, self::$default_config);
         
-        # Set wakka version to trigger install
-        $wakkaConfig['wakka_version'] = 0;
-        
         # Set additional required values
         $_SERVER["REQUEST_URI"] = '/path?page=HelloWorld';
         
@@ -271,9 +268,28 @@ class WikkaModulesTest extends PHPUnit_Framework_TestCase {
         ob_end_clean();
         
         # Asserts ($ask and $lockpw set by wikka/install.php)
-        $this->assertTrue($ask);
-        $this->assertEquals($lockpw, $lock_file_pw);
+        $this->assertTrue(install_or_update_required());
+        $this->assertTrue(site_is_locked_for_update());
+        $this->assertFalse(is_authenticated_for_install());
         $this->assertContains('This site is currently being upgraded', $output);
+    }
+    
+    public function testInstallAuthentication() {
+        # Set auth values
+        $_SERVER["PHP_AUTH_USER"] = 'admin';
+        $_SERVER["PHP_AUTH_PW"] = 'password';
+        
+        # Set additional required values
+        $_SERVER["REQUEST_URI"] = '/path?page=HelloWorld';
+        
+        # Create lock file
+        $lock_file_pw = $_SERVER["PHP_AUTH_PW"];
+        file_put_contents($this->install_lock_file, $lock_file_pw);
+        
+        # Asserts ($ask and $lockpw set by wikka/install.php)
+        $this->assertTrue(install_or_update_required());
+        $this->assertTrue(site_is_locked_for_update());
+        $this->assertTrue(is_authenticated_for_install());
     }
     
     public function testMultiSiteModule() {

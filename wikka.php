@@ -53,8 +53,10 @@ $tstart = getmicrotime();
 include('wikka/load_config.php');
 
 # Check Install
-require_once('wikka/install.php');
-
+if ( install_or_update_required() ) {
+    require_once('wikka/install.php');
+}
+    
 # Process Request
 ob_start();
 require_once('wikka/magic_quotes.php');
