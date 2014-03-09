@@ -30,14 +30,14 @@ class WikkaWebServiceTest extends PHPUnit_Framework_TestCase {
     public static function setUpBeforeClass() {
         include('test/test.config.php');
         self::$config = $wakkaConfig;
-        self::setup_database();
+        self::setUpDatabase();
     }
  
     public static function tearDownAfterClass() {
-        self::teardown_database();
+        self::tearDownDatabase();
     }
     
-    public static function setup_database() {
+    public static function setUpDatabase() {
         # Create db connection
         $host = sprintf('mysql:host=%s', self::$config['mysql_host']);
         self::$pdo = new PDO($host, self::$config['mysql_user'],
@@ -52,7 +52,7 @@ class WikkaWebServiceTest extends PHPUnit_Framework_TestCase {
         self::$pdo->query(sprintf('USE %s', self::$config['mysql_database']));
     }
     
-    public static function teardown_database() {
+    public static function tearDownDatabase() {
         self::$pdo->exec(sprintf('DROP DATABASE `%s`',
             self::$config['mysql_database']));
         self::$pdo = NULL;
@@ -69,6 +69,11 @@ class WikkaWebServiceTest extends PHPUnit_Framework_TestCase {
     /**
      * Tests
      */
+    public function testPrepareRequest() {
+        $request = $this->web_service->prepare_request();
+        $this->assertInstanceOf('WikkaRequest', $request);
+    }
+    
     public function testLoadConfig() {
         # Check PDO property (should throw exception if not able to load)
         $this->assertInstanceOf('PDO', $this->web_service->pdo);

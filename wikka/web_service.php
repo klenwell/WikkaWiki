@@ -13,6 +13,9 @@
  * @copyright   Copyright 2014  Tom Atwell <klenwell@gmail.com>
  *  
  */
+require_once('wikka/request.php');
+
+
 
 class WikkaWebService {
     
