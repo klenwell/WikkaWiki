@@ -34,7 +34,7 @@ class WikkaWebService {
             error_reporting(E_ALL);
         }
         else {
-            error_reporting(E_ALL & !E_DEPRECATED);
+            error_reporting(WIKKA_ERROR_LEVEL);
         }
         
         $this->verify_requirements();
