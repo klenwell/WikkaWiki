@@ -6,25 +6,61 @@
  *
  * This should be the first module loaded.
  */
-
+#
+# Minimum Requirements
+#
 define('WIKKA_ERROR_LEVEL', E_ALL ^ E_DEPRECATED);
 define('MINIMUM_PHP_VERSION', '5.0');
 define('MINIMUM_MYSQL_VERSION', '4.1');
 define('ERROR_WRONG_PHP_VERSION', 'Wikka requires PHP %s or higher!');
  
+#
+# Config
+#
 define('WIKKA_CONFIG_PATH', 'wikka.config.php');
 define('WIKKA_DEFAULT_CONFIG_PATH', 'wikka/default.config.php');
 define('WIKKA_MULTI_CONFIG_PATH', 'multi.config.php');
 
+#
+# Paths
+#
 define('WIKKA_LIBRARY_PATH', 'lib');
 define('PATH_DIVIDER', ',');
 
+#
+# Cookies
+#
 define('BASIC_COOKIE_NAME', 'Wikkawiki');
 define('DEFAULT_COOKIE_EXPIRATION_HOURS', 90 * 24);
+define('PERSISTENT_COOKIE_EXPIRY', 7776000);
 
-define('ID_LENGTH', 10);
+#
+# Regex Patterns
+#   PATTERN_INVALID_ID_CHARS: Defines characters that are not valid for an ID.
+#   PATTERN_REPLACE_IMG_WITH_ALTTEXT: To be used in replacing img tags having
+#       an alt attribute with the value of the alt attribute, trimmed.
+#       - $result[0]: the entire img tag
+#       - $result[1]: If the alt attribute exists, this holds the single
+#           character used to delimit the alt string.
+#       - $result[2]: The content of the alt attribute, after it has been
+#           trimmed, if the attribute exists.
+#
 define('SHOW_INVALID_CHARS', '| ? = &lt; &gt; / \ " % &amp;');
+define('PATTERN_INVALID_ID_CHARS', '/[^A-Za-z0-9_:.-\s]/');
+define('PATTERN_REPLACE_IMG_WITH_ALTTEXT',
+    '/<img[^>]*(?<=\\s)alt=("|\')\s*(.*?)\s*\\1.*?>/');
 
+#
+# Miscellaneous
+#
+define('ID_LENGTH', 10);
+define('MAX_HOSTNAME_LENGTH_DISPLAY', 50);
+define('SPAMLOG_SIG','-@-');
+define('WIKKA_URL_EXTENSION', 'wikka.php?wakka=');
+
+#
+# Long Error Messages
+#
 $ERROR_MYSQL_SUPPORT_MISSING = <<<HEREDOC
 PHP can't find MySQL support but Wikka requires MySQL. Please check the output
 of <tt>phpinfo()</tt> in a php document for MySQL support: it needs to be

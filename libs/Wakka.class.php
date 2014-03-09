@@ -24,51 +24,6 @@
  * @copyright Copyright 2004-2005, Jason Tourtelotte <wikka-admin@jsnx.com>
  * @copyright Copyright 2006-2014 {@link http://wikkawiki.org/CreditsPage Wikka Development Team}
  */
-
-/**
- * Time to live for client-side cookies in seconds (90 days)
- */
-if(!defined('PERSISTENT_COOKIE_EXPIRY')) define('PERSISTENT_COOKIE_EXPIRY', 7776000);
-/**
- * Maximum length for displayed hostnames
- */
-if (!defined('MAX_HOSTNAME_LENGTH_DISPLAY')) define('MAX_HOSTNAME_LENGTH_DISPLAY', 50);
-/**
- * Length to use for generated part of id attribute.
- */
-if (!defined('ID_LENGTH')) define('ID_LENGTH',10);        // @@@ maybe make length configurable
-/**#@-*/
-
-/**
- * Signature for a spamlog metadata line; MUST look different than Wikka markup!
- */
-define('SPAMLOG_SIG','-@-');
-
-/**#@+
- * String constant defining a regular expresion pattern.
- */
-/**
- * To be used in replacing img tags having an alt attribute with the value of the alt attribute, trimmed.
- * - $result[0] : the entire img tag
- * - $result[1] : If the alt attribute exists, this holds the single character used to delimit the alt string.
- * - $result[2] : The content of the alt attribute, after it has been trimmed, if the attribute exists.
- */
-if (!defined('PATTERN_REPLACE_IMG_WITH_ALTTEXT')) define('PATTERN_REPLACE_IMG_WITH_ALTTEXT', '/<img[^>]*(?<=\\s)alt=("|\')\s*(.*?)\s*\\1.*?>/');
-/**
- * Defines characters that are not valid for an ID.
- * Defined as the negation of a character class comprising the characters that
- * <i>are</i> valid in an ID. All but valid characters will be stripped when deriving
- * an ID froma provided string.
- */
-if (!defined('PATTERN_INVALID_ID_CHARS')) define ('PATTERN_INVALID_ID_CHARS', '/[^A-Za-z0-9_:.-\s]/');
-/**#@-*/
-
-/**#@+
- * String constant defining a regularly used bit of constant text.
- */
-if (!defined('WIKKA_URL_EXTENSION')) define('WIKKA_URL_EXTENSION', 'wikka.php?wakka=');
-/**#@-*/
-
 /**
  * The Wikka core class.
  *
