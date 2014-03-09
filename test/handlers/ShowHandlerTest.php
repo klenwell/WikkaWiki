@@ -8,7 +8,7 @@
  * > phpunit --stderr test/handlers/ShowHandlerTest
  * 
  */
-require_once('test/test.config.php');
+require_once('wikka/constants.php');
 require_once('libs/Compatibility.lib.php');
 require_once('3rdparty/core/php-gettext/gettext.inc');
 require_once('lang/en/en.inc.php');
@@ -27,8 +27,8 @@ class ShowHandlerTest extends PHPUnit_Framework_TestCase {
      * Test Fixtures
      */
     public static function setUpBeforeClass() {
-        global $wikkaTestConfig;
-        self::$config = $wikkaTestConfig;
+        require('test/test.config.php');
+        self::$config = $wakkaConfig;
         
         # Must set $config for setup/database.php
         $config = self::$config;

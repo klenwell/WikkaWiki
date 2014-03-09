@@ -29,7 +29,7 @@ class WikkaWebServiceTest extends PHPUnit_Framework_TestCase {
      */
     public static function setUpBeforeClass() {
         include('test/test.config.php');
-        self::$config = $wikkaTestConfig;
+        self::$config = $wakkaConfig;
         self::setup_database();
     }
  
@@ -69,7 +69,17 @@ class WikkaWebServiceTest extends PHPUnit_Framework_TestCase {
     /**
      * Tests
      */
-    public function testInstantiation() {
+    public function testLoadConfig() {
+        # Check PDO property (should throw exception if not able to load)
+        $this->assertInstanceOf('PDO', $this->web_service->pdo);
+        
+        # Test test.config.php loaded
+        $this->assertArrayHasKey('mysql_database', $this->web_service->config);
+        $this->assertEquals('wikkawiki_test', $this->web_service->config['mysql_database']);
+    }
+    
+    public function testInstantiates() {
         $this->assertInstanceOf('WikkaWebService', $this->web_service);
+        $this->assertEquals('wikkawiki_test', self::$config['mysql_database']);
     }
 }

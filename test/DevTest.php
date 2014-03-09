@@ -15,7 +15,6 @@
  * - http://phpunit.de/manual/3.7/en/installation.html
  * - http://book.cakephp.org/2.0/en/development/testing.html#installing-phpunit
  */
-require_once('test/test.config.php');
 require_once('libs/Wakka.class.php');
 require_once('version.php');
 
@@ -30,8 +29,8 @@ class ReadMeTest extends PHPUnit_Framework_TestCase {
      * Test Fixtures
      */
     public static function setUpBeforeClass() {
-        global $wikkaTestConfig;
-        self::$config = $wikkaTestConfig;
+        require('test/test.config.php');
+        self::$config = $wakkaConfig;
         
         # create db connection
         $host = sprintf('mysql:host=%s', self::$config['mysql_host']);

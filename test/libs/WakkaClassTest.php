@@ -23,9 +23,9 @@
  * - Uncategorized Tests
  * 
  */
-require_once('test/test.config.php');
+require_once('wikka/constants.php');
 require_once('libs/Compatibility.lib.php');
-require_once('./3rdparty/core/php-gettext/gettext.inc');
+require_once('3rdparty/core/php-gettext/gettext.inc');
 require_once('libs/Wakka.class.php');
 require_once('version.php');
 
@@ -40,8 +40,8 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
      * Test Fixtures
      */
     public static function setUpBeforeClass() {
-        global $wikkaTestConfig;
-        self::$config = $wikkaTestConfig;
+        require('test/test.config.php');
+        self::$config = $wakkaConfig;
         
         # Must set $config for setup/database.php
         $config = self::$config;

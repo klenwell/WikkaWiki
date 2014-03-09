@@ -80,7 +80,7 @@ class WikkaWebService {
     private function load_config($config_file_path) {
         # Load config settings
         require(WIKKA_DEFAULT_CONFIG_PATH);
-        include(WIKKA_CONFIG_PATH);
+        include($config_file_path);
         $wakkaConfig = array_merge($wakkaDefaultConfig, $wakkaConfig);
         
         # Load language defaults

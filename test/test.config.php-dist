@@ -16,7 +16,7 @@
  * you wish to keep.
  * 
  */
-$wikkaTestConfig = array(
+$wakkaConfig = array(
 
     # database
     'mysql_host'                => 'localhost',
