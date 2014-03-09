@@ -13,22 +13,51 @@
  * To run all tests:
  * > phpunit --stderr test
  */
+require_once('wikka/constants.php');
 require_once('wikka/web_service.php');
 
 
 class WikkaWebServiceTest extends PHPUnit_Framework_TestCase {
+    
+    protected static $pdo;
+    protected static $config;
  
     /**
      * Test Fixtures
      */
     public static function setUpBeforeClass() {
+        include('test/test.config.php');
+        self::$config = $wikkaTestConfig;
+        self::setup_database();
     }
  
-    public static function tearDownAfterClass() {       
+    public static function tearDownAfterClass() {
+        self::teardown_database();
+    }
+    
+    public static function setup_database() {
+        # Create db connection
+        $host = sprintf('mysql:host=%s', self::$config['mysql_host']);
+        self::$pdo = new PDO($host, self::$config['mysql_user'],
+            self::$config['mysql_password']);
+        self::$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+        # Create database
+        self::$pdo->exec(sprintf('DROP DATABASE IF EXISTS `%s`',
+            self::$config['mysql_database']));
+        self::$pdo->exec(sprintf('CREATE DATABASE `%s`',
+            self::$config['mysql_database']));
+        self::$pdo->query(sprintf('USE %s', self::$config['mysql_database']));
+    }
+    
+    public static function teardown_database() {
+        self::$pdo->exec(sprintf('DROP DATABASE `%s`',
+            self::$config['mysql_database']));
+        self::$pdo = NULL;
     }
     
     public function setUp() {
-        $this->web_service = new WikkaWebService();
+        $this->web_service = new WikkaWebService('test/test.config.php');
     }
     
     public function tearDown() {

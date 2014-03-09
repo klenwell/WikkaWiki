@@ -17,11 +17,20 @@
 #
 require_once('wikka/constants.php');
 require_once('wikka/web_service.php');
+require_once('wikka/errors.php');
 
 #
 # Main Script
 #
 $webservice = new WikkaWebService();
-$response = $webservice->process_request();
-$reponse->send_headers();
+
+try {
+    $request = $webservice->prepare_request();
+    $response = $webservice->process_request($request);
+}
+catch (Exception $e) {
+    $response = $webservice->process_error($e);
+}
+
+$response->send_headers();
 print($response->body);
