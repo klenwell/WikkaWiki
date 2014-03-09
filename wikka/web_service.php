@@ -15,20 +15,42 @@
  */
 
 class WikkaWebService {
+    
+    /*
+     * Properties
+     */
+    public $config = array();
+    public $pdo = null;
+    public $request = null;
+    
+    private $route = null;
 
     /*
      * Constructor
      */
     public function __construct() {
+        $this->verify_requirements();
+        $this->config = $this->load_config();
+        $this->pdo = $this->connect_to_db();
     }
     
     /*
      * Public Methods
      */
     public function process_request() {
+        $this->request = new WikkaRequest();
+        $this->route = $this->route_request();
     }
     
     /*
      * Private Methods
      */
+    private function verify_requirements() {
+    }
+    
+    private function load_config() {
+    }
+    
+    private function connect_to_db() {
+    }
 }
