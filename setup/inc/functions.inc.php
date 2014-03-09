@@ -222,3 +222,14 @@ function SelectTheme($default_theme='light')
 	}
 	echo '</select>';
 }
+
+function is_authenticated_for_install() {
+	# read password from lockfile
+	$lines = file("locked");
+	$lockpw = trim($lines[0]);
+	
+	return isset($_SERVER["PHP_AUTH_USER"]) && (
+		($_SERVER["PHP_AUTH_USER"] == "admin") &&
+		($_SERVER["PHP_AUTH_PW"] == $lockpw)
+	);
+}

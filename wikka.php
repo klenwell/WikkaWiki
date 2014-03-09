@@ -16,15 +16,15 @@
  * @see /docs/Wikka.LICENSE
  * @filesource
  *
- * @author	{@link http://www.mornography.de/ Hendrik Mans}
- * @author	{@link http://wikkawiki.org/JsnX Jason Tourtelotte}
- * @author	{@link http://wikkawiki.org/JavaWoman Marjolein Katsma}
- * @author	{@link http://wikkawiki.org/NilsLindenberg Nils Lindenberg}
- * @author	{@link http://wikkawiki.org/DotMG Mahefa Randimbisoa}
- * @author	{@link http://wikkawiki.org/DarTar Dario Taraborelli}
- * @author	{@link http://wikkawiki.org/BrianKoontz Brian Koontz}
- * @author	{@link http://wikkawiki.org/TormodHaugen Tormod Haugen}
- * @author	{@link https://github.com/klenwell/WikkaWiki Tom Atwell}
+ * @author    {@link http://www.mornography.de/ Hendrik Mans}
+ * @author    {@link http://wikkawiki.org/JsnX Jason Tourtelotte}
+ * @author    {@link http://wikkawiki.org/JavaWoman Marjolein Katsma}
+ * @author    {@link http://wikkawiki.org/NilsLindenberg Nils Lindenberg}
+ * @author    {@link http://wikkawiki.org/DotMG Mahefa Randimbisoa}
+ * @author    {@link http://wikkawiki.org/DarTar Dario Taraborelli}
+ * @author    {@link http://wikkawiki.org/BrianKoontz Brian Koontz}
+ * @author    {@link http://wikkawiki.org/TormodHaugen Tormod Haugen}
+ * @author    {@link https://github.com/klenwell/WikkaWiki Tom Atwell}
  *
  * @copyright Copyright 2002-2003, Hendrik Mans <hendrik@mans.de>
  * @copyright Copyright 2004-2005, Jason Tourtelotte <wikka-admin@jsnx.com>
@@ -38,61 +38,47 @@
  *  Code has been farmed out to modules in wikka dir for cleaner organization.
  *  
  */
-require_once('wikka/error_reporting.php');
-
-require_once('version.php');    # Define current Wikka version
-
+#
+# Imports
+#
+require_once('libs/Compatibility.lib.php');
+require_once('libs/Wakka.class.php');
 require_once('wikka/helpers.php');
-
 require_once('wikka/constants.php');
 
-require_once('wikka/sanity_checks.php');
-
 #
-# Start timer and buffer
-# getmicrotime comes from libs/Compatibility.lib.php
+# Load Config (sets $wakkaConfig)
 #
+# Start time: getmicrotime comes from libs/Compatibility.lib.php
 global $tstart;
 $tstart = getmicrotime();
+ 
+# Load Config
+include('wikka/load_config.php');
+
+#
+# Install or Upgrade
+#
+if ( install_or_update_required() ) {
+    require_once('wikka/install.php');
+}
+
+#
+# Process Request (sets $page and $handler)
+#
+require_once('wikka/process_request.php');
+
+#
+# Prepare Response
+#
+# Start buffer and set Content-Type header (can be overridden by handlers)
 ob_start();
-
-require_once('wikka/magic_quotes.php');
-
-require_once('wikka/domain_path.php');
-
-require_once('wikka/default.config.php');
-
-require_once('wikka/load_config.php');
-
-require_once('wikka/language_defaults.php');
-
-if ( file_exists('multi.config.php') ) {
-    require_once('wikka/multisite.php');
-}
-
-require_once('wikka/install.php');
-
-require_once('wikka/session.php');
-
-require_once('wikka/page_handler.php');
-
-#
-# Create Wakka object and assert database access
-#
-$wakka = instantiate('Wakka', $wakkaConfig);
-
-if ( ! $wakka->dblink ) {
-    die(sprintf('<em class="error">%s</em>',
-        T_("Error: Unable to connect to the database.")));
-}
-
-require_once('wikka/save_session_id.php');
-
-#
-# Run engine to generate page output
-#
-# Add Content-Type header (can be overridden by handlers)
 header('Content-Type: text/html; charset=utf-8');
+
+# Create Wakka object and assert database access
+$wakka = instantiate('Wakka', $wakkaConfig);
+$wakka->assert_db_link();
+wakka_save_session_id_to_db($wakka);
 
 # Run Wikka engine and collect output
 $wakka->Run($page, $handler);

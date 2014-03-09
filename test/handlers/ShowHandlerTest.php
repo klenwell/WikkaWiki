@@ -10,7 +10,8 @@
  */
 require_once('test/test.config.php');
 require_once('libs/Compatibility.lib.php');
-require_once('./3rdparty/core/php-gettext/gettext.inc');
+require_once('3rdparty/core/php-gettext/gettext.inc');
+require_once('lang/en/en.inc.php');
 require_once('libs/Wakka.class.php');
 require_once('version.php');
 require_once('handlers/show.php');
