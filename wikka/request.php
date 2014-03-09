@@ -41,19 +41,13 @@ class WikkaRequest {
         
         # Set constant values: WIKKA_BASE_DOMAIN_URL, WIKKA_BASE_URL_PATH,
         # WIKKA_BASE_URL, and WIKKA_COOKIE_PATH
-        $this->constants['WIKKA_BASE_DOMAIN_URL'] = sprintf('%s%s%s',
-            $this->scheme, $this->domain, $this->port);
+        $this->constants['WIKKA_BASE_DOMAIN_URL'] = $this->build_base_domain_url();
         $this->constants['WIKKA_BASE_URL_PATH'] = str_replace('wikka.php', '',
             $_SERVER['SCRIPT_NAME']);
         $this->constants['WIKKA_BASE_URL'] = sprintf('%s%s',
             $this->constants['WIKKA_BASE_DOMAIN_URL'],
             $this->constants['WIKKA_BASE_URL_PATH']);
-        
-        $this->constants['WIKKA_COOKIE_PATH'] = '/';
-        if ( ($this->constants['WIKKA_BASE_URL'] !== '/') ) {
-            $this->constants['WIKKA_COOKIE_PATH'] = substr(
-                $this->constants['WIKKA_BASE_URL_PATH'], 0, -1);
-        }
+        $this->constants['WIKKA_COOKIE_PATH'] = $this->build_cookie_path();
     }
     
     /*
@@ -111,5 +105,28 @@ class WikkaRequest {
         }
         
         return $request_path;
+    }
+    
+    private function build_base_domain_url() {
+        if (($this->scheme == 'http://') && ($this->port == '80')) {
+            $port = '';
+        }
+        elseif (($this->scheme == 'https://') && ($this->port == '443')) {
+            $port = '';
+        }
+        else {
+            $port = sprintf(':%s', $this->port);
+        }
+        
+        return sprintf('%s%s%s', $this->scheme, $this->domain, $port);
+    }
+    
+    private function build_cookie_path() {
+        if ( ($this->constants['WIKKA_BASE_URL'] == '/') ) {
+            return '/';
+        }
+        else {
+            return substr($this->constants['WIKKA_BASE_URL_PATH'], 0, -1);
+        }
     }
 }

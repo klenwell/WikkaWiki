@@ -34,7 +34,6 @@ if ( TESTING_AS_CGI ) {
 # Imports
 #
 require_once('test/helpers.php');
-require_once('test/test.config.php');
 require_once('wikka/functions_legacy.php');
 require_once('wikka/functions.php');
 require_once('wikka/constants.php');
@@ -47,7 +46,8 @@ require_once('version.php');
 # Setup Database
 #
 # Must set $config for setup/database.php. $wikkaTestConfig from test/test.config.php
-$config = $wikkaTestConfig; 
+require_once('test/test.config.php');
+$config = $wakkaConfig; 
 require('setup/database.php');
 
 # Create db connection
@@ -82,11 +82,18 @@ $page_body = "Hello World!";
 $page_note = 'for wikka regression testing';
 $page_owner = 'TestUser';
 
+# Server Params
+$_SERVER = array(
+    'SERVER_NAME' => 'localhost',
+    'SERVER_PORT' => '80',
+    'QUERY_STRING' => 'wakka=HelloWorld',
+    'REQUEST_URI' => '/WikkaWiki/wikka.php?wakka=HelloWorld',
+    'SCRIPT_NAME' => '/WikkaWiki/wikka.php',
+    'REMOTE_ADDR' => '127.0.0.1'
+);
+
 # Additional Params
 $prefix = $mikka->GetConfigValue('table_prefix');
-$_SERVER['SERVER_NAME'] = 'localhost';
-$_SERVER['REMOTE_ADDR'] = '127.0.0.1';
-$_SERVER['SERVER_PORT'] = '80';
 $_GET['wakka'] = $page_tag;             # How wikka knows what page is wanted
 
 # Need to set some constants
@@ -141,20 +148,12 @@ foreach( $unexpected_output as $needle ) {
 #
 # Test Constants
 #
-assert_equal(WIKKA_BASE_DOMAIN_URL, 'http://localhost');
 assert_equal(WIKKA_LANG_PATH, 'lang/en');
 assert_equal(BASIC_COOKIE_NAME, 'Wikkawiki');
-
-if ( TESTING_AS_CGI ) {
-    assert_equal(WIKKA_BASE_URL, 'http://localhost');  
-}
-else {
-    # TODO(klenwell): Why the missing / after domain? Doesn't seem to be a
-    # issue in production. Root problem is probably a missing $_SERVER var.
-    assert_equal(WIKKA_BASE_URL, 'http://localhosttest/main/refactor.php');
-    assert_equal(WIKKA_BASE_URL_PATH, 'test/main/refactor.php');
-    assert_equal(WIKKA_COOKIE_PATH, 'test/main/refactor.ph');
-}
+assert_equal(WIKKA_BASE_DOMAIN_URL, 'http://localhost');
+assert_equal(WIKKA_BASE_URL, 'http://localhost/WikkaWiki/');
+assert_equal(WIKKA_BASE_URL_PATH, '/WikkaWiki/');
+assert_equal(WIKKA_COOKIE_PATH, '/WikkaWiki');
 
 #
 # Test Settings

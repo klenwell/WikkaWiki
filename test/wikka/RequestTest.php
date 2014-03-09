@@ -46,7 +46,19 @@ class WikkaRequestTest extends PHPUnit_Framework_TestCase {
     
     /**
      * Tests
-     */    
+     */
+    public function testDefineConstants() {
+    }
+    
+    public function testUrlExtraction() {
+        $this->assertEquals($_SERVER['SERVER_NAME'], $this->request->domain);
+        $this->assertEquals('http://', $this->request->scheme);
+        $this->assertFalse($this->request->rewrite_on);
+        $this->assertEquals('/WikkaWiki/wikka.php?wakka=HomePage',
+            $this->request->wikka_path);
+        $this->assertEquals('?wakka=', $this->request->wikka_query_string);
+    }
+    
     public function testInstantiates() {
         $this->assertInstanceOf('WikkaRequest', $this->request);
     }
