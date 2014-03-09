@@ -28,10 +28,19 @@ class WikkaRequestTest extends PHPUnit_Framework_TestCase {
     }
     
     public function setUp() {
+        $_SERVER = array(
+            'SERVER_NAME' => 'localhost',
+            'SERVER_PORT' => '80',
+            'QUERY_STRING' => 'wakka=HomePage',
+            'REQUEST_URI' => '/WikkaWiki/wikka.php?wakka=HomePage',
+            'SCRIPT_NAME' => '/WikkaWiki/wikka.php'
+        );
+        
         $this->request = new WikkaRequest();
     }
     
     public function tearDown() {
+        $_SERVER = array();
         $this->request = null;
     }
     
