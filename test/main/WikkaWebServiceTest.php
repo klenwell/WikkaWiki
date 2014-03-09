@@ -14,7 +14,9 @@
  * > phpunit --stderr test
  */
 require_once('wikka/constants.php');
+require_once('wikka/functions.php');
 require_once('wikka/web_service.php');
+require_once('wikka/errors.php');
 
 
 class WikkaWebServiceTest extends PHPUnit_Framework_TestCase {

@@ -16,6 +16,7 @@
 # Imports
 #
 require_once('wikka/constants.php');
+require_once('wikka/functions.php');
 require_once('wikka/web_service.php');
 require_once('wikka/errors.php');
 
