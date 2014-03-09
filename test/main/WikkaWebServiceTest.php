@@ -59,10 +59,19 @@ class WikkaWebServiceTest extends PHPUnit_Framework_TestCase {
     }
     
     public function setUp() {
+        $_SERVER = array(
+            'SERVER_NAME' => 'localhost',
+            'SERVER_PORT' => '80',
+            'QUERY_STRING' => 'wakka=HomePage',
+            'REQUEST_URI' => '/WikkaWiki/wikka.php?wakka=HomePage',
+            'SCRIPT_NAME' => '/WikkaWiki/wikka.php'
+        );
+        
         $this->web_service = new WikkaWebService('test/test.config.php');
     }
     
     public function tearDown() {
+        $_SERVER = array();
         $this->web_service = null;
     }
     
@@ -72,6 +81,11 @@ class WikkaWebServiceTest extends PHPUnit_Framework_TestCase {
     public function testPrepareRequest() {
         $request = $this->web_service->prepare_request();
         $this->assertInstanceOf('WikkaRequest', $request);
+    }
+    
+    public function testDisableMagicQuotes() {
+        $magic_quotes_are_enabled = $this->web_service->disable_magic_quotes_if_enabled();
+        $this->assertFalse($magic_quotes_are_enabled);
     }
     
     public function testLoadConfig() {

@@ -24,9 +24,12 @@ require_once('wikka/errors.php');
 # Main Script
 #
 $webservice = new WikkaWebService();
+$webservice->disable_magic_quotes_if_enabled();
 
 try {
     $request = $webservice->prepare_request();
+    $webservice->start_session();
+    $webservice->set_csrf_token();
     $response = $webservice->process_request($request);
 }
 catch (Exception $e) {

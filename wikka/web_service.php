@@ -48,9 +48,53 @@ class WikkaWebService {
     /*
      * Public Methods
      */
+    public function disable_magic_quotes_if_enabled() {
+        # Magic quotes are now disabled by default in .htaccess file. But
+        # just in case they're somehow still on, this workaround is provided.
+        # For additional information, see:
+        #   http://www.php.net/manual/en/security.magicquotes.disabling.php
+        #
+        # Returns boolean $magic_quotes_are_enabled. Magic quotes should be
+        # disabled in any case by the time this function returns.
+        $magic_quotes_are_enabled = get_magic_quotes_gpc();
+        
+        if ( $magic_quotes_are_enabled ) {
+            $process = array(&$_GET, &$_POST, &$_COOKIE, &$_REQUEST);
+            while (list($key, $val) = each($process)) {
+                foreach ($val as $k => $v) {
+                    unset($process[$key][$k]);
+                    if (is_array($v)) {
+                        $process[$key][stripslashes($k)] = $v;
+                        $process[] = &$process[$key][stripslashes($k)];
+                    } else {
+                        $process[$key][stripslashes($k)] = stripslashes($v);
+                    }
+                }
+            }
+            unset($process);
+        }
+        
+        return (bool) $magic_quotes_are_enabled;
+    }
+    
     public function prepare_request() {
         $request = new WikkaRequest();
+        $request->define_constants();
         return $request;
+    }
+    
+    public function start_session() {
+        session_set_cookie_params(0, WIKKA_COOKIE_PATH);
+        session_name(md5(BASIC_COOKIE_NAME . $this->config['wiki_suffix']));
+        session_start();
+    }
+    
+    public function set_csrf_token() {
+        # return token
+        if ( ! isset($_SESSION['CSRFToken']) ) {
+            $_SESSION['CSRFToken'] = sha1(getmicrotime());
+        }
+        return $_SESSION['CSRFToken'];
     }
     
     public function process_request($request) {
