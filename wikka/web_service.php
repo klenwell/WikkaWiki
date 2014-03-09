@@ -13,20 +13,6 @@
  * @copyright   Copyright 2014  Tom Atwell <klenwell@gmail.com>
  *  
  */
-class WikkaWebServiceError extends Exception
-{
-    // Redefine the exception so message isn't optional
-    public function __construct($message, $code=0) {
-        parent::__construct($message, $code);
-    }
-
-    // custom string representation of object
-    public function __toString() {
-        return sprintf("%s: %s\n", __CLASS__, $this->message);
-    }
-}
-
-
 
 class WikkaWebService {
     
@@ -35,8 +21,6 @@ class WikkaWebService {
      */
     public $config = array();
     public $pdo = null;
-    
-    private $route = array('page' => null, 'handler' => null);
 
     /*
      * Constructor
@@ -44,6 +28,13 @@ class WikkaWebService {
     public function __construct($config_file_path=null) {
         if ( ! $config_file_path ) {
            $config_file_path = WIKKA_CONFIG_PATH;
+        }
+        
+        if ( version_compare(phpversion(),'5.3','<') ) {
+            error_reporting(E_ALL);
+        }
+        else {
+            error_reporting(E_ALL & !E_DEPRECATED);
         }
         
         $this->verify_requirements();
@@ -75,10 +66,26 @@ class WikkaWebService {
      * Private Methods
      */
     private function verify_requirements() {
+        if ( ! function_exists('version_compare') ||
+            version_compare(phpversion(),MINIMUM_PHP_VERSION,'<') ) {
+            $message = sprintf(ERROR_WRONG_PHP_VERSION, MINIMUM_PHP_VERSION);
+            throw new WikkaWebServiceError($message);
+        }
+        
+        if ( ! function_exists('mysql_connect') ) {
+            throw new WikkaWebServiceError(ERROR_MYSQL_SUPPORT_MISSING);
+        }
     }
     
     private function load_config($config_file_path) {
+        require(WIKKA_DEFAULT_CONFIG_PATH);
         include(WIKKA_CONFIG_PATH);
+        $wakkaConfig = array_merge($wakkaDefaultConfig, $wakkaConfig);
+        
+        if ( file_exists(WIKKA_MULTI_CONFIG_PATH) ) {
+            require_once(WIKKA_MULTI_CONFIG_PATH);
+        }
+        
         return $wakkaConfig;
     }
     
@@ -91,5 +98,8 @@ class WikkaWebService {
         
         $pdo = new PDO($dsn, $user, $pass);
         return $pdo;
+    }
+    
+    private function route_request() {
     }
 }

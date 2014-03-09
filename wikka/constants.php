@@ -8,6 +8,8 @@
  */
 
 define('WIKKA_CONFIG_PATH', 'wikka.config.php');
+define('WIKKA_DEFAULT_CONFIG_PATH', 'wikka/default.config.php');
+define('WIKKA_MULTI_CONFIG_PATH', 'multi.config.php');
 define('BASIC_COOKIE_NAME', 'Wikkawiki');
 define('ID_LENGTH', 10);
 define('PATH_DIVIDER', ',');
