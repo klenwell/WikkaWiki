@@ -16,7 +16,7 @@
 require_once('wikka/web_service.php');
 
 
-class WikkaModulesTest extends PHPUnit_Framework_TestCase {
+class WikkaWebServiceTest extends PHPUnit_Framework_TestCase {
  
     /**
      * Test Fixtures
