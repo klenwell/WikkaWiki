@@ -33,13 +33,15 @@ if ( TESTING_AS_CGI ) {
 #
 # Imports
 #
+require_once('test/helpers.php');
+require_once('test/test.config.php');
+require_once('wikka/functions_legacy.php');
+require_once('wikka/functions.php');
+require_once('wikka/constants.php');
 require_once('libs/Compatibility.lib.php');
 require_once('3rdparty/core/php-gettext/gettext.inc');
 require_once('libs/Wakka.class.php');
 require_once('version.php');
-require_once('test/test.config.php');
-require_once('test/helpers.php');
-
 
 #
 # Setup Database
