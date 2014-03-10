@@ -39,24 +39,29 @@ class WikkaRequest {
         $this->wikka_path = $this->extract_wikka_request_path($this->rewrite_on);
         $this->wikka_query_string = ( $this->rewrite_on ) ? '' : '?wakka=';
         
-        # Set constant values: WIKKA_BASE_DOMAIN_URL, WIKKA_BASE_URL_PATH,
-        # WIKKA_BASE_URL, and WIKKA_COOKIE_PATH
-        $this->constants['WIKKA_BASE_DOMAIN_URL'] = $this->build_base_domain_url();
-        $this->constants['WIKKA_BASE_URL_PATH'] = str_replace('wikka.php', '',
+        # Build composite urls for constants
+        $this->wikka_base_domain_url = $this->build_base_domain_url();
+        $this->wikka_base_url_path = str_replace('wikka.php', '',
             $_SERVER['SCRIPT_NAME']);
-        $this->constants['WIKKA_BASE_URL'] = sprintf('%s%s',
-            $this->constants['WIKKA_BASE_DOMAIN_URL'],
-            $this->constants['WIKKA_BASE_URL_PATH']);
-        $this->constants['WIKKA_COOKIE_PATH'] = $this->build_cookie_path();
+        $this->wikka_base_url = $this->wikka_base_domain_url .
+            $this->wikka_base_url_path;
+        
+        # Cookie path
+        $this->wikka_cookie_path = $this->build_cookie_path();
     }
     
     /*
      * Public Methods
      */
     public function define_constants() {
-        foreach ($this->constants as $constant => $value) {
-            define_constant_if_not_defined($constant, $value);
-        }
+        define_constant_if_not_defined('WIKKA_BASE_DOMAIN_URL',
+            $this->wikka_base_domain_url);
+        define_constant_if_not_defined('WIKKA_BASE_URL_PATH',
+            $this->wikka_base_url_path);
+        define_constant_if_not_defined('WIKKA_BASE_URL',
+            $this->wikka_base_url);
+        define_constant_if_not_defined('WIKKA_COOKIE_PATH',
+            $this->wikka_cookie_path);
     }
     
     /*
@@ -122,11 +127,11 @@ class WikkaRequest {
     }
     
     private function build_cookie_path() {
-        if ( ($this->constants['WIKKA_BASE_URL'] == '/') ) {
+        if ( ($this->wikka_base_url == '/') ) {
             return '/';
         }
         else {
-            return substr($this->constants['WIKKA_BASE_URL_PATH'], 0, -1);
+            return substr($this->wikka_base_url_path, 0, -1);
         }
     }
 }

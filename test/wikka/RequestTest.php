@@ -13,6 +13,7 @@
  * To run all tests:
  * > phpunit --stderr test
  */
+require_once('wikka/functions.php');
 require_once('wikka/request.php');
 
 
@@ -48,6 +49,12 @@ class WikkaRequestTest extends PHPUnit_Framework_TestCase {
      * Tests
      */
     public function testDefineConstants() {
+        $this->request->define_constants();
+        
+        $this->assertEquals('http://localhost/WikkaWiki/', WIKKA_BASE_URL);
+        $this->assertEquals('http://localhost', WIKKA_BASE_DOMAIN_URL);
+        $this->assertEquals('/WikkaWiki/', WIKKA_BASE_URL_PATH);
+        $this->assertEquals('/WikkaWiki', WIKKA_COOKIE_PATH);
     }
     
     public function testUrlExtraction() {
