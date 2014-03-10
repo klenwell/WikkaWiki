@@ -37,4 +37,4 @@ catch (Exception $e) {
 }
 
 $response->send_headers();
-print($response->body);
+$response->output_body();

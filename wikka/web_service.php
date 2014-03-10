@@ -100,6 +100,8 @@ class WikkaWebService {
     public function process_request($request) {
         $route = $this->route_request($request);
         $response = new WikkaResponse();
+        $response->run_wikka_handler($route['page'], $route['handler']);
+        $reponse->status_code = 200;
         return $response;
     }
     
@@ -153,5 +155,6 @@ class WikkaWebService {
     }
     
     private function route_request() {
+        $route = array('page' => null, 'handler' => null);
     }
 }

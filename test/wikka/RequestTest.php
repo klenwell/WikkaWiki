@@ -22,12 +22,6 @@ class WikkaRequestTest extends PHPUnit_Framework_TestCase {
     /**
      * Test Fixtures
      */
-    public static function setUpBeforeClass() {
-    }
- 
-    public static function tearDownAfterClass() {
-    }
-    
     public function setUp() {
         $_SERVER = array(
             'SERVER_NAME' => 'localhost',
@@ -48,7 +42,7 @@ class WikkaRequestTest extends PHPUnit_Framework_TestCase {
     /**
      * Tests
      */
-    public function testDefineConstants() {
+    public function testDefinesConstants() {
         $this->request->define_constants();
         
         $this->assertEquals('http://localhost/WikkaWiki/', WIKKA_BASE_URL);
@@ -57,7 +51,7 @@ class WikkaRequestTest extends PHPUnit_Framework_TestCase {
         $this->assertEquals('/WikkaWiki', WIKKA_COOKIE_PATH);
     }
     
-    public function testUrlExtraction() {
+    public function testParsesRequestData() {
         $this->assertEquals($_SERVER['SERVER_NAME'], $this->request->domain);
         $this->assertEquals('http://', $this->request->scheme);
         $this->assertFalse($this->request->rewrite_on);
