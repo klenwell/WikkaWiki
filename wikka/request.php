@@ -20,12 +20,15 @@ class WikkaRequest {
      */
     public $domain = '';
     public $scheme = '';
-    public $port = 0;
+    public $port = '';
     public $wikka_path = '';
     public $query_string = '';
     public $rewrite_on = false;
     
-    private $constants = array();
+    public $wikka_base_domain_url = '';
+    public $wikka_base_url_path = '';
+    public $wikka_base_url = '';
+    public $wikka_cookie_path = '';
 
     /*
      * Constructor
