@@ -13,7 +13,7 @@
  * REFERENCES
  *
  */
-class WikkaReponse {
+class WikkaResponse {
     /*
      * Properties
      */
