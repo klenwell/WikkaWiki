@@ -18,11 +18,18 @@ class WikkaResponseTest extends PHPUnit_Framework_TestCase {
      * Test Fixtures
      */
     public function setUp() {
-        $this->response = new WikkaResponse();
+        $config = $this->setUpConfig();
+        $this->response = new WikkaResponse($config);
     }
     
     public function tearDown() {
         $this->response = null;
+    }
+    
+    private function setUpConfig() {
+        include('wikka/default.config.php');
+        include('test/test.config.php');
+        return array_merge($wakkaDefaultConfig, $wakkaConfig);
     }
     
     /**

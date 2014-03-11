@@ -99,7 +99,7 @@ class WikkaWebService {
     
     public function process_request($request) {
         $route = $this->route_request($request);
-        $response = new WikkaResponse();
+        $response = new WikkaResponse($this->config);
         $response->run_wikka_handler($route['page'], $route['handler']);
         $reponse->status_code = 200;
         return $response;

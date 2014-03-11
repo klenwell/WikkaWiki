@@ -19,19 +19,28 @@ class WikkaResponse {
      */
     public $status = 0;
     
+    private $config = null;
     private $headers = array();
     private $body = '';
 
     /*
      * Constructor
      */
-    public function __construct() {
+    public function __construct($config) {
+        $this->config = $config;
     }
     
     /*
      * Public Methods
      */
     public function run_wikka_handler($page, $handler) {
+        $wikka = new WikkaBlob($this->config);
+        $wikka->open_buffer();
+        $wikka->connect_to_db();
+        $wikka->save_session_to_db();
+        $wikka->Run($page, $handler);
+        $this->body = $wikka->close_buffer();
+        return $wikka;
     }
     
     public function set_header($key, $value) {
@@ -51,8 +60,8 @@ class WikkaResponse {
         }
     }
     
-    public function output_body() {
-        print $this->body;
+    public function render() {
+        print($this->body);
     }
     
     /*
