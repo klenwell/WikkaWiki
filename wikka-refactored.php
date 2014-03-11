@@ -15,10 +15,15 @@
 #
 # Imports
 #
+require_once('version.php');
 require_once('wikka/constants.php');
 require_once('wikka/functions.php');
 require_once('wikka/web_service.php');
 require_once('wikka/errors.php');
+
+# TODO(klenwell): refactor and remove this. The wakka formatter class
+# requires this library for the instantiate function.
+require_once('libs/Compatibility.lib.php');
 
 #
 # Main Script

@@ -78,6 +78,14 @@ class WikkaWebServiceTest extends PHPUnit_Framework_TestCase {
     /**
      * Tests
      */
+    public function testRouteRequest() {
+        $request = new WikkaRequest();
+        $request->params['wakka'] = 'HomePage/foo';
+        $route = $this->web_service->route_request($request);
+        $this->assertEquals($route['page'], 'HomePage');
+        $this->assertEquals($route['handler'], 'foo');
+    }
+    
     public function testPrepareRequest() {
         $request = $this->web_service->prepare_request();
         $this->assertInstanceOf('WikkaRequest', $request);

@@ -14,6 +14,8 @@
  *  
  */
 require_once('wikka/request.php');
+require_once('wikka/response.php');
+require_once('libs/Wikka.class.php');
 
 
 
@@ -118,7 +120,7 @@ class WikkaWebService {
         $handler = null;
         
         # Get wakka param (strip first slash)
-        $wakka_param = $request->params['wakka'];
+        $wakka_param = $_GET['wakka'];
         $wakka_param = preg_replace("/^\//", "", $wakka_param);
         
         # Extract pagename and handler from URL
