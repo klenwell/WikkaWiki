@@ -24,6 +24,7 @@ class WikkaRequest {
     public $wikka_path = '';
     public $query_string = '';
     public $rewrite_on = false;
+    public $params = array();
     
     public $wikka_base_domain_url = '';
     public $wikka_base_url_path = '';
@@ -70,6 +71,12 @@ class WikkaRequest {
     /*
      * Private Methods
      */
+    private function extract_params() {
+        # TODO: Compare to something like CakePhp. Is there anything else to
+        # do here?
+        return $_GET;
+    }
+    
     private function extract_scheme() {
         # See http://stackoverflow.com/a/5100206/1093087
         if ( ! empty($_SERVER['HTTPS']) ) {

@@ -111,6 +111,42 @@ class WikkaWebService {
         return $response;
     }
     
+    public function route_request($request) {
+        # Return associative array with page/handler values. This could be a
+        # private function, but I'd prefer to unit test it.
+        $page = null;
+        $handler = null;
+        
+        # Get wakka param (strip first slash)
+        $wakka_param = $request->params['wakka'];
+        $wakka_param = preg_replace("/^\//", "", $wakka_param);
+        
+        # Extract pagename and handler from URL
+        # Note this splits at the FIRST / so $handler may contain one or more
+        # slashes; This is not allowed, and ultimately handled in the Handler()
+        # method. [SEC]
+        $matches = array();
+        if ( preg_match("#^(.+?)/(.*)$#", $wakka_param, $matches) ) {
+            list(, $page, $handler) = $matches;
+        }
+        elseif ( preg_match("#^(.*)$#", $wakka_param, $matches) ) {
+            list(, $page) = $matches;
+        }
+        
+        # Fix lowercase mod_rewrite bug: URL rewriting makes pagename lowercase. #135
+        if ( (isset($_SERVER['REQUEST_URI'])) && (strtolower($page) == $page) ) {
+            $pattern = preg_quote($page, '/');
+            $decoded_uri = urldecode($_SERVER['REQUEST_URI']);
+            $match_url = array();
+            
+            if ( preg_match("/($pattern)/i", $decoded_uri, $match_url) ) {
+                $page = $match_url[1];
+            }
+        }
+        
+        return array('page' => $page, 'handler' => $handler);
+    }
+    
     /*
      * Private Methods
      */
@@ -152,9 +188,5 @@ class WikkaWebService {
         
         $pdo = new PDO($dsn, $user, $pass);
         return $pdo;
-    }
-    
-    private function route_request() {
-        $route = array('page' => null, 'handler' => null);
     }
 }
