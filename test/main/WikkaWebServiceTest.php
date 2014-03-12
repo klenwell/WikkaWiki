@@ -13,72 +13,126 @@
  * To run all tests:
  * > phpunit --stderr test
  */
+require_once('version.php');
 require_once('wikka/constants.php');
 require_once('wikka/functions.php');
 require_once('wikka/web_service.php');
 require_once('wikka/errors.php');
+require_once('libs/Compatibility.lib.php');
 
 
 class WikkaWebServiceTest extends PHPUnit_Framework_TestCase {
-    
-    protected static $pdo;
-    protected static $config;
  
     /**
      * Test Fixtures
      */
-    public static function setUpBeforeClass() {
-        include('test/test.config.php');
-        self::$config = $wakkaConfig;
-        self::setUpDatabase();
-    }
- 
-    public static function tearDownAfterClass() {
-        self::tearDownDatabase();
-    }
-    
-    public static function setUpDatabase() {
-        # Create db connection
-        $host = sprintf('mysql:host=%s', self::$config['mysql_host']);
-        self::$pdo = new PDO($host, self::$config['mysql_user'],
-            self::$config['mysql_password']);
-        self::$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
-        # Create database
-        self::$pdo->exec(sprintf('DROP DATABASE IF EXISTS `%s`',
-            self::$config['mysql_database']));
-        self::$pdo->exec(sprintf('CREATE DATABASE `%s`',
-            self::$config['mysql_database']));
-        self::$pdo->query(sprintf('USE %s', self::$config['mysql_database']));
-    }
-    
-    public static function tearDownDatabase() {
-        self::$pdo->exec(sprintf('DROP DATABASE `%s`',
-            self::$config['mysql_database']));
-        self::$pdo = NULL;
-    }
-    
-    public function setUp() {
-        $_SERVER = array(
-            'SERVER_NAME' => 'localhost',
-            'SERVER_PORT' => '80',
-            'QUERY_STRING' => 'wakka=HomePage',
-            'REQUEST_URI' => '/WikkaWiki/wikka.php?wakka=HomePage',
-            'SCRIPT_NAME' => '/WikkaWiki/wikka.php'
-        );
-        
+    public function setUp() {        
+        $this->config = $this->setUpConfig();
+        $this->pdo = $this->setUpDatabase();
+        $this->setUpMockServerEnvironment();
         $this->web_service = new WikkaWebService('test/test.config.php');
     }
     
     public function tearDown() {
         $_SERVER = array();
         $this->web_service = null;
+        $this->tearDownDatabase();
+        $this->config = array();
     }
+    
+    private function setUpDatabase() {
+        # Create db connection
+        $host = sprintf('mysql:host=%s', $this->config['mysql_host']);
+        $pdo = new PDO($host, $this->config['mysql_user'],
+            $this->config['mysql_password']);
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+        # Create database
+        $pdo->exec(sprintf('DROP DATABASE IF EXISTS `%s`',
+            $this->config['mysql_database']));
+        $pdo->exec(sprintf('CREATE DATABASE `%s`',
+            $this->config['mysql_database']));
+        $pdo->query(sprintf('USE %s', $this->config['mysql_database']));
+        
+        return $pdo;
+    }
+    
+    private function setUpConfig() {
+        include('wikka/default.config.php');
+        include('test/test.config.php');
+        return array_merge($wakkaDefaultConfig, $wakkaConfig);
+    }
+    
+    private function setUpMockServerEnvironment() {
+        $_SERVER = array(
+            'SERVER_NAME'   => 'localhost',
+            'SERVER_PORT'   => '80',
+            'QUERY_STRING'  => 'wakka=HomePage',
+            'REQUEST_URI'   => '/WikkaWiki/wikka.php?wakka=HomePage',
+            'SCRIPT_NAME'   => '/WikkaWiki/wikka.php',
+            'REMOTE_ADDR'   => '127.0.0.1'
+        );
+        
+        $_GET = array(
+            'wakka'         => 'HomePage'
+        );
+    }
+    
+    private function tearDownDatabase() {
+        $this->pdo->exec(sprintf('DROP DATABASE `%s`',
+            $this->config['mysql_database']));
+        $this->pdo = NULL;
+    }
+    
+    private function setUpTables() {
+        $config = $this->config;
+        require('setup/database.php');
+        
+        # Create tables
+        foreach ($install_queries as $key => $query) {
+            $this->pdo->exec($query);
+        }
+    }
+    
+    private function createPage($name, $body, $owner="Public", $note='') {
+        # Insert page
+        $sql_f = 'INSERT INTO %spages (tag, body, owner, note, latest, time) ' .
+            'VALUES (:tag, :body, :owner, :note, "Y", NOW())';
+        $sql = sprintf($sql_f, $this->config['table_prefix']);
+        $query = $this->pdo->prepare($sql);
+        $inserted = $query->execute(array(':tag' => $name,
+                                          ':body' => $body,
+                                          ':owner' => $owner,
+                                          ':note' => $note));
+        $this->assertTrue($inserted);
+        
+        # Insert ACLs to make readable
+        $sql_f = 'INSERT INTO %sacls (page_tag, write_acl, read_acl) '.
+            'VALUES (:tag, "*", "*")';
+        $sql = sprintf($sql_f, $this->config['table_prefix']);
+        $query = $this->pdo->prepare($sql);
+        $inserted = $query->execute(array(':tag' => $name));
+        $this->assertTrue($inserted);
+    }
+    
     
     /**
      * Tests
      */
     public function testProcessRequest() {
+        $page_body = 'Lorem ipsum etc...';
+        $page_note = 'for unit test';
+        $page_owner = 'TestUser';
+        
+        $this->setUpTables();
+        $this->createPage('HomePage', $page_body, $page_note);
+        $request = $this->web_service->prepare_request();
+        $this->web_service->start_session();
+        $response = $this->web_service->process_request($request);
+        
+        $this->assertEquals(200, $response->status);
+        $this->assertNotEmpty($response->headers['ETag']);
+        $this->assertContains($page_body, $response->body);
     }
     
     public function testRouteRequest() {
@@ -116,6 +170,6 @@ class WikkaWebServiceTest extends PHPUnit_Framework_TestCase {
     
     public function testInstantiates() {
         $this->assertInstanceOf('WikkaWebService', $this->web_service);
-        $this->assertEquals('wikkawiki_test', self::$config['mysql_database']);
+        $this->assertEquals('wikkawiki_test', $this->config['mysql_database']);
     }
 }

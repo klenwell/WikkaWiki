@@ -168,7 +168,6 @@ class WikkaWebService {
         return $content;
     }
     
-    
     private function verify_requirements() {
         if ( ! function_exists('version_compare') ||
             version_compare(phpversion(),MINIMUM_PHP_VERSION,'<') ) {

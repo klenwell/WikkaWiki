@@ -19,8 +19,7 @@ class WikkaResponse {
      */
     public $status = 0;
     public $body = '';
-    
-    private $headers = array();
+    public $headers = array();
 
     /*
      * Constructor
