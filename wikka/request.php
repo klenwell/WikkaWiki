@@ -35,6 +35,10 @@ class WikkaRequest {
      * Constructor
      */
     public function __construct() {
+        # Set params
+        $this->params = $this->extract_params();
+        
+        # Parse url
         $this->domain = $_SERVER['SERVER_NAME'];
         $this->port = $_SERVER['SERVER_PORT'];
         $this->query_string = $_SERVER['QUERY_STRING'];
@@ -57,6 +61,15 @@ class WikkaRequest {
     /*
      * Public Methods
      */
+    public function get_param($key, $default=null) {
+        if ( isset($this->params[$key]) ) {
+            return $this->params[$key];
+        }
+        else {
+            return $default;
+        }
+    }
+    
     public function define_constants() {
         define_constant_if_not_defined('WIKKA_BASE_DOMAIN_URL',
             $this->wikka_base_domain_url);
@@ -74,7 +87,12 @@ class WikkaRequest {
     private function extract_params() {
         # TODO: Compare to something like CakePhp. Is there anything else to
         # do here?
-        return $_GET;
+        if ( $_GET ) {
+            return $_GET;
+        }
+        else {
+            return array();
+        }
     }
     
     private function extract_scheme() {

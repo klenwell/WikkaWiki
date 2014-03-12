@@ -78,6 +78,9 @@ class WikkaWebServiceTest extends PHPUnit_Framework_TestCase {
     /**
      * Tests
      */
+    public function testProcessRequest() {
+    }
+    
     public function testRouteRequest() {
         $request = new WikkaRequest();
         $request->params['wakka'] = 'HomePage/foo';

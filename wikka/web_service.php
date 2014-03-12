@@ -101,15 +101,20 @@ class WikkaWebService {
     
     public function process_request($request) {
         $route = $this->route_request($request);
-        $response = new WikkaResponse($this->config);
-        $response->run_wikka_handler($route['page'], $route['handler']);
-        $reponse->status_code = 200;
+        $content = $this->run_wikka_handler($route['page'], $route['handler']);
+
+        $response = new WikkaResponse($content, 200);
+        $response->set_header('Content-Type', 'text/html; charset=utf-8');
+        $response->set_header('Cache-Control', 'no-cache');
+        $response->set_header('ETag', md5($content));
+        $response->set_header('Content-Length:', strlen($content));
+        
         return $response;
     }
     
     public function process_error($error) {
-        $reponse = new WikkaResponse();
-        $response->status_code = 500;
+        $content = $error->getMessage();
+        $response = new WikkaResponse($content, 500);
         return $response;
     }
     
@@ -120,7 +125,7 @@ class WikkaWebService {
         $handler = null;
         
         # Get wakka param (strip first slash)
-        $wakka_param = $_GET['wakka'];
+        $wakka_param = $request->get_param('wakka', '');
         $wakka_param = preg_replace("/^\//", "", $wakka_param);
         
         # Extract pagename and handler from URL
@@ -152,6 +157,24 @@ class WikkaWebService {
     /*
      * Private Methods
      */
+    private function run_wikka_handler($page, $handler) {
+        $wikka = new WikkaBlob($this->config);
+        $wikka->open_buffer();
+        $wikka->connect_to_db();
+        $wikka->save_session_to_db();
+        
+        # TODO(klenwell): Ugh... the formatter class requires a $wakka var
+        # which is a global instance of the Wakka class. So we provide it here.
+        global $wakka;
+        $wakka = $wikka;
+        
+        # Now we can call Run method and get out output
+        $wikka->Run($page, $handler);
+        $content = $wikka->close_buffer();
+        return $content;
+    }
+    
+    
     private function verify_requirements() {
         if ( ! function_exists('version_compare') ||
             version_compare(phpversion(),MINIMUM_PHP_VERSION,'<') ) {
