@@ -127,6 +127,13 @@ SQLDOC;
         return $session_id;
     }
     
+    function globalize_this_as_wakka_var() {
+        # The formatter class requires a global $wakka var so we provide it
+        # here. This is deliberately smelly in an effort to hasten its removal.
+        global $wakka;
+        $wakka = $this;
+    }
+    
     /*
      * Overridden Methods
      */ 

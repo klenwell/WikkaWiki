@@ -159,16 +159,10 @@ class WikkaWebService {
      */
     private function run_wikka_handler($page, $handler) {
         $wikka = new WikkaBlob($this->config);
+        $wikka->globalize_this_as_wakka_var();
         $wikka->open_buffer();
         $wikka->connect_to_db();
         $wikka->save_session_to_db();
-        
-        # TODO(klenwell): Ugh... the formatter class requires a $wakka var
-        # which is a global instance of the Wakka class. So we provide it here.
-        global $wakka;
-        $wakka = $wikka;
-        
-        # Now we can call Run method and get out output
         $wikka->Run($page, $handler);
         $content = $wikka->close_buffer();
         return $content;
