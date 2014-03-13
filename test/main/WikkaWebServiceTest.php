@@ -143,6 +143,23 @@ class WikkaWebServiceTest extends PHPUnit_Framework_TestCase {
         $this->assertEquals($route['handler'], 'foo');
     }
     
+    public function testCSRFAuthentication() {
+        $this->web_service->set_csrf_token();
+        $_POST['CSRFToken'] = $_SESSION['CSRFToken'];
+        $_POST['card'] = 'from the edge';
+        
+        $request = $this->web_service->prepare_request();
+    }
+    
+    public function testCSRFAuthenticationError() {
+        $_POST['CSRFToken'] = 'foo';
+        $_POST['card'] = 'from the edge';
+        $this->web_service->set_csrf_token();
+        
+        $this->setExpectedException('WikkaCsrfError');
+        $request = $this->web_service->prepare_request();   # should raise error
+    }
+    
     public function testPrepareRequest() {
         $request = $this->web_service->prepare_request();
         $this->assertInstanceOf('WikkaRequest', $request);

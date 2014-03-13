@@ -81,6 +81,7 @@ class WikkaWebService {
     
     public function prepare_request() {
         $request = new WikkaRequest();
+        $request->authenticate_csrf_token();
         $request->define_constants();
         return $request;
     }

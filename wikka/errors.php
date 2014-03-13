@@ -24,3 +24,5 @@ class WikkaError extends Exception {
 }
 
 class WikkaWebServiceError extends WikkaError {}
+
+class WikkaCsrfError extends WikkaError {}
