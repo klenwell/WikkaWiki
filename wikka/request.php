@@ -113,8 +113,9 @@ class WikkaRequest {
      * Private Methods
      */
     private function extract_params() {
-        # TODO: Compare to something like CakePhp. Is there anything else to
-        # do here?
+        # Wakka::GetSafeVar used to sanitize GET vars. This is not
+        # recommended as a general solution. For proper usage, see:
+        # http://stackoverflow.com/a/1315779/1093087
         if ( $_GET ) {
             return $_GET;
         }
