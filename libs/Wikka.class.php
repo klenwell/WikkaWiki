@@ -136,5 +136,68 @@ SQLDOC;
     
     /*
      * Overridden Methods
-     */ 
+     */
+    #
+    # Loads handler giving precedence to new-style handlers
+    #
+    function Handler($handler) {        
+        # Extract part after slash as "a SORT of defense against directory
+        # traversal"
+        $handler_contains_slash = strpos($handler, '/') !== false;
+        if ( $handler_contains_slash ) {
+            $handler = substr($handler, strrpos($handler, '/')+1);
+        }
+        
+        # Check valid handler name syntax (similar to Action())
+        # @todo move regexp to library
+        # Allow letters, numbers, underscores, dashes and dots only (for now); see also #34
+        $valid_handler_name_regex = '/^([a-zA-Z0-9_.-]+)$/';
+        $handler_syntax_is_valid = preg_match($valid_handler_name_regex, $handler);
+        if ( ! $handler_syntax_is_valid ) {
+            return $this->wrapHandlerError(T_(
+                "Unknown handler; the handler name must not contain special characters."
+            ));
+        }
+        else {
+            # Valid handler name; now make sure it's lower case
+            $handler = strtolower($handler);
+        }
+        
+        # Locate handler. Look first for refactored handler. If not found, look
+        # in old location.
+        $use_refactored_handler = false;
+        $refactored_handler_location = sprintf('%s.php', $handler);
+        $default_handler_location = sprintf('%s%s%s.php',
+            $handler, DIRECTORY_SEPARATOR, $handler);
+        
+        # Build paths and see if they exist
+        $refactored_handler_path = $this->BuildFullpathFromMultipath(
+            $refactored_handler_location,
+            $this->GetConfigValue('handler_path')
+        );
+        $refactored_handler_exists = !(is_null($refactored_handler_path));
+        
+        $default_handler_exists = $this->BuildFullpathFromMultipath(
+            $default_handler_location,
+            $this->GetConfigValue('handler_path')
+        );
+        $default_handler_exists = !(is_null($default_handler_exists));
+        
+        if ( $refactored_handler_exists ) {
+            $HandlerClass = sprintf('%sHandler', ucwords($handler));
+            require_once($refactored_handler_path);
+            $refactored_handler = new $HandlerClass($this);
+            return $refactored_handler->handle();
+        }
+        elseif ( $default_handler_exists ) {
+            return $this->IncludeBuffered($default_handler_location, '', '',
+                $this->GetConfigValue('handler_path'));
+        }
+        else {
+            return $this->wrapHandlerError(sprintf(
+                T_("Sorry, [%s] is an unknown handler."),
+                $handler
+            ));
+        }
+    }
 }

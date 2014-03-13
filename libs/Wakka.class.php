@@ -3518,66 +3518,36 @@ class Wakka
      *            -OR- handle this in wikka.php through more intelligent parsing
      */
     function Handler($handler)
-    {        
-        # Extract part after slash as "a SORT of defense against directory
-        # traversal"
-        $handler_contains_slash = strpos($handler, '/') !== false;
-        if ( $handler_contains_slash ) {
-            $handler = substr($handler, strrpos($handler, '/')+1);
-        }
-        
-        # Check valid handler name syntax (similar to Action())
-        # @todo move regexp to library
-        # Allow letters, numbers, underscores, dashes and dots only (for now); see also #34
-        $regex_valid_handler_syntax = '/^([a-zA-Z0-9_.-]+)$/';
-        $handler_syntax_is_valid = preg_match($regex_valid_handler_syntax, $handler);
-        if ( ! $handler_syntax_is_valid ) {
-            return $this->wrapHandlerError(T_(
-                "Unknown handler; the handler name must not contain special characters."
-            ));
-        }
-        else {
-            # Valid handler name; now make sure it's lower case
-            $handler = strtolower($handler);
-        }
-        
-        # Locate handler. Look first for refactored handler. If not found, look
-        # in old location.
-        $use_refactored_handler = false;
-        $refactored_handler_location = sprintf('%s.php', $handler);
-        $default_handler_location = sprintf('%s%s%s.php',
-            $handler, DIRECTORY_SEPARATOR, $handler);
-        
-        # Build paths and see if they exist
-        $refactored_handler_path = $this->BuildFullpathFromMultipath(
-            $refactored_handler_location,
-            $this->GetConfigValue('handler_path')
-        );
-        $refactored_handler_exists = !(is_null($refactored_handler_path));
-        
-        $default_handler_exists = $this->BuildFullpathFromMultipath(
-            $default_handler_location,
-            $this->GetConfigValue('handler_path')
-        );
-        $default_handler_exists = !(is_null($default_handler_exists));
-        
-        if ( $refactored_handler_exists ) {
-            $HandlerClass = sprintf('%sHandler', ucwords($handler));
-            require_once($refactored_handler_path);
-            $refactored_handler = new $HandlerClass($this);
-            return $refactored_handler->handle();
-        }
-        elseif ( $default_handler_exists ) {
-            return $this->IncludeBuffered($default_handler_location, '', '',
-                $this->GetConfigValue('handler_path'));
-        }
-        else {
-            return $this->wrapHandlerError(sprintf(
-                T_("Sorry, [%s] is an unknown handler."),
-                $handler
-            ));
-        }
-    }
+	{
+		if (strstr($handler, '/'))
+		{
+			// Observations - MK 2007-03-30
+			// extract part after the last slash (if the whole request contained multiple slashes)
+			// @@@
+			// but should such requests be accepted in the first place?
+			// at least it is a SORT of defense against directory traversal (but not necessarily XSS)
+			// NOTE that name syntax check now takes care of XSS
+			$handler = substr($handler, strrpos($handler, '/')+1);
+		}
+		// check valid handler name syntax (similar to Action())
+		// @todo move regexp to library
+		if (!preg_match('/^([a-zA-Z0-9_.-]+)$/', $handler)) // allow letters, numbers, underscores, dashes and dots only (for now); see also #34
+		{
+			return $this->wrapHandlerError(T_("Unknown handler; the handler name must not contain special characters."));	# [SEC]
+		}
+		else
+		{
+			// valid handler name; now make sure it's lower case
+			$handler = strtolower($handler);
+		}
+		$handlerLocation = $handler.DIRECTORY_SEPARATOR.$handler.'.php';	#89
+                $tempOutput = $this->IncludeBuffered($handlerLocation, '', '', $this->GetConfigValue('handler_path'));
+                if (FALSE===$tempOutput)
+                {
+                        return $this->wrapHandlerError(sprintf(T_("Sorry, %s is an unknown handler."), '"'.$handlerLocation.'"'));
+                }
+                return $tempOutput;
+	}
 
         /**
          * Wrap a error message in a content div and an em tag, to avoid breaking the layout on handler errors.
