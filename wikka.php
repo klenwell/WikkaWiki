@@ -41,10 +41,11 @@
 #
 # Imports
 #
+require_once('wikka/functions_legacy.php');
+require_once('wikka/functions.php');
+require_once('wikka/constants.php');
 require_once('libs/Compatibility.lib.php');
 require_once('libs/Wakka.class.php');
-require_once('wikka/helpers.php');
-require_once('wikka/constants.php');
 
 #
 # Load Config (sets $wakkaConfig)

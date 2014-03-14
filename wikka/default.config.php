@@ -8,6 +8,7 @@
  */
 
 $wakkaDefaultConfig = array(
+    'default_config_loaded'     => true,
     'wakka_version'             => 0,
     
     'mysql_host'                => 'localhost',

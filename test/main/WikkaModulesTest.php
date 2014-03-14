@@ -15,7 +15,9 @@
  */
 define('TESTING_AS_CGI', strpos(php_sapi_name(), 'cgi') > -1);
  
-require_once('test/test.config.php');
+require_once('wikka/functions_legacy.php');
+require_once('wikka/functions.php');
+require_once('wikka/constants.php');
 require_once('libs/Compatibility.lib.php');
 require_once('3rdparty/core/php-gettext/gettext.inc');
 require_once('libs/Wakka.class.php');
@@ -34,14 +36,12 @@ class WikkaModulesTest extends PHPUnit_Framework_TestCase {
      * Test Fixtures
      */
     public static function setUpBeforeClass() {
-        global $wikkaTestConfig, $wakkaDefaultConfig;
-        self::$config = $wikkaTestConfig;
+        require('test/test.config.php');
+        self::$config = $wakkaConfig;
         
         # Load default config
         $t_rewrite_mode = 0;    # required by default.config.php
-        require_once('wikka/helpers.php');
-        require_once('wikka/constants.php');
-        require_once('wikka/default.config.php');
+        include('wikka/default.config.php');
         self::$default_config = $wakkaDefaultConfig;
         
         # Must set $config for setup/database.php
@@ -65,10 +65,6 @@ class WikkaModulesTest extends PHPUnit_Framework_TestCase {
         foreach ($install_queries as $key => $query) {
             self::$pdo->exec($query);
         }
-        
-        # Required modules
-        require_once('wikka/helpers.php');
-        require_once('wikka/constants.php');
         
         # Path settings
         self::$test_paths = array(

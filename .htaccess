@@ -4,6 +4,15 @@ SetEnvIfNoCase Referer ".*(adultsite|picturesplace|learnthebiz|pi-o|erotica|ghet
 order deny,allow
 deny from env=BadReferrer
 
+#
+# Disable Magic Quotes
+# See http://www.php.net/manual/en/security.magicquotes.disabling.php
+#
+php_flag magic_quotes_gpc Off
+
+#
+# Rewrite Rules
+#
 <IfModule mod_rewrite.c>
 	# turn on rewrite engine
 	RewriteEngine on

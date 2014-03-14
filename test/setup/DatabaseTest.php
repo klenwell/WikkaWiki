@@ -8,7 +8,6 @@
  * > phpunit test/setup/DatabaseTest
  * 
  */
-require_once('test/test.config.php');
 require_once('libs/Wakka.class.php');
 require_once('version.php');
 
@@ -23,8 +22,8 @@ class DatabaseSetupTest extends PHPUnit_Framework_TestCase {
      * Test Fixtures
      */
     public static function setUpBeforeClass() {
-        global $wikkaTestConfig;
-        self::$config = $wikkaTestConfig;
+        require('test/test.config.php');
+        self::$config = $wakkaConfig;
         
         # Must set $config for setup/database.php. Must use require rather than
         # require_once to set up more than one test.

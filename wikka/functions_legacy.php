@@ -78,12 +78,6 @@ if( ! function_exists('GetSafeVar') ) {
     }
 }
 
-function define_constant_if_not_defined($name, $value) {
-    if ( ! defined($name) ) {
-        define($name, $value);
-    }
-}
-
 function unset_if_isset($var) {
     if ( isset($var) ) {
         unset($var);
