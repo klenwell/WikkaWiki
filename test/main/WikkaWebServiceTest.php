@@ -37,6 +37,7 @@ class WikkaWebServiceTest extends PHPUnit_Framework_TestCase {
         $_SERVER = array();
         $this->web_service = null;
         $this->tearDownDatabase();
+        $this->tearDownSession();
         $this->config = array();
     }
     
@@ -115,6 +116,13 @@ class WikkaWebServiceTest extends PHPUnit_Framework_TestCase {
         $this->assertTrue($inserted);
     }
     
+    private function tearDownSession() {
+        if ( session_id() ) {
+            session_destroy();
+            $_SESSION = array();
+        }
+    }
+    
     
     /**
      * Tests
@@ -126,38 +134,51 @@ class WikkaWebServiceTest extends PHPUnit_Framework_TestCase {
         
         $this->setUpTables();
         $this->createPage('HomePage', $page_body, $page_note);
-        $request = $this->web_service->prepare_request();
+        $this->web_service->prepare_request();
         $this->web_service->start_session();
-        $response = $this->web_service->process_request($request);
-        
+        $response = $this->web_service->process_request();
+
         $this->assertEquals(200, $response->status);
-        $this->assertNotEmpty($response->headers['ETag']);
+        $this->assertNotEmpty($response->headers['etag']);
         $this->assertContains($page_body, $response->body);
     }
     
     public function testRouteRequest() {
-        $request = new WikkaRequest();
-        $request->params['wakka'] = 'HomePage/foo';
-        $route = $this->web_service->route_request($request);
+        $this->web_service->prepare_request();
+        $this->web_service->request->params['wakka'] = 'HomePage/foo';
+        $route = $this->web_service->route_request();
         $this->assertEquals($route['page'], 'HomePage');
         $this->assertEquals($route['handler'], 'foo');
     }
     
     public function testCSRFAuthentication() {
-        $this->web_service->set_csrf_token();
+        # Init CSRF token
+        $this->web_service->prepare_request();
+        $this->web_service->start_session();
+        $this->web_service->enforce_csrf_token();
+        
+        # Simulate post
         $_POST['CSRFToken'] = $_SESSION['CSRFToken'];
         $_POST['card'] = 'from the edge';
         
-        $request = $this->web_service->prepare_request();
+        $this->web_service->prepare_request();
+        $token = $this->web_service->enforce_csrf_token();
+        $this->assertEquals($_POST['CSRFToken'], $token);
     }
     
     public function testCSRFAuthenticationError() {
+        # Init CSRF token
+        $this->web_service->prepare_request();
+        $this->web_service->start_session();
+        $this->web_service->enforce_csrf_token();
+        
+        # Simulate post with bad token
         $_POST['CSRFToken'] = 'foo';
         $_POST['card'] = 'from the edge';
-        $this->web_service->set_csrf_token();
         
         $this->setExpectedException('WikkaCsrfError');
-        $request = $this->web_service->prepare_request();   # should raise error
+        $this->web_service->prepare_request();
+        $request = $this->web_service->enforce_csrf_token();   # should raise error
     }
     
     public function testPrepareRequest() {

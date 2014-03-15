@@ -13,7 +13,6 @@
  * REFERENCES
  *
  */
-require_once('wikka/errors.php');
 
  
  
@@ -81,21 +80,6 @@ class WikkaRequest {
         else {
             return $default;
         }
-    }
-    
-    public function authenticate_csrf_token() {
-        $token = $this->get_post_var('CSRFToken');
-        
-        if ( $_POST ) {
-            if ( ! $token ) {
-                throw new WikkaCsrfError('Authentication failed: NoCSRFToken');
-            }
-            elseif ( $token != $_SESSION['CSRFToken'] ) {
-                throw new WikkaCsrfError('Authentication failed: CSRFToken mismatch');
-            }
-        }
-        
-        return true;
     }
     
     public function define_constants() {

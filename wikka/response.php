@@ -27,20 +27,41 @@ class WikkaResponse {
     public function __construct($body='', $status=0, $headers=array()) {
         $this->body = $body;
         $this->status = $status;
-        $this->headers = $headers;
+        
+        # Headers should be a list of header strings
+        if ( $headers ) {
+            $this->merge_headers($headers);
+        }
     }
     
     /*
      * Public Methods
      */
-    public function set_header($key, $value) {
-        $this->headers[$key] = $value;
+    public function set_header($field, $value) {
+        # Header field names are case-insensitive.
+        # See http://stackoverflow.com/a/5259004/1093087
+        $key = strtolower($field);
+        $this->headers[$key] = sprintf('%s: %s', $field, $value);
         return $this->headers;
     }
     
+    public function merge_headers($headers) {
+        # Merges an array of headers with current headers. If header exists,
+        # it will be replaced.
+        foreach ($headers as $header) {
+            list($field, $value) = explode(':', $header, 2);
+            $this->set_header($field, $value);
+        }
+        return $this->headers;
+    }
+    
+    public function merge_response_headers($response) {
+        # Merges headers from another response object
+        $this->merge_headers(array_values($response->headers));
+    }
+    
     public function send_headers() {
-        foreach ($this->headers as $key => $value) {
-            $header = sprintf('%s: %s', $key, $value);
+        foreach ($this->headers as $key => $header) {
             header($header);
         }
         

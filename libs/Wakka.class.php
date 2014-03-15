@@ -255,6 +255,8 @@ class Wakka
         }
         if (!$result = mysql_query($query, $dblink))
         {
+            # Dump the buffer. (Easier to debug).
+            print ob_get_contents();
             ob_end_clean();
             die("Query failed: ".$query." (".mysql_error().")"); #i18n
         }

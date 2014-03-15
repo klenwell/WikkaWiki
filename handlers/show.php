@@ -24,6 +24,8 @@
  *
  */
 require_once('handlers/base.php');
+require_once('wikka/response.php');
+
 
 class ShowHandler extends WikkaHandler {
     
@@ -31,7 +33,7 @@ class ShowHandler extends WikkaHandler {
      * Properties
      */
     # For Content-type header
-    public $content_type = 'text/html';
+    public $content_type = 'text/html; charset=utf-8';
     
     # Template
     public $template = <<<HTML
@@ -45,13 +47,13 @@ class ShowHandler extends WikkaHandler {
 HTML;
 
     # Template Vars (%s from template above in order)
-    public $double_click_edit = '';
-    public $revision_info = '';
-    public $page_content = '';
-    public $comment_block = '';
+    protected $double_click_edit = '';
+    protected $revision_info = '';
+    protected $page_content = '';
+    protected $comment_block = '';
     
     # Comment display modes (str => int)
-    public $comment_display_modes = array(
+    private $comment_display_modes = array(
         'none' => COMMENT_NO_DISPLAY,
         'date_asc' => COMMENT_ORDER_DATE_ASC,
         'date_desc' => COMMENT_ORDER_DATE_DESC,
@@ -88,13 +90,18 @@ HTML;
             $this->comment_block = $this->format_comments($comments);
         }
         
-        return $this->format_content();
+        $content = $this->format_content();
+        
+        $response = new WikkaResponse($content);
+        $response->status = 200;
+        $response->set_header('Content-Type', $this->content_type);
+        return $response;
     }
     
     /*
      * Validation Methods
      */
-    public function request_is_valid() {
+    private function request_is_valid() {
         if ( ! $this->user_has_read_access() ) {
             $this->error = T_("You are not allowed to read this page.");
             return false;
@@ -125,19 +132,19 @@ HTML;
         return true;
     }
     
-    public function user_has_read_access() {
+    private function user_has_read_access() {
         return $this->wikka->HasAccess('read');
     }
     
-    public function page_name_is_valid() {
+    private function page_name_is_valid() {
         return $this->wikka->IsWikiName($this->wikka->GetPageTag());
     }
     
-    public function page_exists() {
+    private function page_exists() {
         return isset($this->wikka->page) && (! empty($this->wikka->page));
     }
     
-    public function page_is_latest() {
+    private function page_is_latest() {
         return isset($this->wikka->page['latest']) &&
             ($this->wikka->page['latest'] == 'Y');
     }
@@ -145,13 +152,13 @@ HTML;
     /*
      * Status Methods
      */
-    public function double_click_is_active() {
+    private function double_click_is_active() {
         $user = $this->user;
         return $user && ($user['doubleclickedit'] == 'Y') &&
             ($this->wikka->HasAccess('write'));
     }
      
-    public function raw_page_requested() {
+    private function raw_page_requested() {
         # TODO(klenwell): make this less insane.
         # (bool) works as expected with '0' and '1'
         return (! empty($_GET['raw'])) &&
@@ -161,7 +168,7 @@ HTML;
     /*
      * Comment Methods
      */
-    public function show_comments() {
+    private function show_comments() {
         return ($this->wikka->GetConfigValue('hide_comments') != 1) &&
             $this->wikka->HasAccess('comment_read');
     }
@@ -261,7 +268,7 @@ HTML;
     /*
      * Format Methods
      */
-    public function format_content() {
+    protected function format_content() {
         return sprintf($this->template,
             $this->double_click_edit,
             $this->revision_info,
@@ -269,7 +276,7 @@ HTML;
             $this->comment_block);
     }
     
-    public function format_revision_info() {
+    private function format_revision_info() {
         # Format vars
         $format = <<<HTML
     <div class="revisioninfo">
@@ -356,7 +363,7 @@ XHTML;
         );
     }
     
-    public function format_raw_page_content() {
+    private function format_raw_page_content() {
         $format = <<<XHTML
             <div class="wikisource">
                 %s
@@ -370,14 +377,14 @@ XHTML;
         );
     }
     
-    public function format_page_content() {
+    private function format_page_content() {
         return $this->wikka->Format($this->wikka->page['body'], 'wakka', 'page');
     }
     
     /*
      * Comment Format Methods
      */
-    public function format_comments($comments) {
+    private function format_comments($comments) {
         $format = <<<XHTML
             <!-- starting comments block-->
             <div id="comments">
@@ -401,7 +408,7 @@ XHTML;
         return sprintf($format, $comment_header, $comment_list);
     }
     
-    public function format_threaded_comment_list($comments) {
+    private function format_threaded_comment_list($comments) {
         $format = <<<XHTML
                 <div class="commentscontainer">
                     %s
@@ -435,7 +442,7 @@ XHTML;
         return sprintf($format, $comment_list);
     }
     
-    public function format_comment_list($comments) {
+    private function format_comment_list($comments) {
         $format = <<<XHTML
                 <div class="commentscontainer">
                     %s
@@ -457,7 +464,7 @@ XHTML;
         return sprintf($format, $comment_list);
     }
     
-    public function format_comment_header() {
+    private function format_comment_header() {
         $format = <<<XHTML
                 <div id="commentheader">
                     %s %s
@@ -502,7 +509,7 @@ XHTML;
         return sprintf($format, $header_title, $display_link, $comment_form);
     }
     
-    public function format_threaded_comment($comment) {
+    private function format_threaded_comment($comment) {
         # Notice it leaves the div unclosed
         $format = <<<XHTML
                     <div id="comment_%s" class="%s" >
@@ -536,7 +543,7 @@ XHTML;
         ); 
     }
     
-    public function format_comment($comment) {
+    private function format_comment($comment) {
         $html = $this->format_threaded_comment($comment);
         return sprintf("%s%s</div>\n",
             $html,
@@ -586,7 +593,7 @@ XHTML;
         return sprintf($format, $open_form_tag, $submit_value, $close_form_tag);
     }
     
-    public function format_deleted_comment($comment, $is_threaded=false) {
+    private function format_deleted_comment($comment, $is_threaded=false) {
         $format = <<<XHTML
                     <div class="%s">
                         <div class="commentdeleted">
@@ -604,7 +611,7 @@ XHTML;
         return sprintf($format, $comment_class, $comment_body, $end_div);
     }
     
-    public function format_comment_action($comment) {
+    private function format_comment_action($comment) {
         $format = <<<XHTML
                         <div class="commentaction">
                             %s
