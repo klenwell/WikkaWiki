@@ -15,6 +15,7 @@
  *
  */
 require_once('libs/Wakka.class.php');
+require_once('wikka/errors.php');
 
  
 class WikkaBlob extends Wakka {
@@ -134,70 +135,100 @@ SQLDOC;
         $wakka = $this;
     }
     
+    public function normalize_handler_name($handler_name) {
+        # If contains slashes, extract part after last slash. This is to avoid
+        # possible directory traversal
+        $has_slash = strpos($handler_name, '/') !== false;
+        
+        if ( $has_slash ) {
+            $parts = explode('/', $handler_name);
+            $handler_name = end($parts);
+        }
+        
+        return strtolower($handler_name);
+    }
+    
+    private function validate_handler($handler_name) {
+        #
+        # Throws WikkaHandlerError or returns true.
+        #
+        
+        # Validate syntax
+        $valid_handler_name_regex = '/^([a-z0-9_.-]+)$/';
+        $handler_syntax_is_valid = preg_match($valid_handler_name_regex, $handler);
+        if ( ! $handler_syntax_is_valid ) {
+            throw new WikkaHandlerError(T_(
+                "Unknown handler; the handler name must not contain special characters."
+            ));
+        }
+        
+        # Look for class first
+        if ( $wikka->handler_class_exists($handler_name) ) {
+            return true;
+        }
+        # Then look for legacy handler
+        elseif ( $wikka->legacy_handler_exists($handler_name) ) {
+            return true;
+        }
+        # Else raise error
+        else {
+            throw new WikkaHandlerError(
+                sprintf(T_("Sorry, [%s] is an unknown handler."), $handler_name)
+            );
+        }
+    }
+    
+    public function handler_class_exists($handler_name) {
+        $handler_class_path = $this->build_handler_class_path($handler_name);
+        return !(is_null($refactored_handler_path));
+    }
+    
+    public function build_handler_class_path($handler_name) {
+        $handler_fname = sprintf('%s.php', $handler_name);
+        
+        return $this->BuildFullpathFromMultipath(
+            $handler_fname,
+            $this->GetConfigValue('handler_path')
+        );
+    }
+    
+    public function legacy_handler_exists($handler_name) {
+        $legacy_handler_path = $this->build_legacy_handler_path($handler_name);
+        return !(is_null($legacy_handler_path));
+    }
+    
+    public function build_legacy_handler_path($handler_name) {
+        $handler_path = sprintf('%s%s%s.php', $handler, DIRECTORY_SEPARATOR, $handler);
+        
+        return $this->BuildFullpathFromMultipath(
+            $handler_path,
+            $this->GetConfigValue('handler_path')
+        );
+    }
+    
+    public function load_handler_class($handler_name) {
+        $handler_path = $this->build_handler_class_path($handler_name);
+        $HandlerClass = sprintf('%sHandler', ucwords($handler));
+        
+        require_once($handler_path);
+        $handler = new $HandlerClass($this);
+        return $handler;
+    }
+    
+    /*
+     * Private Methods
+     */
+    
     /*
      * Overridden Methods
      */
     #
     # Loads handler giving precedence to new-style handlers
     #
-    function Handler($handler) {        
-        # Extract part after slash as "a SORT of defense against directory
-        # traversal"
-        $handler_contains_slash = strpos($handler, '/') !== false;
-        if ( $handler_contains_slash ) {
-            $handler = substr($handler, strrpos($handler, '/')+1);
-        }
+    public function __Handler($handler_name) {
+        $handler_path = $this->build_legacy_handler_path($handler_name);
         
-        # Check valid handler name syntax (similar to Action())
-        # @todo move regexp to library
-        # Allow letters, numbers, underscores, dashes and dots only (for now); see also #34
-        $valid_handler_name_regex = '/^([a-zA-Z0-9_.-]+)$/';
-        $handler_syntax_is_valid = preg_match($valid_handler_name_regex, $handler);
-        if ( ! $handler_syntax_is_valid ) {
-            return $this->wrapHandlerError(T_(
-                "Unknown handler; the handler name must not contain special characters."
-            ));
-        }
-        else {
-            # Valid handler name; now make sure it's lower case
-            $handler = strtolower($handler);
-        }
-        
-        # Locate handler. Look first for refactored handler. If not found, look
-        # in old location.
-        $use_refactored_handler = false;
-        $refactored_handler_location = sprintf('%s.php', $handler);
-        $default_handler_location = sprintf('%s%s%s.php',
-            $handler, DIRECTORY_SEPARATOR, $handler);
-        
-        # Build paths and see if they exist
-        $refactored_handler_path = $this->BuildFullpathFromMultipath(
-            $refactored_handler_location,
-            $this->GetConfigValue('handler_path')
-        );
-        $refactored_handler_exists = !(is_null($refactored_handler_path));
-        
-        $default_handler_exists = $this->BuildFullpathFromMultipath(
-            $default_handler_location,
-            $this->GetConfigValue('handler_path')
-        );
-        $default_handler_exists = !(is_null($default_handler_exists));
-        
-        if ( $refactored_handler_exists ) {
-            $HandlerClass = sprintf('%sHandler', ucwords($handler));
-            require_once($refactored_handler_path);
-            $refactored_handler = new $HandlerClass($this);
-            return $refactored_handler->handle();
-        }
-        elseif ( $default_handler_exists ) {
-            return $this->IncludeBuffered($default_handler_location, '', '',
-                $this->GetConfigValue('handler_path'));
-        }
-        else {
-            return $this->wrapHandlerError(sprintf(
-                T_("Sorry, [%s] is an unknown handler."),
-                $handler
-            ));
-        }
+        return $this->IncludeBuffered($handler_path, '', '',
+            $this->GetConfigValue('handler_path'));
     }
 }

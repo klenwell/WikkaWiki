@@ -159,18 +159,36 @@ class WikkaWebService {
      * Private Methods
      */
     private function call_wikka_handler($page_name, $handler_name) {
+        #
+        # Loads a new-style class handler, legacy handler module, or raises
+        # an exception.
+        #
+        # TODO(klenwell): Be more efficient. $wikka->build_handler_class_path
+        # get called 3 times by time a new-style handler class is loaded.
+        # This is done for sake of backwards compatability and code readability.
+        #
+        
+        # Load WikkaBlob object
         $wikka = new WikkaBlob($this->config);
         $wikka->connect_to_db();
         $wikka->save_session_to_db();
-        $wikka->validate_handler_name($handler_name);
+        
+        # Normalize handler name and validate handler
+        $handler_name = $wikka->normalize_handler_name($handler_name);
+        
+        if ( ! $wikka->is_valid_handler($handler_name) ) {
+            throw new WikkaWebServiceError(
+                "Invalid handler name: please check your url path");
+        }
        
-        if ( $wikka->is_new_style_handler($handler_name) ) {
+        # Call new-style handler class or legacy module version
+        if ( $wikka->handler_class_exists($handler_name) ) {
             $handler = $wikka->load_handler_class($handler_name);
             $response = $handler->handle();
             return $response;
         }
         else {
-            return $this->run_old_style_handler($page_name, $handler_name);
+            return $this->run_legacy_handler($page_name, $handler_name);
         }
     }
     
