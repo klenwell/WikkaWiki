@@ -38,12 +38,12 @@ require_once('libs/Compatibility.lib.php');
 #
 $webservice = new WikkaWebService();
 $webservice->disable_magic_quotes_if_enabled();
+$webservice->prepare_request();
 
 try {
-    $request = $webservice->prepare_request();
     $webservice->start_session();
-    $webservice->enforce_csrf_token($request);
-    $response = $webservice->process_request($request);
+    $webservice->enforce_csrf_token();
+    $response = $webservice->process_request();
 }
 catch (Exception $e) {
     $response = $webservice->process_error($e);

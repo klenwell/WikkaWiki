@@ -75,15 +75,16 @@ class WikkaBlob extends Wakka {
     }
     
     public function save_session_to_db() {
-        $user_name = $this->GetUser();
+        $user = $this->GetUser();
     
         # Only store sessions for logged in users
-        if ( is_null($user_name) ) {
+        if ( is_null($user) ) {
             return null;
         }
         
         $table_prefix = $this->config['table_prefix'];
         $session_id = session_id();
+        $user_name = $user['name'];
         
         # Look for current session record
         $query = sprintf('SELECT * FROM %ssessions WHERE sessionid="%s" AND userid="%s"',
@@ -215,6 +216,20 @@ SQLDOC;
         require_once($handler_path);
         $handler = new $HandlerClass($this);
         return $handler;
+    }
+    
+    public function format_error($content) {
+        #
+        # TODO(klenwell): Replace with a template or view
+        #
+        $template = <<<XHTML
+    <div id="content">
+        <div class="error">%s</div>
+        <div style="clear: both"></div>
+    </div>
+XHTML;
+        
+        return sprintf($template, $content);
     }
     
     /*

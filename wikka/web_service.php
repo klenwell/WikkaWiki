@@ -82,6 +82,7 @@ class WikkaWebService {
     public function prepare_request() {
         $request = new WikkaRequest();
         $request->define_constants();
+        $this->request = $request;
         return $request;
     }
     
@@ -89,15 +90,17 @@ class WikkaWebService {
         session_set_cookie_params(0, WIKKA_COOKIE_PATH);
         session_name(md5(BASIC_COOKIE_NAME . $this->config['wiki_suffix']));
         session_start();
+        return null;
     }
     
-    public function enforce_csrf_token($request) {
-        $this->set_csrf_token_if_not_set();
-        $this->authenticate_csrf_token($request);
+    public function enforce_csrf_token() {
+        $token = $this->set_csrf_token_if_not_set();
+        $this->authenticate_csrf_token();
+        return $token;
     }
     
-    public function process_request($request) {
-        $route = $this->route_request($request);
+    public function process_request() {
+        $route = $this->route_request();
         $response = $this->run_wikka_handler($route['page'], $route['handler']);
         
         # Set common headers
@@ -109,19 +112,37 @@ class WikkaWebService {
     }
     
     public function process_error($error) {
-        $content = $error->getMessage();
+        $route = $this->route_request();
+
+        $wikka = new WikkaBlob($this->config);
+        $wikka->connect_to_db();
+        $wikka->handler = $route['handler'];
+        $wikka->SetPage($wikka->LoadPage($route['page']));
+        
+        $content_items = array(
+            $wikka->Header(),
+            $wikka->format_error($error->getMessage()),
+            $wikka->Footer()
+        );
+        
+        $content = implode("\n", $content_items);
+
         $response = new WikkaResponse($content, 500);
+        $response->set_header('Cache-Control', 'no-cache');
+        $response->set_header('ETag', md5($response->body));
+        $response->set_header('Content-Length', strlen($response->body));
+        
         return $response;
     }
     
-    public function route_request($request) {
+    public function route_request() {
         # Return associative array with page/handler values. This could be a
         # private function, but I'd prefer to unit test it.
         $page = null;
         $handler = null;
         
         # Get wakka param (strip first slash)
-        $wakka_param = $request->get_param('wakka', '');
+        $wakka_param = $this->request->get_param('wakka', '');
         $wakka_param = preg_replace("/^\//", "", $wakka_param);
         
         # Extract pagename and handler from URL
@@ -170,14 +191,15 @@ class WikkaWebService {
         return $_SESSION['CSRFToken'];
     }
     
-    private function authenticate_csrf_token($request) {
-        $token = $request->get_post_var('CSRFToken');
+    private function authenticate_csrf_token() {
+        $posted_token = $this->request->get_post_var('CSRFToken');
+        $session_token = $_SESSION['CSRFToken'];
         
         if ( $_POST ) {
-            if ( ! $token ) {
+            if ( ! $posted_token ) {
                 throw new WikkaCsrfError('Authentication failed: NoCSRFToken');
             }
-            elseif ( $token != $_SESSION['CSRFToken'] ) {
+            elseif ( $posted_token != $session_token ) {
                 throw new WikkaCsrfError('Authentication failed: CSRFToken mismatch');
             }
         }
