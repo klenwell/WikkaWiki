@@ -102,7 +102,7 @@ class WikkaWebService {
     
     public function process_request($request) {
         $route = $this->route_request($request);
-        $content = $this->run_wikka_handler($route['page'], $route['handler']);
+        $content = $this->call_wikka_handler($route['page'], $route['handler']);
 
         $response = new WikkaResponse($content, 200);
         $response->set_header('Content-Type', 'text/html; charset=utf-8');
@@ -158,15 +158,20 @@ class WikkaWebService {
     /*
      * Private Methods
      */
-    private function run_wikka_handler($page, $handler) {
+    private function call_wikka_handler($page_name, $handler_name) {
         $wikka = new WikkaBlob($this->config);
-        $wikka->globalize_this_as_wakka_var();
-        $wikka->open_buffer();
         $wikka->connect_to_db();
         $wikka->save_session_to_db();
-        $wikka->Run($page, $handler);
-        $content = $wikka->close_buffer();
-        return $content;
+        $wikka->validate_handler_name($handler_name);
+       
+        if ( $wikka->is_new_style_handler($handler_name) ) {
+            $handler = $wikka->load_handler_class($handler_name);
+            $response = $handler->handle();
+            return $response;
+        }
+        else {
+            return $this->run_old_style_handler($page_name, $handler_name);
+        }
     }
     
     private function run_legacy_handler($page_name, $handler_name) {
