@@ -102,13 +102,16 @@ class WikkaWebService {
     
     public function process_request($request) {
         $route = $this->route_request($request);
-        $content = $this->call_wikka_handler($route['page'], $route['handler']);
+        $content = $this->run_wikka_handler($route['page'], $route['handler']);
 
+        # Prepare response
         $response = new WikkaResponse($content, 200);
         $response->set_header('Content-Type', 'text/html; charset=utf-8');
         $response->set_header('Cache-Control', 'no-cache');
         $response->set_header('ETag', md5($content));
         $response->set_header('Content-Length:', strlen($content));
+        
+        # Add any headers set by Wikka handler
         
         return $response;
     }
@@ -158,6 +161,17 @@ class WikkaWebService {
     /*
      * Private Methods
      */
+    private function run_wikka_handler($page_name, $handler_name) {
+        $wikka = new WikkaBlob($this->config);
+        $wikka->globalize_this_as_wakka_var();
+        $wikka->open_buffer();
+        $wikka->connect_to_db();
+        $wikka->save_session_to_db();
+        $wikka->Run($page_name, $handler_name);
+        $content = $wikka->close_buffer();
+        return $content;
+    }
+    
     private function call_wikka_handler($page_name, $handler_name) {
         #
         # Loads a new-style class handler, legacy handler module, or raises
@@ -175,11 +189,7 @@ class WikkaWebService {
         
         # Normalize handler name and validate handler
         $handler_name = $wikka->normalize_handler_name($handler_name);
-        
-        if ( ! $wikka->is_valid_handler($handler_name) ) {
-            throw new WikkaWebServiceError(
-                "Invalid handler name: please check your url path");
-        }
+        $wikka->validate_handler($handler_name);
        
         # Call new-style handler class or legacy module version
         if ( $wikka->handler_class_exists($handler_name) ) {

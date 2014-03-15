@@ -148,14 +148,15 @@ SQLDOC;
         return strtolower($handler_name);
     }
     
-    private function validate_handler($handler_name) {
+    public function validate_handler($handler_name) {
         #
         # Throws WikkaHandlerError or returns true.
         #
         
         # Validate syntax
+        var_dump($handler_name);
         $valid_handler_name_regex = '/^([a-z0-9_.-]+)$/';
-        $handler_syntax_is_valid = preg_match($valid_handler_name_regex, $handler);
+        $handler_syntax_is_valid = preg_match($valid_handler_name_regex, $handler_name);
         if ( ! $handler_syntax_is_valid ) {
             throw new WikkaHandlerError(T_(
                 "Unknown handler; the handler name must not contain special characters."
@@ -223,12 +224,181 @@ SQLDOC;
      * Overridden Methods
      */
     #
-    # Loads handler giving precedence to new-style handlers
+    # Loads page and calls appropriate handler. Return page content.
     #
-    public function __Handler($handler_name) {
-        $handler_path = $this->build_legacy_handler_path($handler_name);
+    public function Run($page_name, $handler_name='') {
+        #
+        # Refactored to return a WikkaResponse object
+        #
         
-        return $this->IncludeBuffered($handler_path, '', '',
-            $this->GetConfigValue('handler_path'));
+        # If no page name provided, redirect to root page
+        if ( ! trim($page_name) ) {
+            $this->Redirect($this->Href('', $this->GetConfigValue('root_page')));
+        }
+        
+        # Set handler
+        if ( trim($handler_name) ) {
+            $this->handler = trim($handler_name);
+        }
+        else {
+            $this->handler = 'show';
+        }
+        
+        # Set default cookie path. (Why are we doing this here when we
+        # already set a constant!?) It gets used in other methods.
+        $this->wikka_cookie_path = WIKKA_COOKIE_PATH;
+        
+        # Set wikka_url
+        $this->wikka_url = ((bool) $this->GetConfigValue('rewrite_mode')) ?
+            WIKKA_BASE_URL : WIKKA_BASE_URL.WIKKA_URL_EXTENSION;
+        $this->config['base_url'] = $this->wikka_url; # backward compatibility
+        
+        # Load user
+        if ( $this->GetUser() ) {
+            $this->registered = true;
+        }
+        else {
+            # Are we really passing password in the cookie? WTF?
+            # TODO(klenwell): fix this.
+            $user = $this->LoadUser($this->GetCookie('user_name'),
+                $this->GetCookie('pass'));
+            
+            if ( $user ) {
+                $this->SetUser($user);
+            }
+            
+            # Is this some terrible legacy code?
+            if ( isset($_COOKIE['wikka_user_name']) ) {
+                $user = $this->LoadUser($_COOKIE['wikka_user_name'],
+                    $_COOKIE['wikka_pass']);
+                
+                # Delete old cookies and set user
+                if ( $user ) {
+                    SetCookie('wikka_user_name', '', 1, WIKKA_COOKIE_PATH);
+                    $_COOKIE['wikka_user_name'] = '';
+                    SetCookie('wikka_pass', '', 1, WIKKA_COOKIE_PATH);
+                    $_COOKIE['wikka_pass'] = '';
+                    $this->SetUser($user);
+                }
+            }
+        }
+        
+        # Load page and ACLs
+        $this->SetPage($this->LoadPage($page_name, $this->GetSafeVar('time', 'get'))); #312
+        $this->ACLs = $this->LoadAllACLs($this->GetPageTag());
+        
+        # Log referrer and read interwiki config
+        $this->LogReferrer();
+        $this->ReadInterWikiConfig();
+        
+        # Time for some maintenance?
+        if ( !($this->GetMicroTime() % 3) ) {
+            $this->Maintenance();
+        }
+        
+        # Various handler types
+        if ( preg_match('/\.(xml|mm)$/', $this->GetHandler()) ) {
+            $content = $this->handler($this->GetHandler());
+            header('Content-type: text/xml');
+        }
+        elseif ( $this->GetHandler() == "raw" ) {
+            $content = $this->handler($this->GetHandler());
+            header('Content-type: text/plain');
+        }
+        elseif ( $this->GetHandler() == 'grabcode' ) {
+            $content = $this->handler($this->GetHandler());
+        }
+        elseif ( $this->GetHandler() == 'html' ) {
+            $content = $this->handler($this->GetHandler());
+            header('Content-type: text/html');
+        }
+        
+        # If page name has spaces in it, replace spaces with _ and redirect to new
+        # page name
+        # TODO: normalize page name somewhere
+        elseif( 0 !== strcmp($newtag = preg_replace('/\s+/', '_', $page_name),
+            $page_name) ) {
+            header("Location: ".$this->Href('', $newtag));
+        }
+        
+        # These next two cases should not be necessary (and yet here they are)
+        elseif ( preg_match('/\.(gif|jpg|png)$/', $this->GetHandler()) ) {
+            header('Location: images/' . $this->GetHandler());
+        }
+        elseif ( preg_match('/\.css$/', $this->GetHandler()) ) {
+            header('Location: css/' . $this->GetHandler());
+        }
+        
+        # All the other handlers (including show)
+        else
+        {
+            $header = $this->Header();
+            $body = $this->handler($this->GetHandler());
+            $footer = $this->Footer();
+            $content = implode("\n", array($header, $body, $footer));
+        }
+        
+        print($content);
+    }
+    
+    public function Handler($handler) {
+        # Extract part after slash as "a SORT of defense against directory
+        # traversal"
+        $handler_contains_slash = strpos($handler, '/') !== false;
+        if ( $handler_contains_slash ) {
+            $handler = substr($handler, strrpos($handler, '/')+1);
+        }
+        
+        # Check valid handler name syntax (similar to Action())
+        # @todo move regexp to library
+        # Allow letters, numbers, underscores, dashes and dots only (for now); see also #34
+        $valid_handler_name_regex = '/^([a-zA-Z0-9_.-]+)$/';
+        $handler_syntax_is_valid = preg_match($valid_handler_name_regex, $handler);
+        if ( ! $handler_syntax_is_valid ) {
+            return $this->wrapHandlerError(T_(
+                "Unknown handler; the handler name must not contain special characters."
+            ));
+        }
+        else {
+            # Valid handler name; now make sure it's lower case
+            $handler = strtolower($handler);
+        }
+        
+        # Locate handler. Look first for refactored handler. If not found, look
+        # in old location.
+        $use_refactored_handler = false;
+        $refactored_handler_location = sprintf('%s.php', $handler);
+        $default_handler_location = sprintf('%s%s%s.php',
+            $handler, DIRECTORY_SEPARATOR, $handler);
+        
+        # Build paths and see if they exist
+        $refactored_handler_path = $this->BuildFullpathFromMultipath(
+            $refactored_handler_location,
+            $this->GetConfigValue('handler_path')
+        );
+        $refactored_handler_exists = !(is_null($refactored_handler_path));
+        
+        $default_handler_exists = $this->BuildFullpathFromMultipath(
+            $default_handler_location,
+            $this->GetConfigValue('handler_path')
+        );
+        $default_handler_exists = !(is_null($default_handler_exists));
+        
+        if ( $refactored_handler_exists ) {
+            $HandlerClass = sprintf('%sHandler', ucwords($handler));
+            require_once($refactored_handler_path);
+            $refactored_handler = new $HandlerClass($this);
+            return $refactored_handler->handle();
+        }
+        elseif ( $default_handler_exists ) {
+            return $this->IncludeBuffered($default_handler_location, '', '',
+                $this->GetConfigValue('handler_path'));
+        }
+        else {
+            return $this->wrapHandlerError(sprintf(
+                T_("Sorry, [%s] is an unknown handler."),
+                $handler
+            ));
+        }
     }
 }
