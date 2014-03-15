@@ -58,9 +58,9 @@ class WikkaWebService {
         #
         # Returns boolean $magic_quotes_are_enabled. Magic quotes should be
         # disabled in any case by the time this function returns.
-        $magic_quotes_are_enabled = get_magic_quotes_gpc();
+        $magic_quotes_were_enabled = get_magic_quotes_gpc();
         
-        if ( $magic_quotes_are_enabled ) {
+        if ( $magic_quotes_were_enabled ) {
             $process = array(&$_GET, &$_POST, &$_COOKIE, &$_REQUEST);
             while (list($key, $val) = each($process)) {
                 foreach ($val as $k => $v) {
@@ -76,7 +76,7 @@ class WikkaWebService {
             unset($process);
         }
         
-        return (bool) $magic_quotes_are_enabled;
+        return (bool) $magic_quotes_were_enabled;
     }
     
     public function prepare_request() {
@@ -92,7 +92,7 @@ class WikkaWebService {
     }
     
     public function enforce_csrf_token($request) {
-        $this->set_csrf_token();
+        $this->set_csrf_token_if_not_set();
         $this->authenticate_csrf_token($request);
     }
     
@@ -173,7 +173,7 @@ class WikkaWebService {
         return $content;
     }
     
-    private function set_csrf_token() {
+    private function set_csrf_token_if_not_set() {
         # return token
         if ( ! isset($_SESSION['CSRFToken']) ) {
             $_SESSION['CSRFToken'] = sha1(getmicrotime());
