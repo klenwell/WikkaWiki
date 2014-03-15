@@ -196,6 +196,6 @@ class ShowHandlerTest extends PHPUnit_Framework_TestCase {
     
     public function testHandlerInstantiation() {        
         $this->assertInstanceOf('ShowHandler', $this->show_handler);
-        $this->assertEquals($this->show_handler->content_type, 'text/html');
+        $this->assertEquals($this->show_handler->content_type, 'text/html; charset=utf-8');
     }
 }
