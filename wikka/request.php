@@ -83,21 +83,6 @@ class WikkaRequest {
         }
     }
     
-    public function authenticate_csrf_token() {
-        $token = $this->get_post_var('CSRFToken');
-        
-        if ( $_POST ) {
-            if ( ! $token ) {
-                throw new WikkaCsrfError('Authentication failed: NoCSRFToken');
-            }
-            elseif ( $token != $_SESSION['CSRFToken'] ) {
-                throw new WikkaCsrfError('Authentication failed: CSRFToken mismatch');
-            }
-        }
-        
-        return true;
-    }
-    
     public function define_constants() {
         define_constant_if_not_defined('WIKKA_BASE_DOMAIN_URL',
             $this->wikka_base_domain_url);

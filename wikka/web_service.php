@@ -81,7 +81,6 @@ class WikkaWebService {
     
     public function prepare_request() {
         $request = new WikkaRequest();
-        $request->authenticate_csrf_token();
         $request->define_constants();
         return $request;
     }
@@ -92,12 +91,9 @@ class WikkaWebService {
         session_start();
     }
     
-    public function set_csrf_token() {
-        # return token
-        if ( ! isset($_SESSION['CSRFToken']) ) {
-            $_SESSION['CSRFToken'] = sha1(getmicrotime());
-        }
-        return $_SESSION['CSRFToken'];
+    public function enforce_csrf_token($request) {
+        $this->set_csrf_token();
+        $this->authenticate_csrf_token($request);
     }
     
     public function process_request($request) {
@@ -175,6 +171,29 @@ class WikkaWebService {
         $wikka->Run($page_name, $handler_name);
         $content = $wikka->close_buffer();
         return $content;
+    }
+    
+    private function set_csrf_token() {
+        # return token
+        if ( ! isset($_SESSION['CSRFToken']) ) {
+            $_SESSION['CSRFToken'] = sha1(getmicrotime());
+        }
+        return $_SESSION['CSRFToken'];
+    }
+    
+    private function authenticate_csrf_token($request) {
+        $token = $request->get_post_var('CSRFToken');
+        
+        if ( $_POST ) {
+            if ( ! $token ) {
+                throw new WikkaCsrfError('Authentication failed: NoCSRFToken');
+            }
+            elseif ( $token != $_SESSION['CSRFToken'] ) {
+                throw new WikkaCsrfError('Authentication failed: CSRFToken mismatch');
+            }
+        }
+        
+        return true;
     }
     
     private function verify_requirements() {

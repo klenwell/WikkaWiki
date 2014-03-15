@@ -42,7 +42,7 @@ $webservice->disable_magic_quotes_if_enabled();
 try {
     $request = $webservice->prepare_request();
     $webservice->start_session();
-    $webservice->set_csrf_token();
+    $webservice->enforce_csrf_token($request);
     $response = $webservice->process_request($request);
 }
 catch (Exception $e) {
