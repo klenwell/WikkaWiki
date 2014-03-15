@@ -69,6 +69,7 @@ HTML;
      * Main Handler Method
      */
     public function handle() {
+        # This should return a WikkaResponse object
         trigger_error('this method should be overridden', E_USER_WARNING);
     }
     

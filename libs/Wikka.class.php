@@ -228,13 +228,13 @@ SQLDOC;
             $this->GetConfigValue('handler_path'));
         
         if ( $content === false ) {
-            return $this->wrapHandlerError(sprintf(
+            $content = $this->wrapHandlerError(sprintf(
                 T_("Sorry, [%s] is an unknown handler."), $handler_path
             ));
         }
-        else {
-            return $content;
-        }
+        
+        $response = new WikkaResponse($content);
+        return $response;
     }
     
     /*
@@ -348,13 +348,19 @@ SQLDOC;
         
         # All the other handlers (including show)
         else {
-            $header = $this->Header();
-            $body = $this->handler($this->GetHandler());
-            $footer = $this->Footer();
-            $content = implode("\n", array($header, $body, $footer));
+            $handler_response = $this->handler($this->GetHandler());
+            
+            $content_items = array(
+                $this->Header(),
+                $handler_response->body,
+                $this->Footer()
+            );
+            
+            $content = implode("\n", $content_items);
         }
         
         $response = new WikkaResponse($content);
+        $response->merge_response_headers($handler_response);
         return $response;
     }
     

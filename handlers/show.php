@@ -88,7 +88,11 @@ HTML;
             $this->comment_block = $this->format_comments($comments);
         }
         
-        return $this->format_content();
+        $content = $this->format_content();
+        
+        $response = new WikkaResponse($content);
+        $response->set_header('Content-Type', 'text/html; charset=utf-8');
+        return $response;
     }
     
     /*
