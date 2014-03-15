@@ -169,6 +169,27 @@ class WikkaWebService {
         return $content;
     }
     
+    private function run_legacy_handler($page_name, $handler_name) {
+        $wikka = new WikkaBlob($this->config);
+        $wikka->globalize_this_as_wakka_var();
+        $wikka->open_buffer();        
+        $wikka->Run($page_name, $handler_name);
+        $content = $wikka->close_buffer();
+       
+        # create response object
+        $response = new WikkaResponse($content, 200);
+        $response->set_header('Content-Type', 'text/html; charset=utf-8');
+       
+        # Set header for response object from headers list
+        $headers = headers_sent();        
+        foreach ($headers as $header) {
+            list($key, $value) = explode(':', $header, 1);
+            $response->set_header($key, $value);
+        }
+
+        return $response;
+    }
+    
     private function verify_requirements() {
         if ( ! function_exists('version_compare') ||
             version_compare(phpversion(),MINIMUM_PHP_VERSION,'<') ) {
