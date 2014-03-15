@@ -34,13 +34,25 @@ class WikkaResponse {
      * Public Methods
      */
     public function set_header($key, $value) {
-        $this->headers[$key] = $value;
+        # Header field names are case-insensitive.
+        # See http://stackoverflow.com/a/5259004/1093087
+        $key = strtolower($key);
+        $this->headers[$key] = sprintf('%s: %s', $key, $value);
+        return $this->headers;
+    }
+    
+    public function merge_headers($headers) {
+        # Merges an array of headers with current headers. If header exists,
+        # it will be replaced.
+        foreach ($headers as $header) {
+            list($key, $value) = explode(':', $header, 2);
+            $this->set_header($key, $value);
+        }
         return $this->headers;
     }
     
     public function send_headers() {
-        foreach ($this->headers as $key => $value) {
-            $header = sprintf('%s: %s', $key, $value);
+        foreach ($this->headers as $key => $header) {
             header($header);
         }
         

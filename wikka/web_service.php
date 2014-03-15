@@ -103,16 +103,14 @@ class WikkaWebService {
         # Prepare response
         $response = new WikkaResponse($content, 200);
         $response->set_header('Content-Type', 'text/html; charset=utf-8');
-        $response->set_header('Cache-Control', 'no-cache');
-        $response->set_header('ETag', md5($content));
-        $response->set_header('Content-Length:', strlen($content));
         
         # Set header for any headers set by Wikka handler
-        $headers = headers_list();
-        foreach ($headers as $header) {
-            list($key, $value) = explode(':', $header, 2);
-            $response->set_header($key, $value);
-        }
+        $response->merge_headers(headers_list());
+        
+        # Set common headers
+        $response->set_header('Cache-Control', 'no-cache');
+        $response->set_header('ETag', md5($content));
+        $response->set_header('Content-Length', strlen($content));
         
         return $response;
     }
