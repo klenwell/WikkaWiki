@@ -13,6 +13,9 @@
  * http://php.net/manual/en/language.exceptions.extending.php
  *
  */
+#
+# Errors
+#
 class WikkaError extends Exception {
     public function __construct($message, $code=0) {
         parent::__construct($message, $code);
@@ -28,3 +31,9 @@ class WikkaWebServiceError extends WikkaError {}
 class WikkaCsrfError extends WikkaError {}
 
 class WikkaHandlerError extends WikkaError {}
+
+
+#
+# Exceptions and Flags
+#
+class WikkaInstallFlag extends Exception {}
