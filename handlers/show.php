@@ -33,7 +33,7 @@ class ShowHandler extends WikkaHandler {
      * Properties
      */
     # For Content-type header
-    public $content_type = 'text/html';
+    public $content_type = 'text/html; charset=utf-8';
     
     # Template
     public $template = <<<HTML
@@ -94,7 +94,7 @@ HTML;
         
         $response = new WikkaResponse($content);
         $response->status = 200;
-        $response->set_header('Content-Type', 'text/html; charset=utf-8');
+        $response->set_header('Content-Type', $this->content_type);
         return $response;
     }
     
