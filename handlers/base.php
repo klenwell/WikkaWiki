@@ -4,14 +4,18 @@
  *
  * Base handler class for new refactored Wikka handlers.
  *
+ * The main method to be called is the handle method. This should return
+ * a WikkaResponse object. The response should have the body property set
+ * to include the handler's content and have a status and content-type
+ * header set for it.
+ * 
+ *
  * USAGE
- *  require_once();
+ *  require_once('handlers/base.php');
  *
  *  class MyHandler extends WikkaHandler {
  *  }
  *
- * NOTES
- * 
  *
  * @package		Handlers
  * @license		http://www.gnu.org/copyleft/gpl.html GNU General Public License
@@ -90,13 +94,13 @@ HTML;
     /*
      * Format Methods
      */
-    public function show_error() {
+    protected function show_error() {
         $this->page_content = sprintf('<div class="handler-error">%s</div>',
             $this->error);
         return $this->format_content();
     }
     
-    public function format_content() {
+    protected function format_content() {
         trigger_error('This should be overridden', E_USER_WARNING);
         return sprintf($this->template,
             $this->template_var);
