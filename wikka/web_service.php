@@ -26,6 +26,7 @@ class WikkaWebService {
      */
     public $config = array();
     public $pdo = null;
+    public $request = null;
 
     /*
      * Constructor

@@ -262,6 +262,7 @@ XHTML;
         #
         # Refactored to return a WikkaResponse object
         #
+        $handler_response = null;
         
         # If no page name provided, redirect to root page
         if ( ! trim($page_name) ) {
@@ -374,8 +375,14 @@ XHTML;
             $content = implode("\n", $content_items);
         }
         
-        $response = new WikkaResponse($content);
-        $response->merge_response_headers($handler_response);
+        if ( $handler_response ) {
+            $response = $handler_response;
+            $response->body = $content;
+        }
+        else {
+            $response = new WikkaResponse($content);
+        }
+        
         return $response;
     }
     

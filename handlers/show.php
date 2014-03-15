@@ -91,6 +91,7 @@ HTML;
         $content = $this->format_content();
         
         $response = new WikkaResponse($content);
+        $response->status = 200;
         $response->set_header('Content-Type', 'text/html; charset=utf-8');
         return $response;
     }
