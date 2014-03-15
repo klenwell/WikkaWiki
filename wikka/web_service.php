@@ -111,7 +111,12 @@ class WikkaWebService {
         $response->set_header('ETag', md5($content));
         $response->set_header('Content-Length:', strlen($content));
         
-        # Add any headers set by Wikka handler
+        # Set header for any headers set by Wikka handler
+        $headers = headers_list();
+        foreach ($headers as $header) {
+            list($key, $value) = explode(':', $header, 2);
+            $response->set_header($key, $value);
+        }
         
         return $response;
     }
@@ -170,57 +175,6 @@ class WikkaWebService {
         $wikka->Run($page_name, $handler_name);
         $content = $wikka->close_buffer();
         return $content;
-    }
-    
-    private function call_wikka_handler($page_name, $handler_name) {
-        #
-        # Loads a new-style class handler, legacy handler module, or raises
-        # an exception.
-        #
-        # TODO(klenwell): Be more efficient. $wikka->build_handler_class_path
-        # get called 3 times by time a new-style handler class is loaded.
-        # This is done for sake of backwards compatability and code readability.
-        #
-        
-        # Load WikkaBlob object
-        $wikka = new WikkaBlob($this->config);
-        $wikka->connect_to_db();
-        $wikka->save_session_to_db();
-        
-        # Normalize handler name and validate handler
-        $handler_name = $wikka->normalize_handler_name($handler_name);
-        $wikka->validate_handler($handler_name);
-       
-        # Call new-style handler class or legacy module version
-        if ( $wikka->handler_class_exists($handler_name) ) {
-            $handler = $wikka->load_handler_class($handler_name);
-            $response = $handler->handle();
-            return $response;
-        }
-        else {
-            return $this->run_legacy_handler($page_name, $handler_name);
-        }
-    }
-    
-    private function run_legacy_handler($page_name, $handler_name) {
-        $wikka = new WikkaBlob($this->config);
-        $wikka->globalize_this_as_wakka_var();
-        $wikka->open_buffer();        
-        $wikka->Run($page_name, $handler_name);
-        $content = $wikka->close_buffer();
-       
-        # create response object
-        $response = new WikkaResponse($content, 200);
-        $response->set_header('Content-Type', 'text/html; charset=utf-8');
-       
-        # Set header for response object from headers list
-        $headers = headers_sent();        
-        foreach ($headers as $header) {
-            list($key, $value) = explode(':', $header, 1);
-            $response->set_header($key, $value);
-        }
-
-        return $response;
     }
     
     private function verify_requirements() {
