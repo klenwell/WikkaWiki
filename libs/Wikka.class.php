@@ -15,6 +15,7 @@
  *
  */
 require_once('libs/Wakka.class.php');
+require_once('wikka/response.php');
 require_once('wikka/errors.php');
 
  
@@ -353,7 +354,8 @@ SQLDOC;
             $content = implode("\n", array($header, $body, $footer));
         }
         
-        print($content);
+        $response = new WikkaResponse($content);
+        return $response;
     }
     
     public function Handler($handler_name) {

@@ -98,19 +98,12 @@ class WikkaWebService {
     
     public function process_request($request) {
         $route = $this->route_request($request);
-        $content = $this->run_wikka_handler($route['page'], $route['handler']);
-
-        # Prepare response
-        $response = new WikkaResponse($content, 200);
-        $response->set_header('Content-Type', 'text/html; charset=utf-8');
-        
-        # Set header for any headers set by Wikka handler
-        $response->merge_headers(headers_list());
+        $response = $this->run_wikka_handler($route['page'], $route['handler']);
         
         # Set common headers
         $response->set_header('Cache-Control', 'no-cache');
-        $response->set_header('ETag', md5($content));
-        $response->set_header('Content-Length', strlen($content));
+        $response->set_header('ETag', md5($response->body));
+        $response->set_header('Content-Length', strlen($response->body));
         
         return $response;
     }
@@ -163,12 +156,10 @@ class WikkaWebService {
     private function run_wikka_handler($page_name, $handler_name) {
         $wikka = new WikkaBlob($this->config);
         $wikka->globalize_this_as_wakka_var();
-        $wikka->open_buffer();
         $wikka->connect_to_db();
         $wikka->save_session_to_db();
-        $wikka->Run($page_name, $handler_name);
-        $content = $wikka->close_buffer();
-        return $content;
+        $response = $wikka->Run($page_name, $handler_name);
+        return $response;
     }
     
     private function set_csrf_token_if_not_set() {

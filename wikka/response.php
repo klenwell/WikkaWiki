@@ -27,7 +27,11 @@ class WikkaResponse {
     public function __construct($body='', $status=0, $headers=array()) {
         $this->body = $body;
         $this->status = $status;
-        $this->headers = $headers;
+        
+        # Headers should be a list of header strings
+        if ( $headers ) {
+            $this->merge_headers($headers);
+        }
     }
     
     /*
