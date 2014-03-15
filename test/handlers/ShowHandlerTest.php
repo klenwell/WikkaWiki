@@ -186,11 +186,12 @@ class ShowHandlerTest extends PHPUnit_Framework_TestCase {
         $this->wikka->ACLs['read_acl'] = '*';
         
         # Test handle
-        $content = $this->show_handler->handle();
+        $response = $this->show_handler->handle();
         
         # Test results
+        $this->assertInstanceOf('WikkaResponse', $response);
         $this->assertTrue($this->wikka->existsPage($page_tag));
-        $this->assertContains($expects, $content);
+        $this->assertContains($expects, $response->body);
     }
     
     public function testHandlerInstantiation() {        
