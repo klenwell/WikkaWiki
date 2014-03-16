@@ -137,6 +137,13 @@ class WikkaWebService {
     }
     
     public function process_installer() {
+        $wikka = new WikkaBlob($this->config);
+        $wikka->connect_to_db();
+    
+        $install_handler = $wikka->load_handler_class('install');
+        $response = $install_handler->handle();
+        
+        return $response;
     }
     
     public function route_request() {
