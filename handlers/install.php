@@ -158,7 +158,19 @@ HTML;
     }
     
     private function state_form() {
-        throw new Exception('TODO: state_form');
+        if ( $this->request->get_post_var('form-submitted') ) {
+          var_dump($_POST);
+        }
+      
+        # Set template variables
+        $this->head = $this->format_head();
+        $this->header = $this->format_header();
+        $this->stage_content = $this->format_form();
+        $this->footer = $this->format_footer();
+        
+        # Return output
+        $content = $this->format_content();
+        return $content;
     }
     
     private function state_install() {
@@ -287,11 +299,93 @@ XHTML;
         return sprintf($intro_f, $intro, $type, $this->next_stage_button('form', 'Start'));
     }
     
+    protected function format_form() {
+        $form_f = <<<XHTML
+    <div class="form">
+      %s
+        <fieldset>
+          <h4>Database Configuration</h4>
+          
+          <div class="row form-group">
+            <label for="mysql-host" class="col-sm-2 control-label">MySQL Host</label>
+            <div class="col-sm-4">
+              <input id="mysql-host" class="form-control" type="text" size="50" 
+                name="config[mysql_host]" value="VAR" />
+              <span class="help-block">
+                The host your MySQL server is running on. Usually "localhost"
+                (i.e., the same machine your Wikka site is on).
+              </span>
+            </div>
+          </div>
+          
+          <div class="row form-group">
+            <label for="mysql-database" class="col-sm-2 control-label">MySQL Database</label>
+            <div class="col-sm-4">
+              <input id="mysql-database" class="form-control" type="text" size="50" 
+                name="config[mysql_database]" value="VAR" />
+              <span class="help-block">
+                The MySQL database Wikka should use. This database
+                <strong class="text-danger">needs to exist already</strong>
+                before you continue!
+              </span>
+            </div>
+          </div>
+          
+          <div class="row form-group">
+            <label for="mysql-user" class="col-sm-2 control-label">MySQL User Name</label>
+            <div class="col-sm-4">
+              <input id="mysql-user" class="form-control" type="text" size="50" 
+                name="config[mysql_user]" value="VAR" />
+            </div>
+          </div>
+          <div class="row form-group">
+            <label for="mysql-password" class="col-sm-2 control-label">MySQL Password</label>
+            <div class="col-sm-4">
+              <input id="mysql-password" class="form-control" type="text" size="12" 
+                name="config[mysql_password]" value="VAR" />
+              <span class="help-block">
+                Name and password of the MySQL user used to connect to your database.
+              </span>
+            </div>
+          </div>
+          
+          <div class="row form-group">
+            <label for="table-prefix" class="col-sm-2 control-label">Table Prefix</label>
+            <div class="col-sm-4">
+              <input id="table-prefix" class="form-control" type="text" size="50" 
+                name="config[table_prefix]" value="VAR" />
+              <span class="help-block">
+                Prefix of all tables used by Wikka. This allows you to run
+                multiple Wikka installations using the same MySQL database by
+                configuring them to use different table prefixes.
+              </span>
+            </div>
+          </div>
+        </fieldset>
+        
+        <fieldset>
+          <h4>Wiki Configuration</h4>
+        </fieldset>
+
+        <div class="form-group">
+          <div class="col-sm-offset-2 col-sm-10">
+            <input type="submit" class="btn btn-primary" name="submit" value="Submit" />
+            <input type="hidden" name="next-stage" value="form" />
+            <input type="hidden" name="form-submitted" value="true" />
+          </div>
+        </div>
+      </form>
+    </div>
+XHTML;
+
+        return sprintf($form_f, $this->wikka->FormOpen());
+    }
+    
     private function next_stage_button($stage, $label='Continue') {
         $form_f = <<<XHTML
     <div>
       %s
-        <input type="submit" name="submit" value="%s" />
+        <input type="submit" class="btn btn-primary" name="submit" value="%s" />
         <input type="hidden" name="next-stage" value="%s" />
       </form>
     </div>
