@@ -24,7 +24,8 @@
  * version number might result in problems upgrading...please use
  * caution.
  */
-$svn_version = 'trunk';
+# TODO(klenwell): Change this back to trunk when done debugging install
+$svn_version = '2.0';
 if (!defined('WAKKA_VERSION')) define('WAKKA_VERSION', $svn_version);
 
 /**
