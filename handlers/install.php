@@ -40,22 +40,58 @@ class InstallHandler extends WikkaHandler {
     private $state = '';
     
     # Template
+    # http://getbootstrap.com/getting-started/#template
+    # http://getbootstrap.com/examples/sticky-footer-navbar/
     public $template = <<<HTML
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html>
+<!DOCTYPE html>
+<html lang="en">
   <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    <title>Wikka Installation</title>
+	<meta name="keywords" content="Wikka Wiki" />
+	<meta name="description" content="WikkaWiki Install" />
+	<link rel="icon" href="images/favicon.ico" type="image/x-icon" />
+	<link rel="shortcut icon" href="images/favicon.ico" type="image/x-icon" />
+    
     %s
+
+    <!-- Bootstrap -->
+    <link rel="stylesheet"
+      href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" />
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+      <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
   </head>
+  
   <body>
-    <div class="header">
-      %s
+    <div class="container">
+      <div class="page-header">
+        %s
+      </div>
+      <div class="content">
+        %s
+      </div>
     </div>
-    <div id="content">
-      %s
-    </div>
+
     <div id="footer">
-      %s
+      <div class="container">
+        %s
+      </div>
     </div>
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+    <script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
   </body>
 </html>
 HTML;
@@ -155,13 +191,7 @@ HTML;
     
     protected function format_head() {
         $head_f = <<<XHTML
-	<title>Wikka Installation</title>
-	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-	<meta name="keywords" content="Wikka Wakka Wiki" />
-	<meta name="description" content="Wikka Wiki Install" />
-	<link rel="icon" href="images/favicon.ico" type="image/x-icon" />
-	<link rel="shortcut icon" href="images/favicon.ico" type="image/x-icon" />
-    <link rel="stylesheet" type="text/css" href="templates/install/install.css?%s" />
+    <link rel="stylesheet" href="templates/install/bootstrap-override.css?%s" />
 XHTML;
 
         $hash = $this->wikka->htmlspecialchars_ent(
@@ -172,7 +202,7 @@ XHTML;
     
     protected function format_header() {
         $header_f = <<<XHTML
-    <h1>WikkaWiki <span class="type">%s</span></h1>
+        <h1>WikkaWiki <span class="type">%s</span></h1>
 XHTML;
 
         $type = ( $this->is_upgrade() ) ? 'Upgrade' : 'Install';
@@ -181,7 +211,9 @@ XHTML;
     }
     
     protected function format_footer() {
-        return '';
+        return <<<XHTML
+        <p class="text-muted">WikkaWiki</p>
+XHTML;
     }
     
     protected function format_intro() {
@@ -194,9 +226,11 @@ XHTML;
 
         if ( $this->is_upgrade() ) {
             $inner_f = <<<XHTML
-      Your installed Wikka is reporting itself as <tt>%s</tt>. You are about to
-      <strong>upgrade</strong> to Wikka version <tt>%s</tt>. To start the
-      upgrade, please hit the start button below.
+      <p>
+        Your installed Wikka is reporting itself as <code>%s</code>. You are 
+        about to <strong>upgrade</strong> to Wikka version <code>%s</code>. To 
+        start the upgrade, please hit the start button below.
+      </p>
 XHTML;
             $intro = sprintf($inner_f,
                 $this->wikka->GetConfigValue('wakka_version'),
@@ -205,10 +239,12 @@ XHTML;
         }
         else {
             $inner_f = <<<XHTML
-      Since there is no existing Wikka configuration file, this probably is a 
-      fresh Wikka install. You are about to install Wikka <tt>%s</tt>.
-      Installing Wikka will take only a few minutes. To start the installation,
-      please hit the start button below.
+      <p>
+        Since there is no existing Wikka configuration file, this probably is a 
+        fresh Wikka install. You are about to install Wikka <code>%s</code>.
+        Installing Wikka will take only a few minutes. To start the installation,
+        please hit the start button below.
+      </p>
 XHTML;
             $intro = sprintf($inner_f,
                 WAKKA_VERSION
