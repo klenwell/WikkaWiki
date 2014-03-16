@@ -172,6 +172,23 @@ class WikkaWebService {
         return array('page' => $page, 'handler' => $handler);
     }
     
+    public function interrupt_if_install_required() {
+        if ( $this->config['wakka_version'] !== WAKKA_VERSION ) {
+            if ( ! $this->config['wakka_version'] ) {
+                $m = "Install required";
+            }
+            else {
+                $m = sprintf("Upgrade required: version %s to %s",
+                    $this->config['wakka_version'], WAKKA_VERSION);
+            }
+            
+            throw new WikkaInstallInterrupt($m);
+        }
+        else {
+            return null;
+        }
+    }
+    
     /*
      * Private Methods
      */

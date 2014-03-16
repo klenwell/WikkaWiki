@@ -36,4 +36,4 @@ class WikkaHandlerError extends WikkaError {}
 #
 # Exceptions and Flags
 #
-class WikkaInstallFlag extends Exception {}
+class WikkaInstallInterrupt extends Exception {}

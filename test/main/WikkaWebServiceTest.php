@@ -127,6 +127,16 @@ class WikkaWebServiceTest extends PHPUnit_Framework_TestCase {
     /**
      * Tests
      */
+    public function testInstallInterrupt() {
+        # Install not needed
+        $this->web_service->interrupt_if_install_required();
+        
+        # Install needed
+        $this->setExpectedException('WikkaInstallInterrupt');
+        $this->web_service->config['wakka_version'] = sprintf('un-%s', WAKKA_VERSION);
+        $this->web_service->interrupt_if_install_required();
+    }
+    
     public function testProcessRequest() {
         $page_body = 'Lorem ipsum etc...';
         $page_note = 'for unit test';
