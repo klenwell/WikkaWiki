@@ -3,10 +3,11 @@
  * Install Handler
  *
  * Handles all stages of install process:
- *  1. Configuration Form
- *  2. Configuration Summary
- *  3. Write Config File
- *  4. Write Config Summary
+ *  1. Intro
+ *  2. Form
+ *  3. Install
+ *  4. Write Files
+ *  5. Conclusion
  *
  * USAGE
  *
@@ -36,7 +37,8 @@ class InstallHandler extends WikkaHandler {
     private $states = array('intro',
                             'form',
                             'install',
-                            'write_files'); 
+                            'write_files',
+                            'conclusion'); 
     private $state = '';
     
     # Template
@@ -51,16 +53,17 @@ class InstallHandler extends WikkaHandler {
     <meta name="viewport" content="width=device-width, initial-scale=1">
     
     <title>Wikka Installation</title>
-	<meta name="keywords" content="Wikka Wiki" />
-	<meta name="description" content="WikkaWiki Install" />
-	<link rel="icon" href="images/favicon.ico" type="image/x-icon" />
-	<link rel="shortcut icon" href="images/favicon.ico" type="image/x-icon" />
+    <meta name="keywords" content="Wikka Wiki" />
+    <meta name="description" content="WikkaWiki Install" />
+    <link rel="icon" href="images/favicon.ico" type="image/x-icon" />
+    <link rel="shortcut icon" href="images/favicon.ico" type="image/x-icon" />
     
     %s
 
     <!-- Bootstrap -->
     <link rel="stylesheet"
       href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="templates/install/bootstrap-override.css" />
 
     <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
@@ -219,44 +222,74 @@ XHTML;
     protected function format_intro() {
         $intro_f = <<<XHTML
     <div class="intro">
-      %s
+      <div class="lead">
+        %s
+      </div>
+      
+      <div class="panel panel-info">
+        <div class="panel-heading">
+          <h4 class="panel-title">Permissions Note</h4>
+        </div>
+        <div class="panel-body">
+          <p>
+            This installer will try to write some configuration files to your
+            Wikka directory. In order for this to work, you must make sure the
+            web server has write access to the necessary files. You can handle
+            this in advance by running the following commands from the command
+            line:
+          </p>
+          <pre>$ chmod -v 777 config
+$ touch /var/www/ww-git/wikka.config.php ; chmod 666 /var/www/ww-git/wikka.config.php</pre>
+          <p>
+            If the installer is unable to write to the necessary files, you
+            will receive a warning during the %s process.
+          </p>
+          <p>
+            For additional information, see the <a
+              href="http://docs.wikkawiki.org/WikkaInstallation"
+              target="_blank">documentation</a>.
+          </p>
+        </div>
+      </div>
     </div>
     %s
 XHTML;
 
         if ( $this->is_upgrade() ) {
             $inner_f = <<<XHTML
-      <p>
-        Your installed Wikka is reporting itself as <code>%s</code>. You are 
-        about to <strong>upgrade</strong> to Wikka version <code>%s</code>. To 
-        start the upgrade, please hit the start button below.
-      </p>
+        <p>
+          Your installed Wikka is reporting itself as <code>%s</code>. You are 
+          about to <strong>upgrade</strong> to Wikka version <code>%s</code>. To 
+          start the upgrade, please hit the start button below.
+        </p>
 XHTML;
             $intro = sprintf($inner_f,
                 $this->wikka->GetConfigValue('wakka_version'),
                 WAKKA_VERSION
             );
+            $type = 'upgrade';
         }
         else {
             $inner_f = <<<XHTML
-      <p>
-        Since there is no existing Wikka configuration file, this probably is a 
-        fresh Wikka install. You are about to install Wikka <code>%s</code>.
-        Installing Wikka will take only a few minutes. To start the installation,
-        please hit the start button below.
-      </p>
+        <p>
+          Since there is no existing Wikka configuration file, this probably is a 
+          fresh Wikka install. You are about to install Wikka <code>%s</code>.
+          Installing Wikka will take only a few minutes. To start the installation,
+          please hit the start button below.
+        </p>
 XHTML;
             $intro = sprintf($inner_f,
                 WAKKA_VERSION
             );
+            $type = 'install';
         }
 
-        return sprintf($intro_f, $intro, $this->next_stage_button('form', 'Start'));
+        return sprintf($intro_f, $intro, $type, $this->next_stage_button('form', 'Start'));
     }
     
     private function next_stage_button($stage, $label='Continue') {
         $form_f = <<<XHTML
-    <div class="form-controls">
+    <div>
       %s
         <input type="submit" name="submit" value="%s" />
         <input type="hidden" name="next-stage" value="%s" />
