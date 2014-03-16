@@ -136,6 +136,9 @@ class WikkaWebService {
         return $response;
     }
     
+    public function process_installer() {
+    }
+    
     public function route_request() {
         # Return associative array with page/handler values. This could be a
         # private function, but I'd prefer to unit test it.

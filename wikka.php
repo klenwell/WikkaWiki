@@ -43,7 +43,11 @@ $webservice->prepare_request();
 try {
     $webservice->start_session();
     $webservice->enforce_csrf_token();
+    $webservice->interrupt_if_install_required();
     $response = $webservice->process_request();
+}
+catch (WikkaInstallInterrupt $e) {
+    $response = $webservice->process_installer($request);
 }
 catch (Exception $e) {
     $response = $webservice->process_error($e);
