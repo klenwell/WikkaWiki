@@ -35,11 +35,13 @@ class InstallHandler extends WikkaHandler {
     public $content_type = 'text/html; charset=utf-8';
     
     private $states = array('intro',
-                            'form',
+                            'database_form',
+                            'wiki_settings_form',
+                            'admin_form',
                             'install',
-                            'write_files',
+                            'upgrade',
                             'conclusion'); 
-    private $state = '';
+    private $state = 'intro';
     
     # Template
     # http://getbootstrap.com/getting-started/#template
@@ -112,8 +114,8 @@ HTML;
         $this->request = new WikkaRequest();
         
         # Simple state machine
-        $method = $this->set_state();
-        $content = $this->$method();
+        $requested_stage = $this->request->get_post_var('next-stage', 'intro');
+        $content = $this->change_state($requested_stage);
         
         # Return response
         $response = new WikkaResponse($content);
@@ -128,20 +130,23 @@ HTML;
      * and $this->footer, then call $this->format_content and return the
      * result.
      */
-    private function set_state() {
-        #
-        # Returns method name for next state
-        # Side-effects: sets $this->state
-        #
-        $requested_stage = $this->request->get_post_var('next-stage');
-        
-        if ( in_array($requested_stage, $this->states) ) {
-            $this->state = $requested_stage;
+    private function change_state($new_state) {
+        if ( in_array($new_state, $this->states) ) {
+            $method = $this->set_state($new_state);
         }
         else {
-            $this->state = 'intro';
+            throw new Exception(sprintf("Invalid install state: %s", $new_state));
         }
         
+        return $this->$method();
+    }
+    
+    private function set_state($state) {
+        #
+        # Returns method name for state
+        # Side-effects: sets $this->state
+        #
+        $this->state = $state;
         return sprintf('state_%s', $this->state);
     }
     
@@ -157,15 +162,21 @@ HTML;
         return $content;
     }
     
-    private function state_form() {
+    private function state_database_form() {
+        # Skip stage during upgrade
+        if ( $this->is_upgrade() ) {
+            return $this->change_state('upgrade');
+        }
+        
+        # Process form request
         if ( $this->request->get_post_var('form-submitted') ) {
-          var_dump($_POST);
+            var_dump($_POST);
         }
       
         # Set template variables
         $this->head = $this->format_head();
         $this->header = $this->format_header();
-        $this->stage_content = $this->format_form();
+        $this->stage_content = $this->format_database_form();
         $this->footer = $this->format_footer();
         
         # Return output
@@ -173,12 +184,22 @@ HTML;
         return $content;
     }
     
+    private function state_wiki_settings_form() {
+    }
+    
+    private function state_admin_form() {
+    }
+    
     private function state_install() {
         throw new Exception('TODO: state_install');
     }
     
-    private function state_write_files() {
-        throw new Exception('TODO: state_write_files');
+    private function state_upgrade() {
+      throw new Exception('TODO: state_upgrade');
+    }
+
+    private function state_conclusion() {
+        throw new Exception('TODO: state_conclusion');
     }
     
     /*
@@ -295,76 +316,23 @@ XHTML;
             );
             $type = 'install';
         }
+        
+        $button = $this->next_stage_button('database_form', 'Start');
 
-        return sprintf($intro_f, $intro, $type, $this->next_stage_button('form', 'Start'));
+        return sprintf($intro_f, $intro, $type, $button);
     }
     
-    protected function format_form() {
+    protected function format_database_form() {
         $form_f = <<<XHTML
     <div class="form">
       %s
         <fieldset>
           <h4>Database Configuration</h4>
-          
-          <div class="row form-group">
-            <label for="mysql-host" class="col-sm-2 control-label">MySQL Host</label>
-            <div class="col-sm-4">
-              <input id="mysql-host" class="form-control" type="text" size="50" 
-                name="config[mysql_host]" value="VAR" />
-              <span class="help-block">
-                The host your MySQL server is running on. Usually "localhost"
-                (i.e., the same machine your Wikka site is on).
-              </span>
-            </div>
-          </div>
-          
-          <div class="row form-group">
-            <label for="mysql-database" class="col-sm-2 control-label">MySQL Database</label>
-            <div class="col-sm-4">
-              <input id="mysql-database" class="form-control" type="text" size="50" 
-                name="config[mysql_database]" value="VAR" />
-              <span class="help-block">
-                The MySQL database Wikka should use. This database
-                <strong class="text-danger">needs to exist already</strong>
-                before you continue!
-              </span>
-            </div>
-          </div>
-          
-          <div class="row form-group">
-            <label for="mysql-user" class="col-sm-2 control-label">MySQL User Name</label>
-            <div class="col-sm-4">
-              <input id="mysql-user" class="form-control" type="text" size="50" 
-                name="config[mysql_user]" value="VAR" />
-            </div>
-          </div>
-          <div class="row form-group">
-            <label for="mysql-password" class="col-sm-2 control-label">MySQL Password</label>
-            <div class="col-sm-4">
-              <input id="mysql-password" class="form-control" type="text" size="12" 
-                name="config[mysql_password]" value="VAR" />
-              <span class="help-block">
-                Name and password of the MySQL user used to connect to your database.
-              </span>
-            </div>
-          </div>
-          
-          <div class="row form-group">
-            <label for="table-prefix" class="col-sm-2 control-label">Table Prefix</label>
-            <div class="col-sm-4">
-              <input id="table-prefix" class="form-control" type="text" size="50" 
-                name="config[table_prefix]" value="VAR" />
-              <span class="help-block">
-                Prefix of all tables used by Wikka. This allows you to run
-                multiple Wikka installations using the same MySQL database by
-                configuring them to use different table prefixes.
-              </span>
-            </div>
-          </div>
-        </fieldset>
-        
-        <fieldset>
-          <h4>Wiki Configuration</h4>
+          %s
+          %s
+          %s
+          %s
+          %s
         </fieldset>
 
         <div class="form-group">
@@ -378,7 +346,45 @@ XHTML;
     </div>
 XHTML;
 
-        return sprintf($form_f, $this->wikka->FormOpen());
+        # Build form groups
+        $db_host_help = 'The host your MySQL server is running on. Usually ' .
+            '"localhost" (i.e., the same machine your Wikka site is on).';
+        $db_host_group = $this->build_input_form_group('mysql-host',
+            'config[mysql_host]', 'MySQL Host',
+            $this->wikka->GetConfigValue('mysql_host'), $db_host_help);
+        
+        $db_name_help = 'The MySQL database Wikka should use. This database ' .
+            '<strong class="text-danger">needs to exist already</strong> ' .
+            'before you continue!';
+        $db_name_group = $this->build_input_form_group('mysql-database',
+            'config[mysql_database]', 'MySQL Database',
+            $this->wikka->GetConfigValue('mysql_database'), $db_name_help);
+        
+        $db_user_group = $this->build_input_form_group('mysql-user',
+            'config[mysql_user]', 'MySQL User Name',
+            $this->wikka->GetConfigValue('mysql_user'));
+        
+        $db_pass_help = 'Name and password of the MySQL user used to connect ' .
+            'to your database.';
+        $db_pass_group = $this->build_input_form_group('mysql-password',
+            'config[mysql_password]', 'MySQL Password',
+            $this->wikka->GetConfigValue('mysql_password'), $db_pass_help, 'password');
+        
+        $db_prefix_help = 'Prefix of all tables used by Wikka. This allows you ' .
+            'to run multiple Wikka installations using the same MySQL database ' .
+            'by configuring them to use different table prefixes.';
+        $db_prefix_group = $this->build_input_form_group('table-prefix',
+            'config[table_prefix]', 'Table Prefix',
+            $this->wikka->GetConfigValue('table_prefix'), $db_prefix_help);
+        
+        return sprintf($form_f,
+            $this->wikka->FormOpen(),
+            $db_host_group,
+            $db_name_group,
+            $db_user_group,
+            $db_pass_group,
+            $db_prefix_group
+        );
     }
     
     private function next_stage_button($stage, $label='Continue') {
@@ -392,5 +398,33 @@ XHTML;
 XHTML;
 
         return sprintf($form_f, $this->wikka->FormOpen(), $label, $stage);
+    }
+    
+    private function build_input_form_group($id, $name, $label, $value='',
+        $help_text='', $type='text') {
+        $html_f = <<<XHTML
+          <div class="row form-group">
+            <label for="%s" class="col-sm-2 control-label">%s</label>
+            <div class="col-sm-5">
+              <input id="%s" class="form-control" type="%s"
+                name="%s" value="%s" />
+              %s
+            </div>
+          </div>   
+XHTML;
+
+        if ( $help_text ) {
+            $help_div_f = <<<XDIV
+              <span class="help-block">
+                %s
+              </span>
+XDIV;
+            $help_div = sprintf($help_div_f, $help_text);
+        }
+        else {
+            $help_div = '';
+        }
+        
+        return sprintf($html_f, $id, $label, $id, $type, $name, $value, $help_div);
     }
 }
