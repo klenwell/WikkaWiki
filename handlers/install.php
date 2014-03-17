@@ -195,7 +195,17 @@ HTML;
     }
     
     private function state_upgrade() {
-      throw new Exception('TODO: state_upgrade');
+        throw new Exception('TODO: state_upgrade');
+        $this->run_migrations();
+        $config = $this->update_config();
+        $saved = $this->save_config($config);
+      
+        if ( $saved ) {
+            return $this->change_state('conclusion');
+        }
+        else {
+            return $this->format_upgrade_error();
+        }
     }
 
     private function state_conclusion() {
