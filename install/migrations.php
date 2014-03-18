@@ -27,13 +27,13 @@ $WikkaDatabaseMigrations = array(
     '1.0.5' => array(),
     '1.0.6' => array(
         "CREATE TABLE {{prefix}}comments (" .
-            "id int(10) unsigned NOT NULL auto_increment," .
-            "page_tag varchar(75) NOT NULL default ''," .
-            "time datetime NOT NULL default '0000-00-00 00:00:00'," .
-            "comment text NOT NULL," .
-            "user varchar(75) NOT NULL default ''," .
-            "PRIMARY KEY (id)," .
-			"KEY idx_page_tag (page_tag)," .
+            "id int(10) unsigned NOT NULL auto_increment, " .
+            "page_tag varchar(75) NOT NULL default '', " .
+            "time datetime NOT NULL default '0000-00-00 00:00:00', " .
+            "comment text NOT NULL, " .
+            "user varchar(75) NOT NULL default '', " .
+            "PRIMARY KEY (id), " .
+			"KEY idx_page_tag (page_tag), " .
 			"KEY idx_time (time)" .
             ") ENGINE={{engine}}",
         "INSERT INTO {{prefix}}comments (page_tag, time, comment, user) " .
@@ -47,10 +47,10 @@ $WikkaDatabaseMigrations = array(
     '1.1.0' => array(
         "DROP TABLE {{prefix}}acls",
         "CREATE TABLE {{prefix}}acls (" .
-			"page_tag varchar(75) NOT NULL default ''," .
-			"read_acl text NOT NULL," .
-			"write_acl text NOT NULL," .
-			"comment_acl text NOT NULL," .
+			"page_tag varchar(75) NOT NULL default '', " .
+			"read_acl text NOT NULL, " .
+			"write_acl text NOT NULL, " .
+			"comment_acl text NOT NULL, " .
 			"PRIMARY KEY  (page_tag)" .
 			") ENGINE={{engine}}",
     ),
@@ -69,7 +69,7 @@ $WikkaDatabaseMigrations = array(
         "ALTER TABLE {{prefix}}links CHANGE to_tag to_tag varchar(75) NOT NULL default ''",
         "ALTER TABLE {{prefix}}referrers MODIFY referrer varchar(150) NOT NULL default ''",
         "CREATE TABLE {{prefix}}referrer_blacklist (" .
-			"spammer varchar(150) NOT NULL default ''," .
+			"spammer varchar(150) NOT NULL default '', " .
 			"KEY idx_spammer (spammer)" .
 			") ENGINE={{engine}}",
         "ALTER TABLE {{prefix}}pages DROP INDEX tag",

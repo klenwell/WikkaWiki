@@ -31,6 +31,7 @@ class WikkaMigratorTest extends PHPUnit_Framework_TestCase {
         $this->setUpOldDatabaseSchema();
         
         $this->migrator = new WikkaMigrator('install/migrations.php');
+        $this->migrator->config = $this->config;
     }
     
     public function tearDown() {
@@ -101,6 +102,12 @@ class WikkaMigratorTest extends PHPUnit_Framework_TestCase {
     /**
      * Tests
      */
+    public function testMigration() {
+        $this->migrator->config['table_prefix'] = '';
+        $this->migrator->run_migrations('1.0', '1.1.6.0');
+        print_r($this->migrator->logs);
+    }
+    
     public function testInstantiates() {
         $result = $this->pdo->query('SELECT * FROM pages');
         $this->assertInstanceOf('WikkaMigrator', $this->migrator);
