@@ -92,6 +92,25 @@ $WikkaDatabaseMigrations = array(
     '1.1.5.2' => array(),
     '1.1.5.3' => array(),
     '1.1.6.0' => array(),
+    '1.1.6.1' => array(),
+    '1.1.6.2-alpha' => array(),
+    '1.1.6.2-beta' => array(),
+    '1.1.6.2' => array(),
+    '1.1.6.3' => array(
+        "ALTER TABLE {{prefix}}users ADD COLUMN status enum (" .
+            "'invited','signed-up','pending','active','suspended','banned','deleted')",
+        "CREATE TABLE {{prefix}}sessions (" .
+            "sessionid char(32) NOT NULL, " .
+            "userid varchar(75) NOT NULL, " .
+            "PRIMARY KEY (sessionid, userid), " .
+            "session_start datetime NOT NULL)",
+        "ALTER TABLE {{prefix}}links DROP INDEX `idx_from`"
+    ),
+    
+    '1.1.6.4' => array(),
+    '1.1.6.5' => array(),
+    '1.1.6.6' => array(),
+    '1.1.6.7' => array(),
 );
 # REPLACE {{prefix}} {{engine}}
 
@@ -118,5 +137,19 @@ $WikkaFunctionalMigrations = array(
         array('delete_path', array('safehtml')),
         array('delete_path', array('wikiedit2')),
         array('delete_path', array('xml')),
+    ),
+    
+    '1.1.6.1' => array(
+        array('add_config', array('grabcode_button', '1')),
+        array('add_config', array('wiki_suffix', '1')),
+        array('add_config', array('require_edit_note', '1')),
+        array('add_config', array('public_sysinfo', '0')),
+        array('delete_cookie', array('wikka_user_name')),
+        array('delete_cookie', array('wikka_pass')),
+    ),
+    
+    '1.1.6.3' => array(
+        array('add_config', array('allow_user_registration', '1')),
+        array('add_config', array('wikka_template_path', 'templates')),
     ),
 );
