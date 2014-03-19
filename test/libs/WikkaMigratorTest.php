@@ -16,6 +16,29 @@ require_once('libs/Wikka.class.php');
 require_once('libs/install/migrator.php');
 
 
+#
+# Create a mock WikkaMigrator to override methods that may have unwanted
+# side-effect (e.g. delete_path)
+#
+class MockWikkaMigrator extends WikkaMigrator {
+    
+    public function __construct($migrations_file, $config) {
+        require($migrations_file);
+        $this->database_migrations = $WikkaDatabaseMigrations;
+        $this->command_migrations = $WikkaCommandMigrations;
+        
+        # Set directly
+        $this->config = $config;
+        
+        $this->pdo = $this->connect_to_db();
+    }
+    
+    public function delete_path($path) {
+        return 'skipped in testing';
+    }
+}
+
+
 class WikkaMigratorTest extends PHPUnit_Framework_TestCase {
     
     protected static $config;
@@ -30,14 +53,13 @@ class WikkaMigratorTest extends PHPUnit_Framework_TestCase {
         $this->pdo = $this->setUpDatabase();
         $this->setUpOldDatabaseSchema();
         
-        $this->migrator = new WikkaMigrator('install/migrations.php');
-        $this->migrator->config = $this->config;
-        $this->migrator->connect_to_db();
+        $this->migrator = new MockWikkaMigrator('install/migrations.php',
+            $this->config);
     }
     
     public function tearDown() {
         $_SERVER = array();
-        $this->migrator = array();
+        $this->migrator = null;
         $this->tearDownDatabase();
         $this->tearDownSession();
         $this->config = array();
@@ -103,6 +125,23 @@ class WikkaMigratorTest extends PHPUnit_Framework_TestCase {
     /**
      * Tests
      */
+    public function testCommandMigration() {
+        # Set pre-migration state
+        unset($this->migrator->config['double_doublequote_html']);
+        
+        # Run migrations
+        $this->migrator->config['table_prefix'] = '';
+        $this->migrator->run_migrations('1.0', '1.1.5.3');
+        
+        # Verify changes
+        $log_messages = array_values($this->migrator->logs);
+        $this->assertEquals(31, count($log_messages));
+        $this->assertEquals('safe',
+            $this->migrator->config['double_doublequote_html']);
+        $this->assertContains('delete_path(xml)', end($log_messages));
+        
+    }
+    
     public function testDatabaseMigration() {
         # Verify pre-migration state
         $result = $this->pdo->query('SELECT comment_on FROM pages');
@@ -113,10 +152,9 @@ class WikkaMigratorTest extends PHPUnit_Framework_TestCase {
         $this->migrator->run_migrations('1.0', '1.0.6');
         
         # Verify changes
-        var_dump($this->migrator->logs);
         $log_messages = array_values($this->migrator->logs);
-        $this->assertEquals(5, count($log_messages));
-        $this->assertContains('DELETE FROM acls', $log_messages[4]);
+        $this->assertEquals(6, count($log_messages));
+        $this->assertContains('DELETE FROM acls', end($log_messages));
         
         # comment_on column should have been removed
         $this->setExpectedException('PDOException');
