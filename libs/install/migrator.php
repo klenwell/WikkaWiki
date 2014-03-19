@@ -52,7 +52,6 @@ class WikkaMigrator {
                 # Command Migrations
                 if ( isset($this->command_migrations[$v]) ) {
                     foreach ( $this->command_migrations[$v] as $command ) {
-                        print("{$command[0]}\n");
                         $this->run_command_migration($command);
                     }            
                 }
