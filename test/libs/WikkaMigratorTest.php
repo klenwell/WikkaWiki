@@ -32,6 +32,7 @@ class WikkaMigratorTest extends PHPUnit_Framework_TestCase {
         
         $this->migrator = new WikkaMigrator('install/migrations.php');
         $this->migrator->config = $this->config;
+        $this->migrator->connect_to_db();
     }
     
     public function tearDown() {
@@ -102,10 +103,24 @@ class WikkaMigratorTest extends PHPUnit_Framework_TestCase {
     /**
      * Tests
      */
-    public function testMigration() {
+    public function testDatabaseMigration() {
+        # Verify pre-migration state
+        $result = $this->pdo->query('SELECT comment_on FROM pages');
+        $this->assertEquals(20, $result->rowCount());
+        
+        # Run migrations
         $this->migrator->config['table_prefix'] = '';
-        $this->migrator->run_migrations('1.0', '1.1.6.0');
-        print_r($this->migrator->logs);
+        $this->migrator->run_migrations('1.0', '1.0.6');
+        
+        # Verify changes
+        var_dump($this->migrator->logs);
+        $log_messages = array_values($this->migrator->logs);
+        $this->assertEquals(5, count($log_messages));
+        $this->assertContains('DELETE FROM acls', $log_messages[4]);
+        
+        # comment_on column should have been removed
+        $this->setExpectedException('PDOException');
+        $this->pdo->query('SELECT comment_on FROM pages');
     }
     
     public function testInstantiates() {

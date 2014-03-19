@@ -222,6 +222,9 @@ HTML;
     private function is_fresh_install() {
         return !($this->is_upgrade());
     }
+    
+    private function run_migrations() {
+    }
      
     /*
      * Format Methods

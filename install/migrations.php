@@ -116,10 +116,10 @@ $WikkaDatabaseMigrations = array(
 
 
 #
-# Functional Migrations
+# Command Migrations
 # These can invoke methods of the WikkaMigrator class
 #
-$WikkaFunctionalMigrations = array(
+$WikkaCommandMigrations = array(
     '1.0.4' => array(
         # array(method_name, array(arg1, ...))
         array('add_config', array('double_doublequote_html', 'safe')),

@@ -16,15 +16,17 @@ class WikkaMigrator {
      */
     public $logs = array();
     public $database_migrations = '';
-    public $functional_migrations = '';
+    public $command_migrations = '';
 
+    private $pdo = null;
+    
     /*
      * Constructor
      */
     public function __construct($migrations_file) {
         require($migrations_file);
         $this->database_migrations = $WikkaDatabaseMigrations;
-        $this->functional_migrations = $WikkaFunctionalMigrations;
+        $this->command_migrations = $WikkaCommandMigrations;
         
         # Could pass it in but simpler to just load again
         $this->config = $this->load_config();
@@ -33,6 +35,24 @@ class WikkaMigrator {
     /*
      * Public Methods
      */
+    public function connect_to_db() {
+        #
+        # To simplify testing, require db connection be made explicitly
+        # rather than in constructor. This gives test a chance to swap out
+        # config settings.
+        #
+        # Assigns PDO object to $this->pdo and returns it.
+        #
+        $host = $this->config['mysql_host'];
+        $name = $this->config['mysql_database'];
+        $user = $this->config['mysql_user'];
+        $pass = $this->config['mysql_password'];
+        $dsn = sprintf('mysql:host=%s;dbname=%s', $host, $name);
+        
+        $this->pdo = new PDO($dsn, $user, $pass);
+        return $this->pdo;
+    }
+    
     public function run_migrations($old_version, $new_version) {
         $apply = FALSE;
         
@@ -41,15 +61,13 @@ class WikkaMigrator {
             if ( $apply ) {
                 # SQL Migrations
                 foreach ( $statements as $sql ) {
-                    $result = $this->exec_db_migration($sql);
-                    $this->log_sql_migration($result);
+                    $this->run_db_migration($sql);
                 }
                
-                # Config Migrations
-                if ( isset($this->functional_migrations[$v]) ) {
-                    foreach ( $this->functional_migrations[$v] as $migration ) {
-                        $result = $this->exec_func_migration($migration);
-                        $this->log_func_migration($result);
+                # Command Migrations
+                if ( isset($this->command_migrations[$v]) ) {
+                    foreach ( $this->command_migrations[$v] as $command ) {
+                        $this->run_command_migration($command);
                     }            
                 }
             }
@@ -74,23 +92,34 @@ class WikkaMigrator {
         $this->config = $wakkaConfig;
     }
     
-    private function exec_db_migration($sql) {
-        # replace placeholders
+    private function run_db_migration($sql) {
+        # Replace placeholders
         $sql = str_replace('{{prefix}}', $this->config['table_prefix'], $sql);
         $sql = str_replace('{{engine}}', self::MYSQL_ENGINE, $sql);
         
-        $result = array(
-            'sql' => $sql,
-        );
-        return $result;
+        # Run command
+        $rows_affected = $this->pdo->exec($sql);
+        
+        # Log result
+        $this->log_sql_migration($sql, $rows_affected);
+        
+        return $rows_affected;
+    }
+
+    private function run_command_migration($migration) {
     }
     
-    private function exec_func_migration($migration) {
+    private function log($message) {
+        $utime = sprintf('%.4f', array_sum(explode(' ', microtime())));
+        $this->logs[$utime] = $message;
+        return $this->logs;
     }
     
-    private function log_sql_migration($result) {
-        $timestamp = microtime();
-        $this->logs[] = $result['sql'];
+    private function log_sql_migration($sql, $rows_updated) {
+        $MAX_LEN = 60;
+        $sql_log = (strlen($sql) > $MAX_LEN) ? substr($sql,0,$MAX_LEN)."..." : $sql;
+        $message = sprintf('%s >> %d rows', $sql, $rows_updated);
+        return $this->log($message);
     }
     
     private function log_func_migration($result) {
