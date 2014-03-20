@@ -36,6 +36,10 @@ class MockWikkaMigrator extends WikkaMigrator {
     public function delete_path($path) {
         return 'skipped in testing';
     }
+    
+    public function backup_file($path) {
+        return 'skipped in testing';
+    }
 }
 
 
@@ -125,6 +129,17 @@ class WikkaMigratorTest extends PHPUnit_Framework_TestCase {
     /**
      * Tests
      */
+    public function testCompleteMigration() {
+        # Run migrations
+        $this->migrator->config['table_prefix'] = '';
+        $this->migrator->run_migrations('1.0', '2.0');
+        
+        # Verify changes
+        $log_messages = array_values($this->migrator->logs);
+        var_dump($log_messages);
+        $this->assertContains('20 rows', $log_messages[47]);
+    }
+    
     public function testCommandMigration() {
         # Set pre-migration state
         unset($this->migrator->config['double_doublequote_html']);
@@ -139,7 +154,6 @@ class WikkaMigratorTest extends PHPUnit_Framework_TestCase {
         $this->assertEquals('safe',
             $this->migrator->config['double_doublequote_html']);
         $this->assertContains('delete_path(xml)', end($log_messages));
-        
     }
     
     public function testDatabaseMigration() {

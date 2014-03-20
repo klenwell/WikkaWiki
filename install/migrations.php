@@ -110,7 +110,38 @@ $WikkaDatabaseMigrations = array(
     '1.1.6.4' => array(),
     '1.1.6.5' => array(),
     '1.1.6.6' => array(),
-    '1.1.6.7' => array(),
+    '1.1.6.7' => array(
+        "ALTER TABLE {{prefix}}users ADD theme varchar(50) default ''",
+        "INSERT INTO {{prefix}}acls set page_tag = 'UserSettings', " .
+            "comment_read_acl = '*', comment_post_acl = '+'",
+        "INSERT INTO {{prefix}}acls set page_tag = 'AdminUsers', " .
+            "read_acl = '!*', write_acl = '!*', comment_acl = '!*', " .
+            "comment_read_acl = '!*', comment_post_acl = '!*'",
+        "INSERT INTO {{prefix}}acls set page_tag = 'AdminPages', " .
+            "read_acl = '!*', write_acl = '!*', comment_acl = '!*', " .
+            "comment_read_acl = '!*', comment_post_acl = '!*'",
+        "INSERT INTO {{prefix}}acls set page_tag = 'DatabaseInfo', " .
+            "read_acl = '!*', write_acl = '!*', comment_acl = '!*', " .
+            "comment_read_acl = '!*', comment_post_acl = '!*'"
+    ),
+    
+    '1.2' => array(
+        "ALTER TABLE {{prefix}}pages DROP handler",
+        "ALTER TABLE {{prefix}}comments ADD parent int(10) unsigned default NULL",
+        "ALTER TABLE {{prefix}}users ADD default_comment_display " .
+            "ENUM('date_asc', 'date_desc', 'threaded') NOT NULL default 'threaded'",
+        "ALTER TABLE {{prefix}}comments ADD status enum('deleted') default NULL",
+        "ALTER TABLE {{prefix}}acls ADD comment_read_acl text NOT NULL",
+        "ALTER TABLE {{prefix}}acls ADD comment_post_acl text NOT NULL",
+        "UPDATE {{prefix}}acls AS a INNER_JOIN(select page_tag, comment_acl " .
+            "FROM {{prefix}}acls) AS b on a.page_tag = b.page_tag set " .
+            "a.comment_read_acl=b.comment_acl, a.comment_post_acl=b.comment_acl",
+        "ALTER TABLE {{prefix}}acls DROP comment_acl",
+        "ALTER TABLE {{prefix}}pages ADD INDEX `idx_owner` (`owner`)",
+        "ALTER TABLE {{prefix}}referrers MODIFY referrer varchar(255) NOT NULL default ''",
+        "ALTER TABLE {{prefix}}referrer_blacklist MODIFY spammer varchar(255) " .
+            "NOT NULL default ''",
+    ),
 );
 # REPLACE {{prefix}} {{engine}}
 
@@ -151,5 +182,15 @@ $WikkaCommandMigrations = array(
     '1.1.6.3' => array(
         array('add_config', array('allow_user_registration', '1')),
         array('add_config', array('wikka_template_path', 'templates')),
+    ),
+    
+    '1.2' => array(
+        array('add_config', array('enable_user_host_lookup', '1')),
+        array('backup_file', array('config/main_menu.admin.inc')),
+        array('backup_file', array('config/main_menu.inc')),
+        array('backup_file', array('config/main_menu.user.inc')),
+        array('backup_file', array('config/options_menu.admin.inc')),
+        array('backup_file', array('config/options_menu.inc')),
+        array('backup_file', array('config/options_menu.user.inc')),
     ),
 );

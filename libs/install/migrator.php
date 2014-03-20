@@ -42,7 +42,6 @@ class WikkaMigrator {
         $apply = FALSE;
         
         foreach ( $this->database_migrations as $v => $statements ) {
-            #var_dump(array($v, $old_version, $v == $old_version));
             if ( $apply ) {
                 # SQL Migrations
                 foreach ( $statements as $sql ) {
@@ -124,6 +123,16 @@ class WikkaMigrator {
         rmdir($parent_dir);
         
         return array_merge(iterator_to_array($paths), array($parent_dir));
+    }
+    
+    public function backup_file($path) {
+        if ( ! file_exists($path) ) {
+            return "path not found";
+        }
+        else {
+            $dest = sprintf('%s.prev', $path);
+            copy($path, $dest);
+        }
     }
     
     /*
