@@ -141,7 +141,7 @@ class WikkaWebService {
         $wikka->connect_to_db();
     
         $install_handler = $wikka->load_handler_class('install');
-        $response = $install_handler->handle();
+        $response = $install_handler->handle($this);
         
         return $response;
     }

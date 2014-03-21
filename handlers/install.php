@@ -34,6 +34,12 @@ class InstallHandler extends WikkaHandler {
     # For Content-type header
     public $content_type = 'text/html; charset=utf-8';
     
+    # Webservice resources
+    public $request = null;
+    public $config = null;
+    public $pdo = null;
+    
+    # States
     private $states = array('intro',
                             'database_form',
                             'wiki_settings_form',
@@ -42,6 +48,9 @@ class InstallHandler extends WikkaHandler {
                             'upgrade',
                             'conclusion'); 
     private $state = 'intro';
+    
+    # Form errors
+    private $form_errors = array();
     
     # Template
     # http://getbootstrap.com/getting-started/#template
@@ -110,8 +119,10 @@ HTML;
     /*
      * Main Handler Method
      */
-    public function handle() {
-        $this->request = new WikkaRequest();
+    public function handle($webservice) {
+        $this->request = $webservice->request;
+        $this->config = $webservice->config;
+        $this->pdo = $webservice->pdo;
         
         # Simple state machine
         $requested_stage = $this->request->get_post_var('next-stage', 'intro');
@@ -165,12 +176,22 @@ HTML;
     private function state_database_form() {
         # Skip stage during upgrade
         if ( $this->is_upgrade() ) {
-            return $this->change_state('upgrade');
+            return $this->change_state('wiki_settings_form');
         }
         
         # Process form request
-        if ( $this->request->get_post_var('form-submitted') ) {
-            var_dump($_POST);
+        $process_form = ($this->request->get_post_var('form-submitted') == 'database');
+        if ( $process_form ) {
+            $form_values = $this->request->get_post_var('config', array());
+            $this->config = array_merge($this->config, $form_values);
+            
+            if ( $this->validate_database_values() ) {
+                # Update Session data
+                $_SESSION['install']['config'] = $this->config;
+
+                # Change State
+                return $this->change_state('wiki_settings_form');
+            };
         }
       
         # Set template variables
@@ -185,9 +206,35 @@ HTML;
     }
     
     private function state_wiki_settings_form() {
+        # Process form request
+        $process_form = (
+            $this->request->get_post_var('form-submitted') == 'wiki-settings');
+        if ( $process_form ) {
+            $form_values = $this->request->get_post_var('config', array());
+            $this->config = array_merge($this->config, $form_values);
+            
+            if ( $this->validate_wiki_settings_values() ) {
+                # Update Session data
+                $_SESSION['install']['config'] = $this->config;
+
+                # Change State
+                return $this->change_state('admin_form');
+            };
+        }
+      
+        # Set template variables
+        $this->head = $this->format_head();
+        $this->header = $this->format_header();
+        $this->stage_content = $this->format_wiki_settings_form();
+        $this->footer = $this->format_footer();
+        
+        # Return output
+        $content = $this->format_content();
+        return $content;
     }
     
     private function state_admin_form() {
+        throw new Exception('TODO: state_install');
     }
     
     private function state_install() {
@@ -213,6 +260,52 @@ HTML;
     }
     
     /*
+     * Validators
+     */
+    private function validate_database_values() {
+        #
+        # Validate database values
+        #
+        if ( empty($this->config['mysql_host']) ) {
+            $this->form_errors['mysql_host'] = 'Please input a valid MySQL host';
+        }
+        
+        if ( empty($this->config['mysql_database']) ) {
+            $this->form_errors['mysql_database'] = 'Please input a valid database';
+        }
+        
+        if ( empty($this->config['mysql_user']) ) {
+            $this->form_errors['mysql_user'] = 'Please input a valid MySQL username';
+        }
+        
+        if ( empty($this->config['mysql_password']) ) {
+            $this->form_errors['mysql_password'] = 'Please input a valid MySQL password';
+        }
+        
+        if ( $this->form_errors ) {
+            return FALSE;
+        }
+        
+        # Test connection
+        try {
+            $host = $this->config['mysql_host'];
+            $name = $this->config['mysql_database'];
+            $user = $this->config['mysql_user'];
+            $pass = $this->config['mysql_password'];
+            $dsn = sprintf('mysql:host=%s;dbname=%s', $host, $name);
+            $pdo = new PDO($dsn, $user, $pass);
+            return TRUE;
+        }
+        catch (Exception $e) {
+            $this->form_errors['database_form'] = sprintf(
+                "Failed to connect to database. Please check settings. [Message: %s]",
+                $e->getMessage()
+            );
+            return FALSE;
+        }
+    }
+    
+    /*
      * Private Methods
      */
     private function is_upgrade() {
@@ -224,6 +317,15 @@ HTML;
     }
     
     private function run_migrations() {
+    }
+    
+    private function get_config_value($key, $default='') {
+        if ( isset($this->config[$key]) ) {
+            return $this->config[$key];
+        }
+        else {
+            return $default;
+        }
     }
      
     /*
@@ -346,58 +448,75 @@ XHTML;
           %s
           %s
           %s
+          %s
         </fieldset>
 
         <div class="form-group">
           <div class="col-sm-offset-2 col-sm-10">
             <input type="submit" class="btn btn-primary" name="submit" value="Submit" />
-            <input type="hidden" name="next-stage" value="form" />
-            <input type="hidden" name="form-submitted" value="true" />
+            <input type="hidden" name="next-stage" value="database_form" />
+            <input type="hidden" name="form-submitted" value="database" />
           </div>
         </div>
       </form>
     </div>
 XHTML;
 
+        # Form-level errors
+        if ( isset($this->form_errors['database_form']) ) {
+            $form_alert = sprintf('<div class="alert alert-danger">%s</div>',
+                $this->form_errors['database_form']
+            );
+        }
+        elseif ( $this->form_errors ) {
+            $form_alert = sprintf('<div class="alert alert-danger">%s</div>',
+                'There were errors with your submission'
+            );
+        }
+        else {
+            $form_alert = '';
+        }
+
         # Build form groups
         $db_host_help = 'The host your MySQL server is running on. Usually ' .
             '"localhost" (i.e., the same machine your Wikka site is on).';
-        $db_host_group = $this->build_input_form_group('mysql-host',
-            'config[mysql_host]', 'MySQL Host',
-            $this->wikka->GetConfigValue('mysql_host'), $db_host_help);
+        $db_host_group = $this->build_input_form_group('mysql_host',
+            'MySQL Host', $this->get_config_value('mysql_host'), $db_host_help);
         
         $db_name_help = 'The MySQL database Wikka should use. This database ' .
             '<strong class="text-danger">needs to exist already</strong> ' .
             'before you continue!';
-        $db_name_group = $this->build_input_form_group('mysql-database',
-            'config[mysql_database]', 'MySQL Database',
-            $this->wikka->GetConfigValue('mysql_database'), $db_name_help);
+        $db_name_group = $this->build_input_form_group('mysql_database',
+            'MySQL Database', $this->get_config_value('mysql_database'), $db_name_help);
         
-        $db_user_group = $this->build_input_form_group('mysql-user',
-            'config[mysql_user]', 'MySQL User Name',
-            $this->wikka->GetConfigValue('mysql_user'));
+        $db_user_group = $this->build_input_form_group('mysql_user',
+            'MySQL User Name', $this->get_config_value('mysql_user'));
         
         $db_pass_help = 'Name and password of the MySQL user used to connect ' .
             'to your database.';
-        $db_pass_group = $this->build_input_form_group('mysql-password',
-            'config[mysql_password]', 'MySQL Password',
-            $this->wikka->GetConfigValue('mysql_password'), $db_pass_help, 'password');
+        $db_pass_group = $this->build_input_form_group('mysql_password',
+            'MySQL Password', $this->get_config_value('mysql_password'),
+            $db_pass_help, 'password');
         
         $db_prefix_help = 'Prefix of all tables used by Wikka. This allows you ' .
             'to run multiple Wikka installations using the same MySQL database ' .
             'by configuring them to use different table prefixes.';
-        $db_prefix_group = $this->build_input_form_group('table-prefix',
-            'config[table_prefix]', 'Table Prefix',
-            $this->wikka->GetConfigValue('table_prefix'), $db_prefix_help);
+        $db_prefix_group = $this->build_input_form_group('table_prefix',
+            'Table Prefix', $this->get_config_value('table_prefix'), $db_prefix_help);
         
         return sprintf($form_f,
             $this->wikka->FormOpen(),
+            $form_alert,
             $db_host_group,
             $db_name_group,
             $db_user_group,
             $db_pass_group,
             $db_prefix_group
         );
+    }
+    
+    protected function format_wiki_settings_form() {
+        throw new Exception('TODO: format_wiki_settings_form');
     }
     
     private function next_stage_button($stage, $label='Continue') {
@@ -413,10 +532,10 @@ XHTML;
         return sprintf($form_f, $this->wikka->FormOpen(), $label, $stage);
     }
     
-    private function build_input_form_group($id, $name, $label, $value='',
-        $help_text='', $type='text') {
+    private function build_input_form_group($id, $label, $value='', $help_text='',
+        $type='text') {
         $html_f = <<<XHTML
-          <div class="row form-group">
+          <div class="row form-group%s">
             <label for="%s" class="col-sm-2 control-label">%s</label>
             <div class="col-sm-5">
               <input id="%s" class="form-control" type="%s"
@@ -425,6 +544,15 @@ XHTML;
             </div>
           </div>   
 XHTML;
+
+        # Check for errors
+        if ( isset($this->form_errors[$id]) ) {
+            $error_class = ' has-error';
+            $help_text = $this->form_errors[$id];
+        }
+        else {
+            $error_class = '';
+        }
 
         if ( $help_text ) {
             $help_div_f = <<<XDIV
@@ -438,6 +566,9 @@ XDIV;
             $help_div = '';
         }
         
-        return sprintf($html_f, $id, $label, $id, $type, $name, $value, $help_div);
+        $name = sprintf('config[%s]', $id);
+        
+        return sprintf($html_f, $error_class, $id, $label, $id, $type, $name,
+            $value, $help_div);
     }
 }
