@@ -136,8 +136,15 @@ class WikkaMigratorTest extends PHPUnit_Framework_TestCase {
         
         # Verify changes
         $log_messages = array_values($this->migrator->logs);
-        var_dump($log_messages);
         $this->assertContains('20 rows', $log_messages[47]);
+        $this->assertEquals(112, count($log_messages));
+        
+        # Verify v1.3.1
+        $result = $this->pdo->query(
+            'SELECT read_acl FROM acls WHERE page_tag="AdminSpamLog"');
+        $first_row = $result->fetch();
+        $this->assertEquals(1, $result->rowCount());
+        $this->assertEquals('!*', $first_row['read_acl']);
     }
     
     public function testCommandMigration() {

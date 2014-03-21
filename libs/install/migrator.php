@@ -168,6 +168,7 @@ class WikkaMigrator {
         # Replace placeholders
         $sql = str_replace('{{prefix}}', $this->config['table_prefix'], $sql);
         $sql = str_replace('{{engine}}', self::MYSQL_ENGINE, $sql);
+        $sql = str_replace('{{db_name}}', $this->config['mysql_database'], $sql);
         
         # Run command
         $rows_affected = $this->pdo->exec($sql);

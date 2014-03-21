@@ -142,6 +142,69 @@ $WikkaDatabaseMigrations = array(
         "ALTER TABLE {{prefix}}referrer_blacklist MODIFY spammer varchar(255) " .
             "NOT NULL default ''",
     ),
+    
+    '1.3' => array(),
+    '1.3.1' => array(
+        "INSERT INTO {{prefix}}acls set page_tag = 'WikkaMenulets', " .
+            "read_acl = '!*', write_acl = '!*', comment_read_acl = '!*', " .
+            "comment_post_acl = '!*'",
+        "INSERT INTO {{prefix}}acls set page_tag = 'AdminBadWords', " .
+            "read_acl = '!*', write_acl = '!*', comment_read_acl = '!*', " .
+            "comment_post_acl = '!*'",
+        "INSERT INTO {{prefix}}acls set page_tag = 'AdminSpamLog', " .
+            "read_acl = '!*', write_acl = '!*', comment_read_acl = '!*', " .
+            "comment_post_acl = '!*'",
+        "ALTER DATABASE {{db_name}} DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci",
+        "ALTER TABLE {{prefix}}pages DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci",
+        "ALTER TABLE {{prefix}}pages CHANGE `tag` `tag` VARCHAR( 75 ) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL default ''",
+        "ALTER TABLE {{prefix}}pages CHANGE `body` `body` MEDIUMTEXT CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL",
+        "ALTER TABLE {{prefix}}pages CHANGE `owner` `owner` VARCHAR( 75 ) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL default ''",
+        "ALTER TABLE {{prefix}}pages CHANGE `user` `user` VARCHAR( 75 ) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL default ''",
+        "ALTER TABLE {{prefix}}pages CHANGE `latest` `latest` ENUM( 'Y','N' ) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL default 'N'",
+        "ALTER TABLE {{prefix}}pages CHANGE `note` `note` varchar(100) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL default ''",
+        "ALTER TABLE {{prefix}}acls DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci",
+        "ALTER TABLE {{prefix}}acls CHANGE `page_tag` `page_tag` VARCHAR( 75 ) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL default ''",
+        "ALTER TABLE {{prefix}}acls CHANGE `read_acl` `read_acl` TEXT CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL",
+        "ALTER TABLE {{prefix}}acls CHANGE `write_acl` `write_acl` TEXT CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL",
+        "ALTER TABLE {{prefix}}acls CHANGE `comment_read_acl` `comment_read_acl` TEXT CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL",
+        "ALTER TABLE {{prefix}}acls CHANGE `comment_post_acl` `comment_post_acl` TEXT CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL",
+        "ALTER TABLE {{prefix}}links DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci",
+        "ALTER TABLE {{prefix}}links CHANGE `from_tag` `from_tag` VARCHAR( 75 ) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL default ''",
+        "ALTER TABLE {{prefix}}links CHANGE `to_tag` `to_tag` VARCHAR( 75 ) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL default ''",
+        "ALTER TABLE {{prefix}}referrers DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci",
+        "ALTER TABLE {{prefix}}referrers CHANGE `page_tag` `page_tag` VARCHAR( 75 ) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL default ''",
+        "ALTER TABLE {{prefix}}referrers CHANGE `referrer` `referrer` VARCHAR(250) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL default ''",
+        "ALTER TABLE {{prefix}}referrer_blacklist DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci",
+        "ALTER TABLE {{prefix}}referrer_blacklist CHANGE `spammer` `spammer` VARCHAR(250) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL default ''",
+        "ALTER TABLE {{prefix}}users DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci",
+        "ALTER TABLE {{prefix}}users CHANGE `name` `name` VARCHAR( 75 ) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL default ''",
+        "ALTER TABLE {{prefix}}users CHANGE `password` `password` VARCHAR( 32 ) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL default ''",
+        "ALTER TABLE {{prefix}}users CHANGE `email` `email` VARCHAR( 50 ) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL default ''",
+        "ALTER TABLE {{prefix}}users CHANGE `doubleclickedit` `doubleclickedit` ENUM( 'Y','N' ) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL default 'Y'",
+        "ALTER TABLE {{prefix}}users CHANGE `show_comments` `show_comments` ENUM( 'Y','N' ) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL default 'N'",
+        "ALTER TABLE {{prefix}}users CHANGE `default_comment_display` `default_comment_display` ENUM( 'date_asc','date_desc','threaded' ) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL default 'threaded'",
+        "ALTER TABLE {{prefix}}users CHANGE `status` `status` ENUM( 'invited','signed-up','pending','active','suspended','banned','deleted') CHARACTER SET utf8 COLLATE utf8_unicode_ci",
+        "ALTER TABLE {{prefix}}users CHANGE `theme` `theme` VARCHAR( 50 ) CHARACTER SET utf8 COLLATE utf8_unicode_ci default ''",
+        "ALTER TABLE {{prefix}}comments DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci",
+        "ALTER TABLE {{prefix}}comments CHANGE `page_tag` `page_tag` VARCHAR( 75 ) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL default ''",
+        "ALTER TABLE {{prefix}}comments CHANGE `comment` `comment` TEXT CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL",
+        "ALTER TABLE {{prefix}}comments CHANGE `user` `user` VARCHAR( 75 ) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL default ''",
+        "ALTER TABLE {{prefix}}comments CHANGE `status` `status` ENUM( 'deleted' ) CHARACTER SET utf8 COLLATE utf8_unicode_ci default NULL",
+        "ALTER TABLE {{prefix}}comments CHANGE `deleted` `deleted` CHAR( 1 ) CHARACTER SET utf8 COLLATE utf8_unicode_ci default NULL",
+        "ALTER TABLE {{prefix}}sessions DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci",
+        "ALTER TABLE {{prefix}}sessions CHANGE `sessionid` `sessionid` CHAR( 32 ) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL",
+        "ALTER TABLE {{prefix}}sessions CHANGE `userid` `userid` VARCHAR( 75 ) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL",
+        "ALTER TABLE {{prefix}}users ADD challenge varchar(8) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT ''",
+        "ALTER TABLE {{prefix}}users CHANGE `challenge` `challenge` varchar(8) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT ''",
+        "UPDATE {{prefix}}users SET challenge='' WHERE challenge='00000000'"
+    ),
+    
+    '1.3.2' => array(
+        "ALTER TABLE {{prefix}}pages ADD `title` varchar(75) CHARACTER SET " .
+            "utf8 COLLATE utf8_unicode_ci DEFAULT '' AFTER `tag`"
+    ),
+    
+    '1.4' => array(),
 );
 # REPLACE {{prefix}} {{engine}}
 
