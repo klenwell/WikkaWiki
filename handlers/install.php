@@ -244,26 +244,73 @@ HTML;
     }
     
     private function state_admin_form() {
-        throw new Exception('TODO: state_install');
+        # Process form request
+        $form_submitted = (
+            $this->request->get_post_var('form-submitted') == 'admin-form');
+        if ( $form_submitted ) {
+            $form_values = $this->request->get_post_var('config', array());
+            $this->config = array_merge($this->config, $form_values);
+            
+            if ( $this->validate_admin_values() ) {
+                # Update Session data
+                $_SESSION['install']['config'] = $this->config;
+
+                # Change State
+                return $this->change_state('install');
+            };
+        }
+      
+        # Set template variables
+        $this->head = $this->format_head();
+        $this->header = $this->format_header();
+        $this->stage_content = $this->format_admin_form();
+        $this->footer = $this->format_footer();
+        
+        # Return output
+        $content = $this->format_content();
+        return $content;
     }
     
     private function state_install() {
-        var_dump($_SESSION['install']['config']);
         throw new Exception('TODO: state_install');
+        var_dump($_SESSION['install']['config']);
+        
+        $installer = new WikkaInstaller();
+        $installer->install_new_wiki();
+        $installer->write_config_file();
+        
+        # Set template variables
+        $this->head = $this->format_head();
+        $this->header = $this->format_header();
+        $this->stage_content = $this->format_install_report($installer);
+        $this->footer = $this->format_footer();
+        
+        # Return output
+        $content = $this->format_content();
+        return $content;
     }
     
     private function state_upgrade() {
         throw new Exception('TODO: state_upgrade');
-        $this->run_migrations();
-        $config = $this->update_config();
-        $saved = $this->save_config($config);
-      
-        if ( $saved ) {
-            return $this->change_state('conclusion');
-        }
-        else {
-            return $this->format_upgrade_error();
-        }
+        
+        $migrator = new WikkaMigrator();
+        $migrator->run_migrations();
+        $migrator->write_config_file();
+        
+        # Set template variables
+        $this->head = $this->format_head();
+        $this->header = $this->format_header();
+        $this->stage_content = $this->format_install_report($migrator);
+        $this->footer = $this->format_footer();
+        
+        # Return output
+        $content = $this->format_content();
+        return $content;
+    }
+    
+    private function state_save_config_file() {
+        var_dump($_SESSION['install']['config']);
+        throw new Exception('TODO: state_save_config_file');
     }
 
     private function state_conclusion() {
@@ -274,9 +321,6 @@ HTML;
      * Validators
      */
     private function validate_database_values() {
-        #
-        # Validate database values
-        #
         if ( empty($this->config['mysql_host']) ) {
             $this->form_errors['mysql_host'] = 'Please input a valid MySQL host';
         }
@@ -318,9 +362,6 @@ HTML;
     }
     
     private function validate_wiki_settings_values() {
-        #
-        # Validate wiki settings values
-        #
         if ( empty($this->config['wakka_name']) ) {
             $this->form_errors['wakka_name'] = "Please fill in a title " .
               "for your wiki. For example: <em>My Wikka website</em>";
@@ -331,6 +372,50 @@ HTML;
             $this->form_errors['root_page'] = "Please fill in a valid name " .
               "for your wiki's homepage. For example: <em>start</em> or " .
               "<em>HomePage</em>";
+        }
+        
+        if ( $this->form_errors ) {
+            return FALSE;
+        }
+        else {
+          return TRUE;
+        }
+    }
+    
+    private function validate_admin_values() {
+        $admin_user = $this->get_form_value('admin_users');
+        if ( empty($admin_user) ) {
+            $this->form_errors['admin_users'] = "Please fill in an admin name.";
+        }
+        elseif ( ! preg_match('/^[A-Z][a-z]+[A-Z0-9][A-Za-z0-9]*$/', $admin_user) ) {
+            $this->form_errors['admin_users'] = "Admin name must be formatted " .
+                "as a WikiName. For example: <em>JohnSmith</em> or " .
+                "<em>AbC</em> or <em>Ted22</em>";
+        }
+        
+        $pass1 = $this->get_form_value('password');
+        $pass2 = $this->get_form_value('password2');
+        if ( ! $pass1 ) {
+            $this->form_errors['password'] = "Please fill in a password.";
+        }
+        elseif ( strlen($pass1) < 5 ) {
+            $this->form_errors['password'] = "Please fill in a password.";
+        }
+        
+        if ( ! $pass2 ) {
+            $this->form_errors['password2'] = "Please fill in a password.";
+        }
+        elseif ( strcmp($pass1, $pass2) != 0 ) {
+            $this->form_errors['password2'] = "Passwords don't match.";
+        }
+        
+        $admin_email = $this->get_form_value('admin_email');
+        if ( empty($admin_email) ) {
+            $this->form_errors['admin_email'] = "Please fill in your email address.";
+        }
+        elseif ( ! preg_match("/^[A-Za-z0-9.!#$%&'*+\/=?^_`{|}~-]+@[A-Za-z0-9.-]+$/i",
+            $admin_email) ) {
+            $this->form_errors['admin_email'] = "Please fill in a valid email address.";
         }
         
         if ( $this->form_errors ) {
@@ -358,6 +443,17 @@ HTML;
     private function get_config_value($key, $default='') {
         if ( isset($this->config[$key]) ) {
             return $this->config[$key];
+        }
+        else {
+            return $default;
+        }
+    }
+    
+    private function get_form_value($key, $default='') {
+        $form_values = $this->request->get_post_var('config', array());
+        
+        if ( isset($form_values[$key]) ) {
+            return $form_values[$key];
         }
         else {
             return $default;
@@ -702,6 +798,102 @@ XHTML;
         );
     }
     
+    protected function format_admin_form() {
+        $form_f = <<<XHTML
+    <div class="form">
+      %s
+        <fieldset>
+          <h4>Administrative Account Configuration</h4>
+          %s
+          %s
+          %s
+          %s
+          %s
+          
+          <div class="panel panel-info">
+            <div class="panel-heading">
+              <h4 class="panel-title">Version Update Check</h4>
+            </div>
+            <div class="panel-body">
+              <p>
+                It is <strong>strongly recommended</strong> that you leave this
+                option checked if your run your wiki on the internet.
+                Administrator(s) will be notified automatically on the wiki if
+                a new version of WikkaWiki is available for download. See the
+                <a href="http://docs.wikkawiki.org/CheckVersionActionInfo"
+                  target="_blank">documentation</a> for details. Please note
+                that if you leave this option enabled, your installation will
+                periodically contact a WikkaWiki server for update information.
+                As a result, your IP address and/or domain name may be recorded
+                in our referrer logs.
+              </p>
+            </div>
+          </div>
+          %s
+          
+        </fieldset>
+
+        <div class="form-group">
+          <div class="col-sm-offset-2 col-sm-10">
+            <input type="submit" class="btn btn-primary" name="submit" value="Submit" />
+            <input type="hidden" name="next-stage" value="admin_form" />
+            <input type="hidden" name="form-submitted" value="admin-form" />
+          </div>
+        </div>
+      </form>
+    </div>
+XHTML;
+
+        # Form-level errors
+        if ( $this->form_errors ) {
+            $form_alert = sprintf('<div class="alert alert-danger">%s</div>',
+                'There were errors with your submission'
+            );
+        }
+        else {
+            $form_alert = '';
+        }
+        
+        # Build form groups
+        $admin_name_help = 'This is the username of the person running this ' .
+            'wiki. Later you\'ll be able to add other admins. The admin ' .
+            'username should be formatted as a <abbr title="A WikiName is ' .
+            'formed by two or more capitalized words without space, ' .
+            'e.g. JohnDoe">WikiName</abbr>.';
+        $admin_name_group = $this->build_input_form_group('admin_users',
+            "Admin Name", $this->get_config_value('admin_users'),
+            $admin_name_help);
+        
+        $pass_help = "Choose a password for the wiki administrator (5+ chars)";
+        $pass1 = $this->get_form_value('password');
+        $pass2 = $this->get_form_value('password2');
+        $pass1_group = $this->build_input_form_group('password', "Enter Password",
+            $pass1, '', 'password');
+        $pass2_group = $this->build_input_form_group('password2',
+            "Confirm Password", $pass2, $pass_help, 'password');
+        
+        $admin_email_help = "Administrator's email address.";
+        $admin_email_group = $this->build_input_form_group('admin_email',
+            "Email", $this->get_config_value('admin_email'),
+            $admin_email_help);
+        
+        $config_value = $this->get_config_value('enable_version_check', NULL);
+        $value_missing = ($config_value == NULL); 
+        $is_checked = ( $value_missing || $config_value == '1' );
+        $version_group = $this->build_checkbox_form_group('enable_version_check',
+            "Enable Check", '1', $is_checked);
+        
+        return sprintf($form_f,
+            $this->wikka->FormOpen(),
+            $form_alert,
+            $admin_name_group,
+            $pass1_group,
+            $pass2_group,
+            $admin_email_group,
+            $version_group
+        );
+    }
+    
     private function next_stage_button($stage, $label='Continue') {
         $form_f = <<<XHTML
     <div>
@@ -736,7 +928,8 @@ XHTML;
         else {
             $error_class = '';
         }
-
+        
+        # Helper Text
         if ( $help_text ) {
             $help_div_f = <<<XDIV
               <span class="help-block">
@@ -753,6 +946,50 @@ XDIV;
         
         return sprintf($html_f, $error_class, $id, $label, $id, $type, $name,
             $value, $help_div);
+    }
+    
+    private function build_checkbox_form_group($id, $label, $value,
+        $is_checked=FALSE, $help_text='') {
+        $html_f = <<<XHTML
+          <div class="row form-group%s">
+            <label for="%s" class="col-sm-2 control-label">%s</label>
+            <div class="col-sm-5">
+              <input id="%s" class="form-control" type="checkbox"
+                name="%s" value="%s"%s />
+              %s
+            </div>
+          </div>   
+XHTML;
+
+        # Check for errors
+        if ( isset($this->form_errors[$id]) ) {
+            $error_class = ' has-error';
+            $help_text = $this->form_errors[$id];
+        }
+        else {
+            $error_class = '';
+        }
+        
+        # Helper Text
+        if ( $help_text ) {
+            $help_div_f = <<<XDIV
+              <span class="help-block">
+                %s
+              </span>
+XDIV;
+            $help_div = sprintf($help_div_f, $help_text);
+        }
+        else {
+            $help_div = '';
+        }
+        
+        # Checked Attr
+        $check_attr = ($is_checked) ? ' checked="checked"' : '';
+        
+        $name = sprintf('config[%s]', $id);
+        
+        return sprintf($html_f, $error_class, $id, $label, $id, $name,
+            $value, $check_attr, $help_div);
     }
     
     private function build_select_group($id, $label, $options, $value='',
