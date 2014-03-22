@@ -128,6 +128,17 @@ HTML;
         $requested_stage = $this->request->get_post_var('next-stage', 'intro');
         $content = $this->change_state($requested_stage);
         
+        # Load config from session
+        $_SESSION['install'] = (isset($_SESSION['install'])) ?
+          $_SESSION['install'] : array();
+        
+        if ( isset($_SESSION['install']['config']) ) {
+            $this->config = $_SESSION['install']['config'];
+        }
+        else {
+            $_SESSION['install']['config'] = $this->config;
+        }
+        
         # Return response
         $response = new WikkaResponse($content);
         $response->status = 200;
@@ -179,9 +190,8 @@ HTML;
             return $this->change_state('wiki_settings_form');
         }
         
-        # Process form request
-        $process_form = ($this->request->get_post_var('form-submitted') == 'database');
-        if ( $process_form ) {
+        $form_submitted = ($this->request->get_post_var('form-submitted') == 'database');
+        if ( $form_submitted ) {
             $form_values = $this->request->get_post_var('config', array());
             $this->config = array_merge($this->config, $form_values);
             
@@ -207,9 +217,9 @@ HTML;
     
     private function state_wiki_settings_form() {
         # Process form request
-        $process_form = (
+        $form_submitted = (
             $this->request->get_post_var('form-submitted') == 'wiki-settings');
-        if ( $process_form ) {
+        if ( $form_submitted ) {
             $form_values = $this->request->get_post_var('config', array());
             $this->config = array_merge($this->config, $form_values);
             
@@ -238,6 +248,7 @@ HTML;
     }
     
     private function state_install() {
+        var_dump($_SESSION['install']['config']);
         throw new Exception('TODO: state_install');
     }
     
@@ -298,10 +309,35 @@ HTML;
         }
         catch (Exception $e) {
             $this->form_errors['database_form'] = sprintf(
-                "Failed to connect to database. Please check settings. [Message: %s]",
+                "<h4>%s</h4>Message: %s",
+                "Failed to connect to database. Please check settings.",
                 $e->getMessage()
             );
             return FALSE;
+        }
+    }
+    
+    private function validate_wiki_settings_values() {
+        #
+        # Validate wiki settings values
+        #
+        if ( empty($this->config['wakka_name']) ) {
+            $this->form_errors['wakka_name'] = "Please fill in a title " .
+              "for your wiki. For example: <em>My Wikka website</em>";
+        }
+        
+        if ( empty($this->config['root_page']) ||
+             ! preg_match('/^[A-Za-z0-9]{3,}$/', $this->config['root_page'])) {
+            $this->form_errors['root_page'] = "Please fill in a valid name " .
+              "for your wiki's homepage. For example: <em>start</em> or " .
+              "<em>HomePage</em>";
+        }
+        
+        if ( $this->form_errors ) {
+            return FALSE;
+        }
+        else {
+          return TRUE;
         }
     }
     
@@ -326,6 +362,69 @@ HTML;
         else {
             return $default;
         }
+    }
+    
+    private function get_theme_options() {
+        #
+        # Return an array of theme options pulled from templates dir. Array
+        # will consist of label => value pairs.
+        #
+        $options = array();
+        
+        # Use configured path
+        $theme_dir = 'templates';
+        $dp = opendir($theme_dir);
+        
+        # Build options list
+        while ( $f = readdir($dp) ) {
+            if ( $f[0] == '.' ) {
+                continue;
+            }
+            else {
+                $label = ucwords($f);
+                $options[$label] = $f;
+            }
+        }
+        
+        return $options;
+    }
+    
+    private function get_language_options() {
+        #
+        # Return an array of language options pulled from lang dir. Array
+        # will consist of label => value pairs.
+        #
+        $options = array();
+        
+        $lang_map = array(
+            'en' => 'English',
+            'de' => 'Deutsch',
+            'fr' => 'Français',
+            'nl' => 'Nederlands',
+            'pl' => 'Polski',
+            'vn' => 'Tiếng Việt'
+        );
+        
+        # Use configured path
+        $lang_dir = 'lang';
+        $dp = opendir($lang_dir);
+        
+        # Build options list
+        $path_f = 'lang%s%s%s%s.inc.php';
+        while ( $f = readdir($dp) ) {
+            $path = sprintf($path_f, DIRECTORY_SEPARATOR, $f,
+                DIRECTORY_SEPARATOR, $f);
+            
+            if ( $f[0] == '.' ) {
+                continue;
+            }
+            elseif ( file_exists($path) ) {
+                $label = isset($lang_map[$f]) ? $lang_map[$f] : $f;
+                $options[$label] = $f;
+            }
+        }
+        
+        return $options;
     }
      
     /*
@@ -516,7 +615,91 @@ XHTML;
     }
     
     protected function format_wiki_settings_form() {
-        throw new Exception('TODO: format_wiki_settings_form');
+        $form_f = <<<XHTML
+    <div class="form">
+      %s
+        <fieldset>
+          <h4>Wiki Configuration</h4>
+          %s
+          %s
+          %s
+          %s
+          %s
+          %s
+          %s
+          %s
+        </fieldset>
+
+        <div class="form-group">
+          <div class="col-sm-offset-2 col-sm-10">
+            <input type="submit" class="btn btn-primary" name="submit" value="Submit" />
+            <input type="hidden" name="next-stage" value="wiki_settings_form" />
+            <input type="hidden" name="form-submitted" value="wiki-settings" />
+          </div>
+        </div>
+      </form>
+    </div>
+XHTML;
+
+        # Form-level errors
+        if ( $this->form_errors ) {
+            $form_alert = sprintf('<div class="alert alert-danger">%s</div>',
+                'There were errors with your submission'
+            );
+        }
+        else {
+            $form_alert = '';
+        }
+        
+        # Build form groups
+        $wakka_name_help = 'The name of your wiki, as it will be displayed ' .
+            'in the title.';
+        $wakka_name_group = $this->build_input_form_group('wakka_name',
+            "Your Wiki's Name", $this->get_config_value('wakka_name'),
+            $wakka_name_help);
+        
+        $root_page_help = 'Your wiki\'s home page. It should not contain ' .
+            'any space or special character and be at least 3 characters ' .
+            'long. It is typically formatted as a <abbr title="A WikiName ' .
+            'is formed by two or more capitalized words without space, ' .
+            'e.g. HomePage">WikiName</abbr>.';
+        $root_page_group = $this->build_input_form_group('root_page',
+            'Home Page', $this->get_config_value('root_page'), $root_page_help);
+        
+        $wiki_suffix_help = 'Suffix used for cookies and part of the session ' .
+            'name. This allows you to run multiple Wikka installations on the ' .
+            'same server by configuring them to use different wiki prefixes.';
+        $wiki_suffix_group = $this->build_input_form_group('wiki_suffix',
+            "Your Wiki Suffix", $this->get_config_value('wiki_suffix'),
+            $wiki_suffix_help);
+        
+        $meta_help = 'Optional keywords/description to insert into the HTML meta headers.';
+        $meta_keywords_group = $this->build_input_form_group('meta_keywords',
+            'Meta Keywords', $this->get_config_value('meta_keywords'));
+        $meta_desc_group = $this->build_input_form_group('meta_description',
+            'Meta Description', $this->get_config_value('meta_description'),
+            $meta_help);
+        
+        $theme_help = "Choose the <em>look and feel</em> of your wiki " .
+            "(you'll be able to change this later).";
+        $theme_group = $this->build_select_group('theme',
+            'Theme', $this->get_theme_options(),
+            $this->get_config_value('theme'));
+        $lang_group = $this->build_select_group('default_lang',
+            'Language Pack', $this->get_language_options(),
+            $this->get_config_value('default_lang'), $theme_help);
+        
+        return sprintf($form_f,
+            $this->wikka->FormOpen(),
+            $form_alert,
+            $wakka_name_group,
+            $root_page_group,
+            $wiki_suffix_group,
+            $meta_keywords_group,
+            $meta_desc_group,
+            $theme_group,
+            $lang_group
+        );
     }
     
     private function next_stage_button($stage, $label='Continue') {
@@ -570,5 +753,55 @@ XDIV;
         
         return sprintf($html_f, $error_class, $id, $label, $id, $type, $name,
             $value, $help_div);
+    }
+    
+    private function build_select_group($id, $label, $options, $value='',
+        $help_text='') {
+        $html_f = <<<XHTML
+          <div class="row form-group%s">
+            <label for="%s" class="col-sm-2 control-label">%s</label>
+            <div class="col-sm-5">
+              <select id="%s" class="form-control" name="%s" >
+                %s
+              </select>
+              %s
+            </div>
+          </div>   
+XHTML;
+
+        # Check for errors
+        if ( isset($this->form_errors[$id]) ) {
+            $error_class = ' has-error';
+            $help_text = $this->form_errors[$id];
+        }
+        else {
+            $error_class = '';
+        }
+
+        # Set helper text value
+        if ( $help_text ) {
+            $help_div_f = <<<XDIV
+              <span class="help-block">
+                %s
+              </span>
+XDIV;
+            $help_div = sprintf($help_div_f, $help_text);
+        }
+        else {
+            $help_div = '';
+        }
+        
+        # Build option list
+        $option_tags = array();
+        $option_f = '<option value="%s"%s>%s</option>';
+        foreach ($options as $opt_label => $opt_value) {
+          $selected = ($opt_value == $value) ? ' selected' : '';
+          $option_tags[] = sprintf($option_f, $opt_value, $selected, $opt_label);
+        }
+        
+        $name = sprintf('config[%s]', $id);
+        
+        return sprintf($html_f, $error_class, $id, $label, $id, $name,
+            implode('', $option_tags), $help_div);
     }
 }
