@@ -47,6 +47,7 @@ class InstallHandler extends WikkaHandler {
                             'admin_form',
                             'install',
                             'upgrade',
+                            'save_config_file',
                             'conclusion'); 
     private $state = 'intro';
     
@@ -893,25 +894,72 @@ XHTML;
     
     protected function format_installer_report($installer) {
         $report_f = <<<XHTML
-    <div class="installer-report container">
+    <div class="installer-report">
+      <div class="container">
+        %s
+      </div>
+      
       %s
+      <div class="form-group buttons">
+        %s
+        %s
+      </div>
     </div>
 XHTML;
 
-        return sprintf($report_f, implode("\n", $installer->report));
+        if ( $installer->errors ) {
+            $restart_button_f = <<<XHTML
+        <div class="pull-left">
+          %s
+        </div>
+XHTML;
+
+            $restart_button = sprintf($restart_button_f,
+                $this->next_stage_button('database_form', 'Try Again', 'warning'));
+
+            $warning = <<<XHTML
+      <div class="panel panel-warning">
+        <div class="panel-heading">
+          <h4 class="panel-title">Install Issues Reported</h4>
+        </div>
+        <div class="panel-body">
+          <p>
+            There were some issues reported during the install process. This
+            does not necessarily mean the install was unsuccessful. Please
+            review the issues reported above in red.
+          </p>
+          <p>
+            If you believe the issues are negligible, hit the
+            <span class="label label-primary">Continue</span> button.
+            Otherwise, you can press the <span class="label label-warning">
+            Try Again</span> button to resubmit your information and try again. 
+          </p>
+        </div>
+      </div>
+XHTML;
+        }
+        else {
+            $restart_button = '';
+            $warning = '';
+        }
+
+        return sprintf($report_f,
+            implode("\n", $installer->report),
+            $warning,
+            $restart_button,
+            $this->next_stage_button('save_config_file')
+        );
     }
     
-    private function next_stage_button($stage, $label='Continue') {
+    private function next_stage_button($stage, $label='Continue', $class='primary') {
         $form_f = <<<XHTML
-    <div>
       %s
-        <input type="submit" class="btn btn-primary" name="submit" value="%s" />
+        <input type="submit" class="btn btn-%s" name="submit" value="%s" />
         <input type="hidden" name="next-stage" value="%s" />
       </form>
-    </div>
 XHTML;
 
-        return sprintf($form_f, $this->wikka->FormOpen(), $label, $stage);
+        return sprintf($form_f, $this->wikka->FormOpen(), $class, $label, $stage);
     }
     
     private function build_input_form_group($id, $label, $value='', $help_text='',

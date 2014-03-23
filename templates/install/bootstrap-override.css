@@ -38,3 +38,17 @@ body {
 code {
   font-size: 80%;
 }
+
+
+/* Wikka Install Forms
+-------------------------------------------------- */
+div.installer-report h4 {
+}
+
+div.installer-report div.panel-warning {
+  margin-top: 12px;
+}
+
+div.installer-report div.buttons form {
+  padding-right: 12px;
+}

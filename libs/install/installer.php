@@ -1,8 +1,8 @@
 <?php
 /**
- * libs/install/migrator.php
+ * libs/install/installer.php
  *
- * WikkaMigrator runs migrations during the install process.
+ * WikkaInstaller handles system updates for InstallHandler.
  *
  */
 
@@ -16,7 +16,7 @@ class WikkaInstaller {
      * Properties
      */
     public $report = array();
-    public $logs = array();
+    public $errors = array();
     private $config = array();
     private $pdo = null;
     
@@ -43,11 +43,12 @@ class WikkaInstaller {
      * Public Methods
      */
     public function install_wiki() {
+        $this->errors = array();
         $this->setup_database();
         $this->create_default_pages();
         $this->build_links_table();
         $this->set_default_acls();
-        $this->create_admin_user();
+        $this->setup_admin_user();
     }
     
     /*
@@ -89,6 +90,7 @@ class WikkaInstaller {
                 $this->report_event(TRUE, $message);
             }
             catch (Exception $e) {
+                $this->errors[] = $e;
                 $this->report_event(FALSE, $message, $e->getMessage());
             }
         }
@@ -120,6 +122,7 @@ class WikkaInstaller {
                 $this->report_event(TRUE, $message);
             }
             catch (Exception $e) {
+                $this->errors[] = $e;
                 $this->report_event(FALSE, $message, $e->getMessage());
             }
         }
@@ -163,6 +166,7 @@ class WikkaInstaller {
                 $this->report_event(TRUE, $message);
             }
             catch (Exception $e) {
+                $this->errors[] = $e;
                 $this->report_event(FALSE, $message, $e->getMessage());
             }
         }
@@ -170,7 +174,50 @@ class WikkaInstaller {
         return $this;
     }
     
-    private function create_admin_user() {
+    private function setup_admin_user() {
+        $this->report_section_header('Set Up Admin User');
+        
+        # Save admin user (delete first to avoid SQL errors)
+        # TODO(klenwell): shouldn't name account for csv values?
+        $this->report_event(NULL, 'Insert admin user into database');
+        $admin_user = $this->config['admin_users'];
+        $admin_email = $this->config['admin_email'];
+        $admin_challenge = dechex(crc32(time()));
+        
+        # Set password
+        # TODO(klenwell): Escaping here is unnecessary since we're hashing it
+        # (and now using parameterized queries) but changing this now could
+        # create problem when authenticating elsewhere (e.g. login).
+        $raw_pass = $_SESSION['install']['config']['password'];
+        $admin_pass = md5($admin_challenge . mysql_real_escape_string($raw_pass));
+        
+        # Delete user (if exists)
+        $delete_sql_f = 'DELETE FROM %susers WHERE NAME=?';
+        $delete_sql = sprintf($delete_sql_f, $this->config['table_prefix']);
+        $delete_params = array($admin_user);
+        $delete_query = $this->pdo->prepare($delete_sql);
+        $delete_query->execute($delete_params);
+        
+        # Insert admin as user
+        $insert_sql_f = 'INSERT INTO %susers SET NAME=?, password=?, email=?, ' .
+            'signuptime=NOW(), challenge=?';
+        $insert_sql = sprintf($insert_sql_f, $this->config['table_prefix']);
+        $insert_params = array($admin_user, $admin_pass, $admin_email,
+            $admin_challenge);
+        $insert_query = $this->pdo->prepare($insert_sql);
+        $insert_query->execute($insert_params);
+        
+        $message_f = 'Admin user %s saved to database';
+        $this->report_event(TRUE, sprintf($message_f, $admin_user));
+        
+        # Set cookies to login admin user
+        $expiration = time() + PERSISTENT_COOKIE_EXPIRY;
+        $this->report_event(NULL, 'Setting cookies to auto-login admin');
+        SetCookie('user_name@wikka', $admin_user, $expiration, WIKKA_COOKIE_PATH); 
+        $_COOKIE['user_name'] = $admin_user; 
+        SetCookie('pass@wikka', $admin_pass, $expiration, WIKKA_COOKIE_PATH); 
+        $_COOKIE['pass'] = $admin_pass;
+        $this->report_event(TRUE, 'Cookies set for admin');
     }
     
     /*
@@ -237,15 +284,15 @@ class WikkaInstaller {
         }
         
         # Update database
-        $update_sql_f = 'UPDATE %spages SET latest="N" WHERE tag="?"';
+        $update_sql_f = 'UPDATE %spages SET latest="N" WHERE tag=?';
         $update_sql = sprintf($update_sql_f, $this->config['table_prefix']);
         $update_params = array($tag);
         $update_query = $this->pdo->prepare($update_sql);
         $update_query->execute($update_params);
         
-        $insert_sql_f = 'INSERT INTO %spages SET tag="?", body="?", ' .
-            'user="WikkaInstaller", owner="?", time=NOW(), latest="Y", ' .
-            'note="?"';
+        $insert_sql_f = 'INSERT INTO %spages SET tag=?, body=?, ' .
+            'user="WikkaInstaller", owner=?, time=NOW(), latest="Y", ' .
+            'note=?';
         $insert_sql = sprintf($insert_sql_f, $this->config['table_prefix']);
         $insert_params = array($tag, $body, $admin_main_user, $page_note);
         $insert_query = $this->pdo->prepare($insert_sql);
