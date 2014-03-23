@@ -24,6 +24,7 @@
 require_once('handlers/base.php');
 require_once('wikka/request.php');
 require_once('wikka/response.php');
+require_once('libs/install/installer.php');
 
 
 class InstallHandler extends WikkaHandler {
@@ -272,17 +273,13 @@ HTML;
     }
     
     private function state_install() {
-        throw new Exception('TODO: state_install');
-        var_dump($_SESSION['install']['config']);
-        
-        $installer = new WikkaInstaller();
-        $installer->install_new_wiki();
-        $installer->write_config_file();
+        $installer = new WikkaInstaller($_SESSION['install']['config']);
+        $installer->install_wiki();
         
         # Set template variables
         $this->head = $this->format_head();
         $this->header = $this->format_header();
-        $this->stage_content = $this->format_install_report($installer);
+        $this->stage_content = $this->format_installer_report($installer);
         $this->footer = $this->format_footer();
         
         # Return output
@@ -892,6 +889,16 @@ XHTML;
             $admin_email_group,
             $version_group
         );
+    }
+    
+    protected function format_installer_report($installer) {
+        $report_f = <<<XHTML
+    <div class="installer-report container">
+      %s
+    </div>
+XHTML;
+
+        return sprintf($report_f, implode("\n", $installer->report));
     }
     
     private function next_stage_button($stage, $label='Continue') {
