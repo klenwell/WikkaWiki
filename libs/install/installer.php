@@ -128,9 +128,46 @@ class WikkaInstaller {
     }
     
     private function build_links_table() {
+        # This method reimplements this script:
+        # https://github.com/wikkawik/WikkaWiki/blob/73c8e/setup/links.php
     }
     
     private function set_default_acls() {
+        $this->report_section_header('Setting ACLs for Default Pages');
+        
+        $default_acls = array(
+            # tag => array(read, write, comment_read, comment_post)
+            'UserSettings' => array('*', '+', '*', '+'),
+            'AdminUsers' => array('!*', '!*', '!*', '!*'),
+            'AdminPages' => array('!*', '!*', '!*', '!*'),
+            'SysInfo' => array('!*', '!*', '!*', '!*'),
+            'WikkaConfig' => array('!*', '!*', '!*', '!*'),
+            'DatabaseInfo' => array('!*', '!*', '!*', '!*'),
+            'WikkaMenulets' => array('!*', '!*', '!*', '!*'),
+            'AdminBadWords' => array('!*', '!*', '!*', '!*'),
+            'AdminSpamLog' => array('!*', '!*', '!*', '!*')
+        );
+        
+        $query_f = "INSERT INTO %sacls SET page_tag='%s', read_acl='%s', " .
+            "write_acl='%s', comment_read_acl='%s', comment_post_acl='%s'";
+        
+        foreach ($default_acls as $tag => $acls) {
+            list($read_acl, $write_act, $comment_read_acl, $comment_write_acl) = $acls;
+            $sql = sprintf($query_f, $this->config['table_prefix'], $tag,
+                $read_acl, $write_act, $comment_read_acl, $comment_write_acl);
+                
+            $message = sprintf('Update ACLs for page: %s', $tag);
+            
+            try {                
+                $rows_affected = $this->exec_sql($sql);
+                $this->report_event(TRUE, $message);
+            }
+            catch (Exception $e) {
+                $this->report_event(FALSE, $message, $e->getMessage());
+            }
+        }
+        
+        return $this;
     }
     
     private function create_admin_user() {
