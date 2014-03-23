@@ -8,6 +8,7 @@
 
 class WikkaInstaller {
     
+    # Constants
     const CONFIG_PATH = 'wikka.config.php';
     const MYSQL_ENGINE = 'MyISAM';
     
@@ -18,7 +19,10 @@ class WikkaInstaller {
     public $logs = array();
     private $config = array();
     private $pdo = null;
+    
     private $schema_path = '';
+    private $default_pages_path = '';
+    private $default_page_source_dir = '';
     
     /*
      * Constructor
@@ -28,7 +32,11 @@ class WikkaInstaller {
         $this->pdo = $this->connect_to_db();
         $this->logs = array();
         $this->report = array();
+        
         $this->schema_path = sprintf('install%sschema.php', DIRECTORY_SEPARATOR);
+        $this->default_pages_path = sprintf('install%sdefault_pages.php',
+            DIRECTORY_SEPARATOR);
+        $this->default_page_source_dir = $this->find_lang_default_pages_path();
     }
     
     /*
@@ -84,9 +92,39 @@ class WikkaInstaller {
                 $this->report_event(FALSE, $message, $e->getMessage());
             }
         }
+        
+        return $this;
     }
     
     private function create_default_pages() {
+        $this->report_section_header('Creating Default Pages');
+        
+        # Sets $WikkaInstallDefaultPages
+        require($this->default_pages_path);
+        
+        foreach ($WikkaInstallDefaultPages as $page) {
+            $message_f = 'Creating default page: %s';
+            
+            if ($page == '_rootpage') {
+                $page = $this->config['root_page'];
+                $fname = 'HomePage';
+            }
+            else {
+                $fname = $page;
+            }
+
+            $message = sprintf($message_f, $page);
+            
+            try {                
+                $this->update_default_page($page, $fname);                
+                $this->report_event(TRUE, $message);
+            }
+            catch (Exception $e) {
+                $this->report_event(FALSE, $message, $e->getMessage());
+            }
+        }
+        
+        return $this;
     }
     
     private function build_links_table() {
@@ -101,6 +139,29 @@ class WikkaInstaller {
     /*
      * Private Methods
      */
+    private function find_lang_default_pages_path() {
+        $path_f = 'lang%s%s%sdefaults%s';
+        $default_path = sprintf($path_f,
+            DIRECTORY_SEPARATOR,
+            'en',
+            DIRECTORY_SEPARATOR,
+            DIRECTORY_SEPARATOR
+        );
+        $configured_path = sprintf($path_f,
+            DIRECTORY_SEPARATOR,
+            $this->config['default_lang'],
+            DIRECTORY_SEPARATOR,
+            DIRECTORY_SEPARATOR
+        );
+        
+        if ( file_exists($configured_path) ) {
+            return $configured_path;
+        }
+        else {
+            return $default_path;
+        }
+    }
+    
     private function exec_sql($sql) {
         # Replace placeholders
         $sql = str_replace('{{prefix}}', $this->config['table_prefix'], $sql);
@@ -109,6 +170,51 @@ class WikkaInstaller {
         
         $rows_affected = $this->pdo->exec($sql);
         return $rows_affected;
+    }
+    
+    private function update_default_page($tag, $fname) {
+        $admin_users = explode(',', $this->config['admin_users']);
+        $admin_main_user = trim($admin_users[0]);
+        
+        $path = sprintf('%s%s.php', $this->default_page_source_dir, $fname);
+        
+        if ( ! file_exists($path) ) {
+            throw new Exception('path %s not found', $path);
+        }
+        elseif ( ! is_readable($path) ) {
+            throw new Exception('path %s not readable', $path);
+        }
+        else {
+            # TODO(klenwell): refactor the mechanism for defining default
+            # page content. Currently, it is to assign the content as a
+            # heredoc to a variable and then echo the variable. Just set the
+            # variable, require the path, and insert the content. No need for
+            # buffering here.
+            ob_start();
+            require($path);
+            $body = ob_get_contents();
+            ob_end_clean();
+            
+            $note_f = 'Default page installed %s from path %s';
+            $page_note = sprintf($note_f, date('Y-m-d H:i:s'), $path);
+        }
+        
+        # Update database
+        $update_sql_f = 'UPDATE %spages SET latest="N" WHERE tag="?"';
+        $update_sql = sprintf($update_sql_f, $this->config['table_prefix']);
+        $update_params = array($tag);
+        $update_query = $this->pdo->prepare($update_sql);
+        $update_query->execute($update_params);
+        
+        $insert_sql_f = 'INSERT INTO %spages SET tag="?", body="?", ' .
+            'user="WikkaInstaller", owner="?", time=NOW(), latest="Y", ' .
+            'note="?"';
+        $insert_sql = sprintf($insert_sql_f, $this->config['table_prefix']);
+        $insert_params = array($tag, $body, $admin_main_user, $page_note);
+        $insert_query = $this->pdo->prepare($insert_sql);
+        $insert_query->execute($insert_params);
+        
+        return $body;
     }
     
     private function report_section_header($message) {
