@@ -77,7 +77,8 @@ class WikkaInstaller {
      * Install Steps
      */
     private function setup_database() {
-        $this->report_section_header('Setting Up Database');
+        $this->report_section_header(sprintf('Setting Up Database %s',
+            $this->config['mysql_database']));
         
         # Sets $WikkaDatabaseSchema
         require($this->schema_path);
@@ -133,6 +134,22 @@ class WikkaInstaller {
     private function build_links_table() {
         # This method reimplements this script:
         # https://github.com/wikkawik/WikkaWiki/blob/73c8e/setup/links.php
+        $this->report_section_header('Build Links Table');
+        $this->truncate_links_table();
+        
+        $backlink_count = 0;
+        $start_id = 0;
+        while ( $page_rows = $this->load_page_batch(10, $start_id) ) {
+            foreach( $page_rows as $page_row ) {
+                $backlinks = $this->save_page_backlinks($page_row);
+                $backlink_count += count($backlinks);
+            }
+            
+            $start_id = $page_row['id'];
+        }
+        
+        $this->report_event(TRUE, sprintf('Saved %d backlinks', $backlink_count));
+        return $this;
     }
     
     private function set_default_acls() {
@@ -179,7 +196,6 @@ class WikkaInstaller {
         
         # Save admin user (delete first to avoid SQL errors)
         # TODO(klenwell): shouldn't name account for csv values?
-        $this->report_event(NULL, 'Insert admin user into database');
         $admin_user = $this->config['admin_users'];
         $admin_email = $this->config['admin_email'];
         $admin_challenge = dechex(crc32(time()));
@@ -212,7 +228,6 @@ class WikkaInstaller {
         
         # Set cookies to login admin user
         $expiration = time() + PERSISTENT_COOKIE_EXPIRY;
-        $this->report_event(NULL, 'Setting cookies to auto-login admin');
         SetCookie('user_name@wikka', $admin_user, $expiration, WIKKA_COOKIE_PATH); 
         $_COOKIE['user_name'] = $admin_user; 
         SetCookie('pass@wikka', $admin_pass, $expiration, WIKKA_COOKIE_PATH); 
@@ -254,6 +269,98 @@ class WikkaInstaller {
         
         $rows_affected = $this->pdo->exec($sql);
         return $rows_affected;
+    }
+    
+    private function save_page_backlinks($page_row) {
+        $saved_backlinks = array();
+        
+        $sql_f = 'INSERT INTO %slinks (from_tag, to_tag) VALUES (?, ?) ' .
+            'ON DUPLICATE KEY UPDATE from_tag=from_tag';
+        $sql = sprintf($sql_f, $this->config['table_prefix']);
+        
+        $backlinks = $this->extract_links_from_page($page_row['body']);
+        
+        $insert = $this->pdo->prepare($sql);
+        
+        foreach ( $backlinks as $backlink ) {            
+            $insert->execute(array($page_row['tag'], $backlink));
+            
+            # Per http://www.php.net/manual/en/pdostatement.rowcount.php#109891,
+            # rowCount will return 1 on insert, 2 on update
+            if ( $insert->rowCount() == 1 ) {
+                $saved_backlinks[] = $backlink;
+            }
+        }
+        
+        return $saved_backlinks;
+    }
+    
+    private function extract_links_from_page($body) {
+        $saved_links = array();
+
+        # First extract wiki link features
+        $regex_map = array(
+            # type => wiki markup pattern
+            'code'          => '%%.*?%%',
+            'literal'       => '"".*?""',
+            'forced link'   => '\[\[[^\[]*?\]\]',
+            'forced link whitespace' => '\[\[\S*[^\[]*?\]\]',
+            'url'           => '\b[a-z]+:\/\/\S+',
+            'simple tables' => '\|(?:[^\|])?\|(?:\(.*?\))?(?:\{[^\{\}]*?\})?(?:\n)?',
+            'action'        => '\{\{.*?\}\}',
+            'interwiki link' => '\b[A-ZÄÖÜ][A-Za-zÄÖÜßäöü]+[:](?![=_])\S*\b',
+            'camel words'   => '\b([A-ZÄÖÜ]+[a-zßäöü]+[A-Z0-9ÄÖÜ][A-Za-z0-9ÄÖÜßäöü]*)\b',
+            'newline'       => '\n',
+        );
+        $regex = sprintf('/%s/ms', implode('|', array_values($regex_map)));
+        
+        $matches = array();
+        $matched = preg_match_all($regex, $body, $matches);
+        
+        # If no matches, return empty array
+        if ( ! $matched ) {
+            return array();
+        }
+        
+        # Now filter wikka-style links from first set of regex matches
+        # Some tricky conditional logic here I couldn't fully figure out. For
+        # help, see: http://www.regular-expressions.info/refadv.html
+        $magic_link_regex = '(\[\[)?([A-ZÄÖÜa-zßäöü0-9]+' .
+            '(?(1)(?=[ \]])|[A-Z0-9ÄÖÜ][A-Za-z0-9ÄÖÜßäöü]*\\b$))';
+        $link_regex = sprintf('/%s/s', $magic_link_regex);
+        
+        foreach ( $matches[0] as $extract ) {
+            $parsed_link = array();
+            if ( preg_match($link_regex, $extract, $parsed_link) ) {
+                $saved_links[] = $parsed_link[2];
+            }
+        }
+        
+        return $saved_links;
+    }
+    
+    private function truncate_links_table() {
+        $sql_f = 'TRUNCATE TABLE %slinks';
+        $sql = sprintf($sql_f, $this->config['table_prefix']);
+        $rows_affected = $this->pdo->exec($sql);
+        $this->report_event(TRUE, 'Truncated links table');
+        return NULL;
+    }
+    
+    private function load_page_batch($limit, $start_id) {
+        $sql_f = <<<HSQL
+SELECT id, tag, body
+    FROM %spages
+    WHERE
+        id > %d AND latest = 'Y'
+    ORDER BY id ASC
+    LIMIT %s
+HSQL;
+
+        $sql = sprintf($sql_f, $this->config['table_prefix'], $start_id, $limit); 
+
+        $result = $this->pdo->query($sql);
+        return $result->fetchAll();
     }
     
     private function update_default_page($tag, $fname) {
