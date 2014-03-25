@@ -25,7 +25,6 @@ class WikkaWebService {
      * Properties
      */
     public $config = array();
-    public $pdo = null;
     public $request = null;
 
     /*
@@ -45,7 +44,6 @@ class WikkaWebService {
         
         $this->verify_requirements();
         $this->config = $this->load_config($config_file_path);
-        $this->pdo = $this->connect_to_db();
     }
     
     /*
@@ -248,9 +246,23 @@ class WikkaWebService {
     }
     
     private function load_config($config_file_path) {
-        # Load config settings
+        # Load default settings
         require(WIKKA_DEFAULT_CONFIG_PATH);
+        
+        # If config file is missing, return default settings to trigger install
+        if ( ! file_exists($config_file_path) ) {
+            return $wakkaDefaultConfig;
+        }
+        
+        # Load config settings
         include($config_file_path);
+        
+        # If $wakkaConfig not set, return default settings to trigger install
+        if ( ! isset($wakkaConfig) ) {
+            return $wakkaDefaultConfig;
+        }
+        
+        # Overwrite defaults with config file settings
         $wakkaConfig = array_merge($wakkaDefaultConfig, $wakkaConfig);
         
         # Load language defaults

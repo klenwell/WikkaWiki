@@ -38,7 +38,6 @@ class InstallHandler extends WikkaHandler {
     # Webservice resources
     public $request = null;
     public $config = null;
-    public $pdo = null;
     
     # States
     private $states = array('intro',
@@ -124,22 +123,21 @@ HTML;
     public function handle($webservice) {
         $this->request = $webservice->request;
         $this->config = $webservice->config;
-        $this->pdo = $webservice->pdo;
-        
-        # Simple state machine
-        $requested_stage = $this->request->get_post_var('next-stage', 'intro');
-        $content = $this->change_state($requested_stage);
         
         # Load config from session
         $_SESSION['install'] = (isset($_SESSION['install'])) ?
             $_SESSION['install'] : array();
-
+            
         if ( ! empty($_SESSION['install']['config']) ) {
             $this->config = $_SESSION['install']['config'];
         }
         else {
             $_SESSION['install']['config'] = $this->config;
         }
+        
+        # Simple state machine
+        $requested_stage = $this->request->get_post_var('next-stage', 'intro');
+        $content = $this->change_state($requested_stage);
         
         # Return response
         $response = new WikkaResponse($content);
@@ -233,7 +231,7 @@ HTML;
                 return $this->change_state('admin_form');
             };
         }
-      
+
         # Set template variables
         $this->head = $this->format_head();
         $this->header = $this->format_header();
@@ -1063,13 +1061,7 @@ XHTML;
     }
     
     protected function format_write_config_error($e) {
-        var_dump($content);
-        if ( $content instanceof Exception ) {
-            throw $content;
-        }
-        else {
-            return print_r($content, 1);
-        }
+        return print_r($e, 1);
     }
     
     protected function format_conclusion() {

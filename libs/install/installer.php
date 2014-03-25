@@ -5,6 +5,9 @@
  * WikkaInstaller handles system updates for InstallHandler.
  *
  */
+# Require this module for T function used in creating default pages
+require_once('3rdparty/core/php-gettext/gettext.inc');
+
 
 class WikkaInstaller {
     
@@ -201,11 +204,8 @@ class WikkaInstaller {
         $admin_challenge = dechex(crc32(time()));
         
         # Set password
-        # TODO(klenwell): Escaping here is unnecessary since we're hashing it
-        # (and now using parameterized queries) but changing this now could
-        # create problem when authenticating elsewhere (e.g. login).
-        $raw_pass = $_SESSION['install']['config']['password'];
-        $admin_pass = md5($admin_challenge . mysql_real_escape_string($raw_pass));
+        $admin_pass = $this->hash_password($_SESSION['install']['config']['password'],
+            $admin_challenge);
         
         # Delete user (if exists)
         $delete_sql_f = 'DELETE FROM %susers WHERE NAME=?';
@@ -233,6 +233,21 @@ class WikkaInstaller {
         SetCookie('pass@wikka', $admin_pass, $expiration, WIKKA_COOKIE_PATH); 
         $_COOKIE['pass'] = $admin_pass;
         $this->report_event(TRUE, 'Cookies set for admin');
+    }
+    
+    private function hash_password($raw_password, $challenge) {
+        # TODO(klenwell): Escaping here is unnecessary since we're hashing it
+        # (and now using parameterized queries) but changing this now could
+        # create problem when authenticating elsewhere (e.g. login). So
+        # we have to create a old-style mysql connection so we can use
+        # mysql_real_escape_string.
+        $mysql_host = $this->config['mysql_host'];
+        $mysql_user = $this->config['mysql_user'];
+        $mysql_pass = $this->config['mysql_password'];
+        $link = mysql_connect($mysql_host, $mysql_user, $mysql_pass);
+        
+        $escaped_pw = mysql_real_escape_string($raw_password, $link);
+        return md5($challenge . $escaped_pw);
     }
     
     /*
