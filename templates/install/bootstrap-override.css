@@ -52,3 +52,12 @@ div.installer-report div.panel-warning {
 div.installer-report div.buttons form {
   padding-right: 12px;
 }
+
+div#enable_version_check-group {
+  margin-top: 30px;
+}
+
+input[type=checkbox] {
+  width: 25px;
+  height: 25px
+}
