@@ -20,12 +20,21 @@ define('ERROR_WRONG_PHP_VERSION', 'Wikka requires PHP %s or higher!');
 define('WIKKA_CONFIG_PATH', 'wikka.config.php');
 define('WIKKA_DEFAULT_CONFIG_PATH', 'wikka/default.config.php');
 define('WIKKA_MULTI_CONFIG_PATH', 'multi.config.php');
+define('WIKKA_CONFIG_VAR', '$wakkaConfig');
 
 #
 # Paths
 #
 define('WIKKA_LIBRARY_PATH', 'lib');
 define('PATH_DIVIDER', ',');
+
+#
+# URLs
+#
+define('WIKKA_DOCS_URL', 'http://docs.wikkawiki.org/WikkaInstallation');
+define('WIKKA_INSTALL_DOCS_URL', 'http://docs.wikkawiki.org/WikkaInstallation');
+define('WIKKA_CONFIG_DOCS_URL', 'http://docs.wikkawiki.org/ConfigurationOptions');
+define('WIKKA_GITHUB_URL', 'https://github.com/wikkawik/WikkaWiki');
 
 #
 # Cookies

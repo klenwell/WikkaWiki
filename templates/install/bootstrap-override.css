@@ -42,6 +42,16 @@ code {
 
 /* Wikka Install Forms
 -------------------------------------------------- */
+div.intro div.preamble {
+  font-size: 1.2em;
+  padding: 1em;
+  margin-bottom: 1em;
+}
+
+div.intro form {
+  margin-top: 16px;
+}
+
 div.installer-report h4 {
 }
 
@@ -60,4 +70,9 @@ div#enable_version_check-group {
 input[type=checkbox] {
   width: 25px;
   height: 25px
+}
+
+div.conclusion h4.next {
+  margin: 16px 0px 24px;
+  padding: 16px;
 }
