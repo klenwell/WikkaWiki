@@ -32,6 +32,11 @@ class WikkaCsrfError extends WikkaError {}
 
 class WikkaHandlerError extends WikkaError {}
 
+class WikkaInstallerError extends WikkaError {
+    public function render_problem() { /* Interface Method */ }
+    public function render_solution() { /* Interface Method */ }
+}
+
 
 #
 # Exceptions and Flags
