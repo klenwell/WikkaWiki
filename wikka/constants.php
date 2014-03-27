@@ -21,6 +21,7 @@ define('WIKKA_CONFIG_PATH', 'wikka.config.php');
 define('WIKKA_DEFAULT_CONFIG_PATH', 'wikka/default.config.php');
 define('WIKKA_MULTI_CONFIG_PATH', 'multi.config.php');
 define('WIKKA_CONFIG_VAR', '$wakkaConfig');
+define('WIKKA_MIGRATIONS_FILE_PATH', 'install/migrations.php');
 
 #
 # Paths

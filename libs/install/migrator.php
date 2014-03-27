@@ -10,9 +10,6 @@ require_once('libs/install/installer.php');
 
 class WikkaMigrator extends WikkaInstaller {
     
-    const CONFIG_PATH = 'wikka.config.php';
-    const MYSQL_ENGINE = 'MyISAM';
-    
     /*
      * Properties
      */
@@ -42,7 +39,11 @@ class WikkaMigrator extends WikkaInstaller {
         $apply = FALSE;
         
         foreach ( $this->database_migrations as $v => $statements ) {
+            
             if ( $apply ) {
+                $this->report_section_header(
+                    sprintf('Running migrations for version %s', $v));
+                
                 # SQL Migrations
                 foreach ( $statements as $sql ) {
                     $this->run_db_migration($sql);
@@ -165,7 +166,7 @@ class WikkaMigrator extends WikkaInstaller {
      */
     private function load_config() {
         include(self::CONFIG_PATH);
-        $this->config = $wakkaConfig;
+        return $wakkaConfig;
     }
     
     private function run_db_migration($sql) {
@@ -198,12 +199,17 @@ class WikkaMigrator extends WikkaInstaller {
     
     private function log_sql_migration($sql, $rows_updated) {
         $message = sprintf('%s >> %d rows', $sql, $rows_updated);
+        $this->report_event(TRUE,
+            sprintf('Migration: updated %s rows affected', $rows_updated),
+            $sql
+        );
         return $this->log($message);
     }
     
     private function log_command_migration($method, $args, $result='') {
         $tail = ($result) ? sprintf(' >> %s', $result) : '';
         $message = sprintf('%s(%s)%s', $method, implode(', ', $args), $tail);
+        $this->report_event(TRUE, sprintf('Update: %s', $message));
         return $this->log($message);
     }
 }

@@ -510,7 +510,7 @@ XPHP;
     /*
      * Report Methods
      */
-    private function report_section_header($message) {
+    public function report_section_header($message) {
         $row_f = <<<XHTML
     <div class="row">
       <div class="col-md-4"><h4 class="section">%s</h4></div>
@@ -519,7 +519,7 @@ XHTML;
         $this->report[] = sprintf($row_f, $message);
     }
     
-    private function report_event($success, $message, $detail='') {
+    public function report_event($success, $message, $detail='') {
         $row_f = <<<XHTML
     <div class="row">
       <div class="col-md-4">%s %s</div>

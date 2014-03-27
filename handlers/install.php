@@ -25,6 +25,7 @@ require_once('handlers/base.php');
 require_once('wikka/request.php');
 require_once('wikka/response.php');
 require_once('libs/install/installer.php');
+require_once('libs/install/migrator.php');
 
 
 class InstallHandler extends WikkaHandler {
@@ -306,16 +307,18 @@ XHTML;
     }
     
     private function state_upgrade() {
-        throw new Exception('TODO: state_upgrade');
-        
-        $migrator = new WikkaMigrator();
-        $migrator->run_migrations();
-        $migrator->write_config_file();
+        $old_version = $this->config['wakka_version'];
+        $new_version = WAKKA_VERSION;
+      
+        $migrator = new WikkaMigrator(WIKKA_MIGRATIONS_FILE_PATH);
+        $migrator->report_section_header(
+            sprintf('Start migration from version %s to %s', $old_version, $new_version));
+        $migrator->run_migrations($old_version, $new_version);
         
         # Set template variables
         $this->head = $this->format_head();
         $this->header = $this->format_header();
-        $this->stage_content = $this->format_install_report($migrator);
+        $this->stage_content = $this->format_installer_report($migrator);
         $this->footer = $this->format_footer();
         
         # Return output
@@ -944,6 +947,7 @@ XHTML;
     </div>
 XHTML;
 
+        # Error handling
         if ( $installer->errors ) {
             $restart_button_f = <<<XHTML
         <div class="pull-left">
@@ -979,6 +983,7 @@ XHTML;
             $restart_button = '';
             $warning = '';
         }
+        # End error handling
 
         return sprintf($report_f,
             implode("\n", $installer->report),

@@ -64,7 +64,7 @@ class WikkaMigratorTest extends PHPUnit_Framework_TestCase {
         # Set admin for config
         $this->config['admin_users'] = 'KlenwellAdmin';
         
-        $this->migrator = new MockWikkaMigrator('install/migrations.php',
+        $this->migrator = new MockWikkaMigrator(WIKKA_MIGRATIONS_FILE_PATH,
             $this->config);
     }
     
