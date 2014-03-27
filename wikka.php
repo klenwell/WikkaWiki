@@ -23,11 +23,11 @@
 #
 # Imports
 #
-require_once('version.php');
+require_once('version.php');            # TODO: merge into constants
 require_once('wikka/constants.php');
-require_once('wikka/functions.php');
-require_once('wikka/web_service.php');
+require_once('wikka/functions.php');    # TODO: eliminate this (replace with libs)
 require_once('wikka/errors.php');
+require_once('wikka/web_service.php');
 
 # TODO(klenwell): refactor and remove this. The wakka formatter class
 # requires this library for the instantiate function.
