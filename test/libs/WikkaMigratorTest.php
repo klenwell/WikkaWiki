@@ -31,6 +31,10 @@ class MockWikkaMigrator extends WikkaMigrator {
         $this->config = $config;
         
         $this->pdo = $this->connect_to_db();
+        
+        # Call grandparent constructor. We don't want parent constructor because
+        # it autoloads configs, which would overwrite the ones we want.
+        WikkaInstaller::__construct($this->config);
     }
     
     public function delete_path($path) {
@@ -56,6 +60,9 @@ class WikkaMigratorTest extends PHPUnit_Framework_TestCase {
         $this->config = $this->setUpConfig();
         $this->pdo = $this->setUpDatabase();
         $this->setUpOldDatabaseSchema();
+        
+        # Set admin for config
+        $this->config['admin_users'] = 'KlenwellAdmin';
         
         $this->migrator = new MockWikkaMigrator('install/migrations.php',
             $this->config);
@@ -136,8 +143,8 @@ class WikkaMigratorTest extends PHPUnit_Framework_TestCase {
         
         # Verify changes
         $log_messages = array_values($this->migrator->logs);
-        $this->assertContains('20 rows', $log_messages[47]);
-        $this->assertEquals(112, count($log_messages));
+        $this->assertContains('29 rows', $log_messages[56]);
+        $this->assertEquals(130, count($log_messages));
         
         # Verify v1.3.1
         $result = $this->pdo->query(
@@ -157,10 +164,10 @@ class WikkaMigratorTest extends PHPUnit_Framework_TestCase {
         
         # Verify changes
         $log_messages = array_values($this->migrator->logs);
-        $this->assertEquals(31, count($log_messages));
+        $this->assertEquals(33, count($log_messages));
         $this->assertEquals('safe',
             $this->migrator->config['double_doublequote_html']);
-        $this->assertContains('delete_path(xml)', end($log_messages));
+        $this->assertContains('WikkaDocumentation', end($log_messages));
     }
     
     public function testDatabaseMigration() {

@@ -20,8 +20,8 @@ class WikkaInstaller {
      */
     public $report = array();
     public $errors = array();
-    private $config = array();
-    private $pdo = null;
+    public $config = array();
+    protected $pdo = null;
     
     private $schema_path = '';
     private $default_pages_path = '';
@@ -106,6 +106,60 @@ class WikkaInstaller {
         return $this->pdo;
     }
     
+    protected function update_default_page($tag) {
+        if ($tag == '_rootpage') {
+            $tag = $this->config['root_page'];
+            $fname = 'HomePage';
+        }
+        else {
+            $fname = $tag;
+        }
+
+        $admin_users = explode(',', $this->config['admin_users']);
+        $admin_main_user = trim($admin_users[0]);
+        
+        $path = sprintf('%s%s.php', $this->default_page_source_dir, $fname);
+        
+        if ( ! file_exists($path) ) {
+            throw new Exception(sprintf('path %s not found', $path));
+        }
+        elseif ( ! is_readable($path) ) {
+            throw new Exception(sprintf('path %s not readable', $path));
+        }
+        else {
+            # TODO(klenwell): refactor the mechanism for defining default
+            # page content. Currently, it is to assign the content as a
+            # heredoc to a variable and then echo the variable. Just set the
+            # variable, require the path, and insert the content. No need for
+            # buffering here.
+            $config = $this->config;
+            ob_start();
+            require($path);
+            $body = ob_get_contents();
+            ob_end_clean();
+            
+            $note_f = 'Default page installed %s from path %s';
+            $page_note = sprintf($note_f, date('Y-m-d H:i:s'), $path);
+        }
+        
+        # Update database
+        $update_sql_f = 'UPDATE %spages SET latest="N" WHERE tag=?';
+        $update_sql = sprintf($update_sql_f, $this->config['table_prefix']);
+        $update_params = array($tag);
+        $update_query = $this->pdo->prepare($update_sql);
+        $update_query->execute($update_params);
+        
+        $insert_sql_f = 'INSERT INTO %spages SET tag=?, body=?, ' .
+            'user="WikkaInstaller", owner=?, time=NOW(), latest="Y", ' .
+            'note=?';
+        $insert_sql = sprintf($insert_sql_f, $this->config['table_prefix']);
+        $insert_params = array($tag, $body, $admin_main_user, $page_note);
+        $insert_query = $this->pdo->prepare($insert_sql);
+        $insert_query->execute($insert_params);
+        
+        return $tag;
+    }
+    
     /*
      * Install Steps
      */
@@ -141,18 +195,9 @@ class WikkaInstaller {
         foreach ($WikkaInstallDefaultPages as $page) {
             $message_f = 'Creating default page: %s';
             
-            if ($page == '_rootpage') {
-                $page = $this->config['root_page'];
-                $fname = 'HomePage';
-            }
-            else {
-                $fname = $page;
-            }
-
-            $message = sprintf($message_f, $page);
-            
             try {                
-                $this->update_default_page($page, $fname);                
+                $page_tag = $this->update_default_page($page);
+                $message = sprintf($message_f, $page_tag);
                 $this->report_event(TRUE, $message);
             }
             catch (Exception $e) {
@@ -406,51 +451,6 @@ HSQL;
 
         $result = $this->pdo->query($sql);
         return $result->fetchAll();
-    }
-    
-    private function update_default_page($tag, $fname) {
-        $admin_users = explode(',', $this->config['admin_users']);
-        $admin_main_user = trim($admin_users[0]);
-        
-        $path = sprintf('%s%s.php', $this->default_page_source_dir, $fname);
-        
-        if ( ! file_exists($path) ) {
-            throw new Exception('path %s not found', $path);
-        }
-        elseif ( ! is_readable($path) ) {
-            throw new Exception('path %s not readable', $path);
-        }
-        else {
-            # TODO(klenwell): refactor the mechanism for defining default
-            # page content. Currently, it is to assign the content as a
-            # heredoc to a variable and then echo the variable. Just set the
-            # variable, require the path, and insert the content. No need for
-            # buffering here.
-            ob_start();
-            require($path);
-            $body = ob_get_contents();
-            ob_end_clean();
-            
-            $note_f = 'Default page installed %s from path %s';
-            $page_note = sprintf($note_f, date('Y-m-d H:i:s'), $path);
-        }
-        
-        # Update database
-        $update_sql_f = 'UPDATE %spages SET latest="N" WHERE tag=?';
-        $update_sql = sprintf($update_sql_f, $this->config['table_prefix']);
-        $update_params = array($tag);
-        $update_query = $this->pdo->prepare($update_sql);
-        $update_query->execute($update_params);
-        
-        $insert_sql_f = 'INSERT INTO %spages SET tag=?, body=?, ' .
-            'user="WikkaInstaller", owner=?, time=NOW(), latest="Y", ' .
-            'note=?';
-        $insert_sql = sprintf($insert_sql_f, $this->config['table_prefix']);
-        $insert_params = array($tag, $body, $admin_main_user, $page_note);
-        $insert_query = $this->pdo->prepare($insert_sql);
-        $insert_query->execute($insert_params);
-        
-        return $body;
     }
     
     private function format_config_file($config) {

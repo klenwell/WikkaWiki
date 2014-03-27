@@ -231,6 +231,8 @@ $WikkaCommandMigrations = array(
         array('delete_path', array('safehtml')),
         array('delete_path', array('wikiedit2')),
         array('delete_path', array('xml')),
+        array('update_page', array('WikkaReleaseNotes')),
+        array('update_page', array('WikkaDocumentation'))
     ),
     
     '1.1.6.1' => array(
@@ -245,6 +247,16 @@ $WikkaCommandMigrations = array(
     '1.1.6.3' => array(
         array('add_config', array('allow_user_registration', '1')),
         array('add_config', array('wikka_template_path', 'templates')),
+        array('update_page', array('HighScores')),
+        array('update_page', array('CategoryAdmin')),
+        array('update_page', array('AdminUsers')),
+        array('update_page', array('AdminPages')),
+        array('update_page', array('DatabaseInfo')),
+        array('update_page', array('WikiCategory'))
+    ),
+    
+    '1.1.6.7' => array(
+        array('update_page', array('FormattingRules'))
     ),
     
     '1.2' => array(
@@ -255,5 +267,17 @@ $WikkaCommandMigrations = array(
         array('backup_file', array('config/options_menu.admin.inc')),
         array('backup_file', array('config/options_menu.inc')),
         array('backup_file', array('config/options_menu.user.inc')),
+        array('update_page', array('SysInfo')),
+        array('update_page', array('TableMarkup')),
+        array('update_page', array('TableMarkupReference')),
+        array('update_page', array('WikkaConfig')),
+        array('update_page', array('FormattingRules')),
+        array('update_page', array('WikkaReleaseNotes'))
     ),
+    
+    '1.3.1' => array(
+        array('update_page', array('AdminBadWords')),
+        array('update_page', array('AdminSpamLog')),
+        array('update_page', array('WikkaMenulets'))
+    )
 );

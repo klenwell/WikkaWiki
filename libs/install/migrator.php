@@ -99,6 +99,10 @@ class WikkaMigrator extends WikkaInstaller {
         return '';
     }
     
+    public function update_page($tag) {
+        $this->update_default_page($tag);
+    }
+    
     public function remove_dir($parent_dir) {
         #
         # http://stackoverflow.com/a/15111679/1093087
