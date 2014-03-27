@@ -242,7 +242,12 @@ XHTML;
                 $_SESSION['install']['config'] = $this->config;
 
                 # Change State
-                return $this->change_state('admin_form');
+                if ( $this->is_upgrade() ) {
+                  return $this->change_state('upgrade');
+                }
+                else {
+                  return $this->change_state('admin_form');
+                }
             };
         }
 
@@ -644,7 +649,7 @@ XHTML;
         if ( $this->is_upgrade() ) {
             $preamble_f = <<<XHTML
         <p>
-          Your installed Wikka is reporting itself as <code>%s</code>. You are 
+          Your current version of Wikka is <code>%s</code>. You are 
           about to <strong>upgrade</strong> to Wikka version <code>%s</code>. To 
           start the upgrade, please hit the
           <span class="label label-primary">start</span> button.
@@ -655,6 +660,7 @@ XHTML;
                 WAKKA_VERSION
             );
             $type = 'upgrade';
+            $button = $this->next_stage_button('wiki_settings_form', 'Start Upgrade');
         }
         else {
             $preamble_f = <<<XHTML
@@ -669,11 +675,12 @@ XHTML;
                 WAKKA_VERSION
             );
             $type = 'install';
+            $button = $this->next_stage_button('database_form', 'Start Install');
         }
 
         return sprintf($intro_f,
             $preamble,
-            $this->next_stage_button('database_form', sprintf('Start %s', ucwords($type))),
+            $button,
             WIKKA_CONFIG_PATH, WIKKA_CONFIG_PATH,
             $type, WIKKA_INSTALL_DOCS_URL);
     }
@@ -770,6 +777,7 @@ XHTML;
           %s
           %s
           %s
+          %s
         </fieldset>
 
         <div class="form-group">
@@ -831,6 +839,13 @@ XHTML;
             'Language Pack', $this->get_language_options(),
             $this->get_config_value('default_lang'), $theme_help);
         
+        if ( $this->is_upgrade() ) {
+            $version_group = $this->build_version_group();
+        }
+        else {
+           $version_group = '';
+        }
+        
         return sprintf($form_f,
             $this->wikka->FormOpen(),
             $form_alert,
@@ -840,7 +855,8 @@ XHTML;
             $meta_keywords_group,
             $meta_desc_group,
             $theme_group,
-            $lang_group
+            $lang_group,
+            $version_group
         );
     }
     
@@ -855,31 +871,7 @@ XHTML;
           %s
           %s
           %s
-          
-          <div class="panel panel-info">
-            <div class="panel-heading">
-              <h4 class="panel-title">Version Update Check</h4>
-            </div>
-            <div class="panel-body">
-              <p>
-                It is <strong>strongly recommended</strong> that you leave this
-                option checked if your run your wiki on the internet.
-                Administrator(s) will be notified automatically on the wiki if
-                a new version of WikkaWiki is available for download. See the
-                <a href="http://docs.wikkawiki.org/CheckVersionActionInfo"
-                  target="_blank">documentation</a> for details. Please note
-                that if you leave this option enabled, your installation will
-                periodically contact a WikkaWiki server for update information.
-                As a result, your IP address and/or domain name may be recorded
-                in our referrer logs.
-              </p>
-              
-              <p>
-                %s
-              </p>
-            </div>
-          </div>
-          
+          %s
         </fieldset>
 
         <div class="form-group">
@@ -926,12 +918,6 @@ XHTML;
             "Email", $this->get_config_value('admin_email'),
             $admin_email_help);
         
-        $config_value = $this->get_config_value('enable_version_check', NULL);
-        $value_missing = ($config_value == NULL); 
-        $is_checked = ( $value_missing || $config_value == '1' );
-        $version_group = $this->build_checkbox_form_group('enable_version_check',
-            "Enable Check", '1', $is_checked);
-        
         return sprintf($form_f,
             $this->wikka->FormOpen(),
             $form_alert,
@@ -939,7 +925,7 @@ XHTML;
             $pass1_group,
             $pass2_group,
             $admin_email_group,
-            $version_group
+            $this->build_version_group()
         );
     }
     
@@ -1191,5 +1177,41 @@ XDIV;
         
         return sprintf($html_f, $id, $error_class, $id, $label, $id, $name,
             implode('', $option_tags), $help_div);
+    }
+    
+    private function build_version_group() {
+        $group_f = <<<XHTML
+          <div class="panel panel-info">
+            <div class="panel-heading">
+              <h4 class="panel-title">Version Update Check</h4>
+            </div>
+            <div class="panel-body">
+              <p>
+                It is <strong>strongly recommended</strong> that you leave this
+                option checked if your run your wiki on the internet.
+                Administrator(s) will be notified automatically on the wiki if
+                a new version of WikkaWiki is available for download. See the
+                <a href="http://docs.wikkawiki.org/CheckVersionActionInfo"
+                  target="_blank">documentation</a> for details. Please note
+                that if you leave this option enabled, your installation will
+                periodically contact a WikkaWiki server for update information.
+                As a result, your IP address and/or domain name may be recorded
+                in our referrer logs.
+              </p>
+              
+              <p>
+                %s
+              </p>
+            </div>
+          </div>
+XHTML;
+
+        $config_value = $this->get_config_value('enable_version_check', NULL);
+        $value_missing = ($config_value == NULL); 
+        $is_checked = ( $value_missing || $config_value == '1' );
+        $version_group = $this->build_checkbox_form_group('enable_version_check',
+            "Enable Check", '1', $is_checked);
+        
+        return sprintf($group_f, $version_group);
     }
 }
