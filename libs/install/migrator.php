@@ -5,8 +5,10 @@
  * WikkaMigrator runs migrations during the install process.
  *
  */
+require_once('libs/install/installer.php');
+ 
 
-class WikkaMigrator {
+class WikkaMigrator extends WikkaInstaller {
     
     const CONFIG_PATH = 'wikka.config.php';
     const MYSQL_ENGINE = 'MyISAM';
@@ -17,8 +19,6 @@ class WikkaMigrator {
     public $logs = array();
     public $database_migrations = '';
     public $command_migrations = '';
-
-    private $pdo = null;
     
     /*
      * Constructor
@@ -30,9 +30,9 @@ class WikkaMigrator {
         
         # Could pass it in but simpler to just load again. This will also
         # ensure only user config values are loaded (not Wikka defaults).
-        $this->config = $this->load_config();
+        $config_settings = $this->load_config();
         
-        $this->pdo = $this->connect_to_db();
+        parent::__construct($config_settings);
     }
     
     /*

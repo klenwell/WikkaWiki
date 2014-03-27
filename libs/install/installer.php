@@ -33,7 +33,6 @@ class WikkaInstaller {
     public function __construct($config_settings) {
         $this->config = $config_settings;        
         $this->pdo = $this->connect_to_db();
-        $this->logs = array();
         $this->report = array();
         
         $this->schema_path = sprintf('install%sschema.php', DIRECTORY_SEPARATOR);
