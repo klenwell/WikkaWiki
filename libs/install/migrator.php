@@ -143,7 +143,8 @@ class WikkaMigrator extends WikkaInstaller {
     public function add_menu_config_files() {
         #
         # Adds menu config files and removes config settings navigation_links and
-        # logged_in_navigation_links
+        # logged_in_navigation_links. This is irrelevant to newer version
+        # and preserved mainly for historical fidelity.
         #
         # See ticket (both are same):
         # - http://wush.net/trac/wikka/ticket/891
@@ -173,6 +174,29 @@ class WikkaMigrator extends WikkaInstaller {
             }
             
             unset($this->config['navigation_links']);
+        }
+        
+        if ( isset($this->config['logged_in_navigation_links']) ) {
+            $links = array();
+            $links_found = preg_match_all(sprintf('/%s/', $link_regex),
+                $this->config['logged_in_navigation_links'],
+                $links);
+            
+            if ( $links_found !== FALSE ) {
+                if( file_exists($config_path.'main_menu.user.inc') ) {
+                    rename($config_path.'main_menu.user.inc',
+                        $config_path.'main_menu.user.orig.inc');
+                }
+
+                $f = fopen($config_path.'main_menu.user.inc', 'w');                 
+                foreach( $links[0] as $link ) {
+                    fwrite($f, $link."\n");
+                }
+                fwrite($f, "{{searchform}}\nYou are {{whoami}}");
+                fclose($f);
+            }
+            
+            unset($this->config['logged_in_navigation_links']);
         }
     }
     

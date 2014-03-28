@@ -144,7 +144,7 @@ class WikkaMigratorTest extends PHPUnit_Framework_TestCase {
         # Verify changes
         $log_messages = array_values($this->migrator->logs);
         $this->assertContains('29 rows', $log_messages[56]);
-        $this->assertEquals(130, count($log_messages));
+        $this->assertEquals(131, count($log_messages));
         
         # Verify v1.3.1
         $result = $this->pdo->query(
