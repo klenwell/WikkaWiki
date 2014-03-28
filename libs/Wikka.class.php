@@ -78,7 +78,7 @@ class WikkaBlob extends Wakka {
         $user = $this->GetUser();
     
         # Only store sessions for logged in users
-        if ( is_null($user) ) {
+        if ( empty($user) ) {
             return null;
         }
         

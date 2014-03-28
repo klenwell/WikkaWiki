@@ -42,6 +42,7 @@ $webservice->prepare_request();
 
 try {
     $webservice->start_session();
+    $webservice->authenticate_if_locked();
     $webservice->enforce_csrf_token();
     $webservice->interrupt_if_install_required();
     $response = $webservice->process_request();
