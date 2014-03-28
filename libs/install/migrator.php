@@ -140,6 +140,42 @@ class WikkaMigrator extends WikkaInstaller {
         }
     }
     
+    public function add_menu_config_files() {
+        #
+        # Adds menu config files and removes config settings navigation_links and
+        # logged_in_navigation_links
+        #
+        # See ticket (both are same):
+        # - http://wush.net/trac/wikka/ticket/891
+        # - https://github.com/wikkawik/WikkaWiki/issues/885
+        #
+        $config_path = 'config' . DIRECTORY_SEPARATOR;
+        $link_regex = '[A-ZÄÖÜ]+[a-zßäöü]+[A-Z0-9ÄÖÜ][A-Za-z0-9ÄÖÜßäöü]*|\[\[.*?\]\]';
+        
+        if ( isset($this->config['navigation_links']) ) {
+            $links = array();
+            $links_found = preg_match_all(sprintf('/%s/', $link_regex),
+                $this->config['navigation_links'],
+                $links);
+            
+            if ( $links_found !== FALSE ) {
+                if( file_exists($config_path.'main_menu.inc') ) {
+                    rename($config_path.'main_menu.inc',
+                        $config_path.'main_menu.orig.inc');
+                }
+
+                $f = fopen($config_path.'main_menu.inc', 'w');                 
+                foreach( $links[0] as $link ) {
+                    fwrite($f, $link."\n");
+                }
+                fwrite($f, "{{searchform}}\nYour hostname is {{whoami}}");
+                fclose($f);
+            }
+            
+            unset($this->config['navigation_links']);
+        }
+    }
+    
     /*
      * Protected Methods
      */

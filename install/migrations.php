@@ -272,7 +272,8 @@ $WikkaCommandMigrations = array(
         array('update_page', array('TableMarkupReference')),
         array('update_page', array('WikkaConfig')),
         array('update_page', array('FormattingRules')),
-        array('update_page', array('WikkaReleaseNotes'))
+        array('update_page', array('WikkaReleaseNotes')),
+        array('add_menu_config_files', array())
     ),
     
     '1.3.1' => array(
