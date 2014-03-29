@@ -327,7 +327,8 @@ XHTML;
     }
     
     private function state_save_config_file() {
-        $do_config_dir_check = $this->request->get_post_var('submit') != 'Continue';
+        $submit_val = $this->request->get_post_var('submit');
+        $do_config_dir_check = in_array($submit_val, array('Continue', 'Submit'));
       
         if ( $do_config_dir_check && ! is_writeable('config') ) {
             $e = new ConfigDirWriteError('config directory not writeable');
