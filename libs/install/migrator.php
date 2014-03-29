@@ -29,6 +29,12 @@ class WikkaMigrator extends WikkaInstaller {
         # ensure only user config values are loaded (not Wikka defaults).
         $config_settings = $this->load_config();
         
+        # These values need to be set if not in config
+        $config_settings['default_lang'] = (isset($config_settings['default_lang'])) ?
+            $config_settings['default_lang']: 'en';
+        $config_settings['table_prefix'] = (isset($config_settings['table_prefix'])) ?
+            $config_settings['table_prefix']: '';
+        
         parent::__construct($config_settings);
     }
     
