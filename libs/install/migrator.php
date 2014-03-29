@@ -25,15 +25,8 @@ class WikkaMigrator extends WikkaInstaller {
         $this->database_migrations = $WikkaDatabaseMigrations;
         $this->command_migrations = $WikkaCommandMigrations;
         
-        # Could pass it in but simpler to just load again. This will also
-        # ensure only user config values are loaded (not Wikka defaults).
+        # Could pass it in but simpler to just load again.
         $config_settings = $this->load_config();
-        
-        # These values need to be set if not in config
-        $config_settings['default_lang'] = (isset($config_settings['default_lang'])) ?
-            $config_settings['default_lang']: 'en';
-        $config_settings['table_prefix'] = (isset($config_settings['table_prefix'])) ?
-            $config_settings['table_prefix']: '';
         
         parent::__construct($config_settings);
     }
@@ -239,8 +232,9 @@ class WikkaMigrator extends WikkaInstaller {
      * Private Methods
      */
     private function load_config() {
+        include(WIKKA_DEFAULT_CONFIG_PATH);
         include(self::CONFIG_PATH);
-        return $wakkaConfig;
+        return array_merge($wakkaDefaultConfig, $wakkaConfig);
     }
     
     private function run_db_migration($sql) {
