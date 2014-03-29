@@ -137,11 +137,19 @@ class WikkaMigrator extends WikkaInstaller {
     }
     
     public function backup_file($path) {
+        $dest = sprintf('%s.prev', $path);
+        
         if ( ! file_exists($path) ) {
             return "path not found";
         }
+        elseif ( ! is_writeable($dest) ) {
+            $this->report_event(FALSE,
+                sprintf('unable to backup file: %s', $path),
+                'PERMISSIONS ERROR'
+            );
+            return "dest not writable";
+        }
         else {
-            $dest = sprintf('%s.prev', $path);
             copy($path, $dest);
         }
     }
