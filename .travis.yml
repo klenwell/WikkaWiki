@@ -5,4 +5,5 @@ php:
   
 before_script:
   - cp test/travis-ci.config.php-dist test/test.config.php
-  
+
+script: phpunit test
