@@ -269,9 +269,12 @@ XHTML;
         $this->wikka_url = ((bool) $this->GetConfigValue('rewrite_mode')) ?
             WIKKA_BASE_URL : WIKKA_BASE_URL.WIKKA_URL_EXTENSION;
         
-        # If no page name provided, redirect to root page
+        # Set tag (page name) or redirect to home page if empty
         if ( ! trim($page_name) ) {
             $this->Redirect($this->Href('', $this->GetConfigValue('root_page')));
+        }
+        else {
+            $this->tag = $page_name;
         }
         
         # Set handler
@@ -371,16 +374,28 @@ XHTML;
         else {
             $handler_response = $this->handler($this->GetHandler());
             
+            if ( $handler_response instanceof WikkaResponse ) {
+                $content_body = $handler_response->body;
+            }
+            elseif ( is_string($handler_response) ) {
+                $content_body = $handler_response;
+            }
+            else {
+                throw new WikkaHandlerError('Handler %s returned unexpected type: %s',
+                    $this->GetHandler(), gettype($handler_response));
+            }
+            
+            
             $content_items = array(
                 $this->Header(),
-                $handler_response->body,
+                $content_body,
                 $this->Footer()
             );
             
             $content = implode("\n", $content_items);
         }
         
-        if ( $handler_response ) {
+        if ( $handler_response instanceof WikkaResponse  ) {
             $response = $handler_response;
             $response->body = $content;
         }

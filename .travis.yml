@@ -2,9 +2,7 @@ language: php
 
 
 php:
-  # 5.2 error: Parse error: syntax error, unexpected T_START_HEREDOC in
-  # /home/travis/build/klenwell/WikkaWiki/handlers/show.php on line 40
-  #- 5.2
+  # 5.2 not supported: see http://stackoverflow.com/a/8721165/1093087
   - 5.3
   - 5.4
   - 5.5

@@ -127,6 +127,14 @@ class WikkaWebServiceTest extends PHPUnit_Framework_TestCase {
     /**
      * Tests
      */
+    public function testProcessError() {
+        $this->web_service->prepare_request();
+        $this->web_service->start_session();
+        $e = new Exception('testing process error');
+        $response = $this->web_service->process_error($e);
+        var_dump($response);
+    }
+    
     public function testInstallInterrupt() {
         # Install not needed
         $this->web_service->interrupt_if_install_required();
