@@ -25,8 +25,13 @@ $wakkaConfig = array(
     'mysql_database'            => 'wikkawiki_test_tmp',
     'table_prefix'              => '',
     
-    # other
+    # wikka settings
+    'wakka_name'                => 'WakkaWikiTesting',
+    'wakka_version'             => WAKKA_VERSION,
     'enable_user_host_lookup'   => false,
+    
+    # paths
+    'wikka_formatter_path'      => 'formatters',   
 );
 
 # For multisite tests

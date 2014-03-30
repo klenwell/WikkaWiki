@@ -1,0 +1,78 @@
+/*
+ * Template: http://getbootstrap.com/examples/sticky-footer-navbar/
+ * http://getbootstrap.com/examples/sticky-footer-navbar/sticky-footer-navbar.css
+ */
+/* Sticky footer styles
+-------------------------------------------------- */
+html {
+  position: relative;
+  min-height: 100%;
+}
+body {
+  /* Margin bottom by footer height */
+  margin-bottom: 80px;
+}
+#footer {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  /* Set the fixed height of the footer here */
+  height: 60px;
+  background-color: #f5f5f5;
+}
+
+
+/* Custom page CSS
+-------------------------------------------------- */
+/* Not required for template or sticky footer method. */
+
+.container .text-muted {
+  margin: 20px 0;
+}
+
+#footer > .container {
+  padding-right: 15px;
+  padding-left: 15px;
+}
+
+code {
+  font-size: 80%;
+}
+
+
+/* Wikka Install Forms
+-------------------------------------------------- */
+div.intro div.preamble {
+  font-size: 1.2em;
+  padding: 1em;
+  margin-bottom: 1em;
+}
+
+div.intro form {
+  margin-top: 16px;
+}
+
+div.installer-report h4 {
+}
+
+div.installer-report div.panel-warning {
+  margin-top: 12px;
+}
+
+div.installer-report div.buttons form {
+  padding-right: 12px;
+}
+
+div#enable_version_check-group {
+  margin-top: 30px;
+}
+
+input[type=checkbox] {
+  width: 25px;
+  height: 25px
+}
+
+div.conclusion h4.next {
+  margin: 16px 0px 24px;
+  padding: 16px;
+}

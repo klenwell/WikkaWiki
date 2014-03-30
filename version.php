@@ -24,7 +24,8 @@
  * version number might result in problems upgrading...please use
  * caution.
  */
-$svn_version = 'trunk';
+# TODO(klenwell): Move this into wikka/constants.php
+$svn_version = '1.5';
 if (!defined('WAKKA_VERSION')) define('WAKKA_VERSION', $svn_version);
 
 /**

@@ -73,6 +73,15 @@ class WikkaRequest {
         }
     }
     
+    public function get_get_var($key, $default=null) {
+        if ( isset($_GET[$key]) ) {
+            return $_GET[$key];
+        }
+        else {
+            return $default;
+        }
+    }
+    
     public function get_post_var($key, $default=null) {
         if ( isset($_POST[$key]) ) {
             return $_POST[$key];

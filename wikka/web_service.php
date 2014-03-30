@@ -25,7 +25,6 @@ class WikkaWebService {
      * Properties
      */
     public $config = array();
-    public $pdo = null;
     public $request = null;
 
     /*
@@ -45,7 +44,6 @@ class WikkaWebService {
         
         $this->verify_requirements();
         $this->config = $this->load_config($config_file_path);
-        $this->pdo = $this->connect_to_db();
     }
     
     /*
@@ -94,6 +92,28 @@ class WikkaWebService {
         return null;
     }
     
+    public function authenticate_if_locked() {
+        # A simple locking mechanism WikkaWiki has long used to restrict access,
+        # especially for doing upgrades.
+        # TODO: For upgrade, restrict access to logged in admins
+        if ( ! $this->site_is_locked() ) {
+            return null;
+        }
+        
+        if ( ! $this->is_authenticated_to_unlock_site() ) {
+            $auth_f = 'WWW-Authenticate: Basic realm="%s Install/Upgrade Interface"';
+            $auth_header = sprintf($auth_f, $this->config["wakka_name"]);
+		
+            header($auth_header);
+            header("HTTP/1.0 401 Unauthorized");
+            throw new BasicAuthenticationError(T_(
+                "This site is currently being upgraded. Please try again later."
+            ));
+        }
+        
+        return null;
+    }
+    
     public function enforce_csrf_token() {
         $token = $this->set_csrf_token_if_not_set();
         $this->authenticate_csrf_token();
@@ -116,6 +136,7 @@ class WikkaWebService {
         $route = $this->route_request();
 
         $wikka = new WikkaBlob($this->config);
+        $wikka->globalize_this_as_wakka_var();
         $wikka->connect_to_db();
         $wikka->handler = $route['handler'];
         $wikka->SetPage($wikka->LoadPage($route['page']));
@@ -126,12 +147,28 @@ class WikkaWebService {
             $wikka->Footer()
         );
         
-        $content = implode("\n", $content_items);
-
-        $response = new WikkaResponse($content, 500);
+        if ( $error instanceof WikkaAccessError ) {
+            $content = sprintf($error->template, $content_items[1]);
+            $response = new WikkaResponse($content, 401);
+        }
+        else {
+            $content = implode("\n", $content_items);
+            $response = new WikkaResponse($content, 500);
+        }
+        
         $response->set_header('Cache-Control', 'no-cache');
         $response->set_header('ETag', md5($response->body));
         $response->set_header('Content-Length', strlen($response->body));
+        
+        return $response;
+    }
+    
+    public function process_installer() {
+        $wikka = new WikkaBlob($this->config);
+        $wikka->connect_to_db();
+    
+        $install_handler = $wikka->load_handler_class('install');
+        $response = $install_handler->handle($this);
         
         return $response;
     }
@@ -170,6 +207,23 @@ class WikkaWebService {
         }
         
         return array('page' => $page, 'handler' => $handler);
+    }
+    
+    public function interrupt_if_install_required() {
+        if ( $this->config['wakka_version'] !== WAKKA_VERSION ) {
+            if ( ! $this->config['wakka_version'] ) {
+                $m = "Install required";
+            }
+            else {
+                $m = sprintf("Upgrade required: version %s to %s",
+                    $this->config['wakka_version'], WAKKA_VERSION);
+            }
+            
+            throw new WikkaInstallInterrupt($m);
+        }
+        else {
+            return null;
+        }
     }
     
     /*
@@ -221,9 +275,23 @@ class WikkaWebService {
     }
     
     private function load_config($config_file_path) {
-        # Load config settings
+        # Load default settings
         require(WIKKA_DEFAULT_CONFIG_PATH);
+        
+        # If config file is missing, return default settings to trigger install
+        if ( ! file_exists($config_file_path) ) {
+            return $wakkaDefaultConfig;
+        }
+        
+        # Load config settings
         include($config_file_path);
+        
+        # If $wakkaConfig not set, return default settings to trigger install
+        if ( ! isset($wakkaConfig) ) {
+            return $wakkaDefaultConfig;
+        }
+        
+        # Overwrite defaults with config file settings
         $wakkaConfig = array_merge($wakkaDefaultConfig, $wakkaConfig);
         
         # Load language defaults
@@ -246,5 +314,20 @@ class WikkaWebService {
         
         $pdo = new PDO($dsn, $user, $pass);
         return $pdo;
+    }
+    
+    private function site_is_locked() {
+        return file_exists('locked');
+    }
+    
+    private function is_authenticated_to_unlock_site() {
+        # read password from lockfile
+        $lines = file_get_contents("locked");
+        $lockpw = trim($lines);
+        
+        return isset($_SERVER["PHP_AUTH_USER"]) && (
+            ($_SERVER["PHP_AUTH_USER"] == "admin") &&
+            ($_SERVER["PHP_AUTH_PW"] == $lockpw)
+        );
     }
 }

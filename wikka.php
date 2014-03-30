@@ -23,11 +23,11 @@
 #
 # Imports
 #
-require_once('version.php');
+require_once('version.php');            # TODO: merge into constants
 require_once('wikka/constants.php');
-require_once('wikka/functions.php');
-require_once('wikka/web_service.php');
+require_once('wikka/functions.php');    # TODO: eliminate this (replace with libs)
 require_once('wikka/errors.php');
+require_once('wikka/web_service.php');
 
 # TODO(klenwell): refactor and remove this. The wakka formatter class
 # requires this library for the instantiate function.
@@ -42,8 +42,13 @@ $webservice->prepare_request();
 
 try {
     $webservice->start_session();
+    $webservice->authenticate_if_locked();
     $webservice->enforce_csrf_token();
+    $webservice->interrupt_if_install_required();
     $response = $webservice->process_request();
+}
+catch (WikkaInstallInterrupt $e) {
+    $response = $webservice->process_installer();
 }
 catch (Exception $e) {
     $response = $webservice->process_error($e);

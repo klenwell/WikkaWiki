@@ -78,7 +78,7 @@ class WikkaBlob extends Wakka {
         $user = $this->GetUser();
     
         # Only store sessions for logged in users
-        if ( is_null($user) ) {
+        if ( empty($user) ) {
             return null;
         }
         
@@ -263,6 +263,11 @@ XHTML;
         # Refactored to return a WikkaResponse object
         #
         $handler_response = null;
+        
+        # Set wikka_url (this is used by Href method)
+        # TODO(klenwell): eliminate the global
+        $this->wikka_url = ((bool) $this->GetConfigValue('rewrite_mode')) ?
+            WIKKA_BASE_URL : WIKKA_BASE_URL.WIKKA_URL_EXTENSION;
         
         # If no page name provided, redirect to root page
         if ( ! trim($page_name) ) {
