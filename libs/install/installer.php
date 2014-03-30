@@ -56,9 +56,7 @@ class WikkaInstaller {
     public function write_config_file() {
         $config_path = WikkaInstaller::CONFIG_PATH;
         
-        # Unset obsolete settings
         $this->remove_obsolete_settings();
-        $this->remove_navigation_links();
         
         # Force reloading of stylesheet
         $this->config['stylesheet_hash'] = substr(md5(time()),1,5);
@@ -486,10 +484,6 @@ XPHP;
             WIKKA_CONFIG_VAR,
             implode("\n    ", $config_lines)
         );
-    }
-    
-    private function remove_navigation_links() {
-        // TODO(klenwell)
     }
     
     private function remove_obsolete_settings() {
