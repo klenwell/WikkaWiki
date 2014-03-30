@@ -171,6 +171,11 @@ class WikkaInstaller {
         foreach ($WikkaDatabaseSchema as $key => $sql) {
             $message = sprintf('Create database: %s', $key);
             
+            # Replace placeholders
+            $sql = str_replace('{{prefix}}', $this->config['table_prefix'], $sql);
+            $sql = str_replace('{{engine}}', self::MYSQL_ENGINE, $sql);
+            $sql = str_replace('{{db_name}}', $this->config['mysql_database'], $sql);
+            
             try {                
                 $rows_affected = $this->exec_sql($sql);
                 $this->report_event(TRUE, $message);

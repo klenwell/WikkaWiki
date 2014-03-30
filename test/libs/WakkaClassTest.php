@@ -39,103 +39,132 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
     /**
      * Test Fixtures
      */
-    public static function setUpBeforeClass() {
-        require('test/test.config.php');
-        self::$config = $wakkaConfig;
-        
-        # Must set $config for setup/database.php
-        $config = self::$config;
-        require('setup/database.php');
-        
-        # Create db connection
-        $host = sprintf('mysql:host=%s', self::$config['mysql_host']);
-        self::$pdo = new PDO($host, self::$config['mysql_user'],
-            self::$config['mysql_password']);
-        self::$pdo->setAttribute( PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION );
-
-        # Create database
-        self::$pdo->exec(sprintf('DROP DATABASE IF EXISTS `%s`',
-            self::$config['mysql_database']));
-        self::$pdo->exec(sprintf('CREATE DATABASE `%s`',
-            self::$config['mysql_database']));
-        self::$pdo->query(sprintf('USE %s', self::$config['mysql_database']));
-        
-        # Create tables
-        foreach ($install_queries as $key => $query) {
-            self::$pdo->exec($query);
-        }
-    }
- 
-    public static function tearDownAfterClass() {       
-        # Cleanup database
-        self::$pdo->exec(sprintf('DROP DATABASE `%s`',
-            self::$config['mysql_database']));
-        self::$pdo = NULL;
-    }
-    
     public function setUp() {
-        self::$wakka = new Wakka(self::$config);
-        self::$wakka->handler = 'show';
+        $this->config = $this->setUpConfig();
+        $this->pdo = $this->setUpDatabase();
+        $this->setUpMockServerEnvironment();
         
-        $this->save_users();
-        $this->save_pages();
-        $this->save_comments();
+        $this->wakka = new Wakka($this->config);
+        $this->wakka->handler = 'show';
+        
+        $this->setUpUserTable();
+        $this->setUpPagesTable();
+        $this->setUpCommentsTable();
         
         $_SERVER['REMOTE_ADDR'] = ( isset($_SERVER['REMOTE_ADDR']) ) ?
             $_SERVER['REMOTE_ADDR'] : '127.0.0.1';
     }
     
     public function tearDown() {
-        self::$wakka = NULL;
-        
-        # Truncate all tables
-        foreach (self::$pdo->query('SHOW TABLES') as $row) {
-            self::$pdo->query(sprintf('TRUNCATE TABLE %s', $row[0]));
-        };
+        $_SERVER = array();
+        $this->wakka = null;
+        $this->tearDownDatabase();
+        $this->tearDownSession();
+        $this->config = array();
     }
     
-    private function save_users() {
+    private function setUpConfig() {
+        include('wikka/default.config.php');
+        include('test/test.config.php');
+        return array_merge($wakkaDefaultConfig, $wakkaConfig);
+    }
+    
+    private function setUpDatabase() {
+        # Create db connection
+        $host = sprintf('mysql:host=%s', $this->config['mysql_host']);
+        $pdo = new PDO($host, $this->config['mysql_user'],
+            $this->config['mysql_password']);
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+        # Create database
+        $pdo->exec(sprintf('DROP DATABASE IF EXISTS `%s`',
+            $this->config['mysql_database']));
+        $pdo->exec(sprintf('CREATE DATABASE `%s`',
+            $this->config['mysql_database']));
+        $pdo->query(sprintf('USE %s', $this->config['mysql_database']));
+        
+        # Create tables
+        require('install/schema.php');
+        foreach ($WikkaDatabaseSchema as $key => $sql) {
+            $sql = str_replace('{{prefix}}', $this->config['table_prefix'], $sql);
+            $sql = str_replace('{{engine}}', 'MyISAM', $sql);
+            $sql = str_replace('{{db_name}}', $this->config['mysql_database'], $sql);
+            $pdo->exec($sql);
+        }
+        
+        return $pdo;
+    }
+    
+    private function setUpMockServerEnvironment() {
+        $_SERVER = array(
+            'SERVER_NAME'   => 'localhost',
+            'SERVER_PORT'   => '80',
+            'QUERY_STRING'  => 'wakka=HomePage',
+            'REQUEST_URI'   => '/WikkaWiki/wikka.php?wakka=HomePage',
+            'SCRIPT_NAME'   => '/WikkaWiki/wikka.php',
+            'REMOTE_ADDR'   => '127.0.0.1'
+        );
+        
+        $_GET = array(
+            'wakka'         => 'HomePage'
+        );
+    }
+    
+    private function setUpUserTable() {
         # User parameters
         $users = array(
             # name, status 
             array('admin', 'active')
         );
-        $prefix = self::$wakka->GetConfigValue('table_prefix');
+        $prefix = $this->wakka->GetConfigValue('table_prefix');
         $sql_f = 'INSERT INTO %susers SET name="%s", email="%s", status="%s"';
         
         # Save pages
         foreach ($users as $user) {
-            list($name, $status) = each($user);
+            list($name, $status) = $user;
             $email = sprintf('%s@test.wikkawiki.org', $name);
-            self::$wakka->query(sprintf($sql_f, $prefix,
+            $this->wakka->query(sprintf($sql_f, $prefix,
                 $name, $email, $status));
         }
     }
     
-    private function save_pages() {
+    private function setUpPagesTable() {
         # Page parameters
         $page_tags = array('TestPage1', 'TestPage2', 'TestPage3');
         $page_body = "A test in WakkaClassTest";
-        $prefix = self::$wakka->GetConfigValue('table_prefix');
+        $prefix = $this->wakka->GetConfigValue('table_prefix');
         $sql_f = 'INSERT INTO %spages SET tag="%s", body="%s"';
         
         # Save pages
         foreach ($page_tags as $page_tag) {
-            self::$wakka->query(sprintf($sql_f, $prefix, $page_tag, $page_body));
+            $this->wakka->query(sprintf($sql_f, $prefix, $page_tag, $page_body));
         }
     }
     
-    private function save_comments() {
+    private function setUpCommentsTable() {
         # Page parameters
         $page_tag = 'TestPage1';
         $comment_f = "Comment #%d";
-        $prefix = self::$wakka->GetConfigValue('table_prefix');
+        $prefix = $this->wakka->GetConfigValue('table_prefix');
         $sql_f = 'INSERT INTO %scomments SET page_tag="%s", comment="%s"';
         
         # Save pages
         for($num=1; $num<=10; $num++) {
             $comment = sprintf($comment_f, $num);
-            self::$wakka->query(sprintf($sql_f, $prefix, $page_tag, $comment));
+            $this->wakka->query(sprintf($sql_f, $prefix, $page_tag, $comment));
+        }
+    }
+    
+    private function tearDownDatabase() {
+        $this->pdo->exec(sprintf('DROP DATABASE `%s`',
+            $this->config['mysql_database']));
+        $this->pdo = NULL;
+    }
+    
+    private function tearDownSession() {
+        if ( session_id() ) {
+            session_destroy();
+            $_SESSION = array();
         }
     }
     
@@ -150,34 +179,34 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
     {
         $page_tag = 'TestQuery';
         $page_body = "A test of the Wakka::Query method";
-        $prefix = self::$wakka->GetConfigValue('table_prefix');
+        $prefix = $this->wakka->GetConfigValue('table_prefix');
         
         # Insert Page
         $sql_f = 'INSERT INTO %spages SET tag="%s", body="%s"';
-        $result = self::$wakka->query(sprintf($sql_f, $prefix, $page_tag, $page_body));
+        $result = $this->wakka->query(sprintf($sql_f, $prefix, $page_tag, $page_body));
         $this->assertTrue($result);
         
         # Select Page
         $sql_f = 'SELECT tag, body FROM %spages WHERE tag="%s"';
-        $result = self::$wakka->query(sprintf($sql_f, $prefix, $page_tag));
+        $result = $this->wakka->query(sprintf($sql_f, $prefix, $page_tag));
         $row = mysql_fetch_assoc($result);
         $this->assertEquals($row['tag'], $page_tag);
         $this->assertEquals($row['body'], $page_body);
         
         # Count Pages
         $sql_f = 'SELECT COUNT(*) as count FROM %spages WHERE tag="%s"';
-        $result = self::$wakka->query(sprintf($sql_f, $prefix, $page_tag));
+        $result = $this->wakka->query(sprintf($sql_f, $prefix, $page_tag));
         $row = mysql_fetch_assoc($result);
         $this->assertEquals($row['count'], 1);
         
         # Delete Page
         $sql_f = 'DELETE FROM %spages WHERE tag="%s"';
-        $result = self::$wakka->query(sprintf($sql_f, $prefix, $page_tag));
+        $result = $this->wakka->query(sprintf($sql_f, $prefix, $page_tag));
         $this->assertTrue($result);
         
         # Count Pages
         $sql_f = 'SELECT COUNT(*) as count FROM %spages WHERE tag="%s"';
-        $result = self::$wakka->query(sprintf($sql_f, $prefix, $page_tag));
+        $result = $this->wakka->query(sprintf($sql_f, $prefix, $page_tag));
         $row = mysql_fetch_assoc($result);
         $this->assertEquals($row['count'], 0);
     }
@@ -187,9 +216,9 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
      */
     public function testLoadAll()
     {
-        $prefix = self::$wakka->GetConfigValue('table_prefix');
+        $prefix = $this->wakka->GetConfigValue('table_prefix');
         $sql_f = 'SELECT tag, body FROM %spages ORDER BY tag ASC';    
-        $data = self::$wakka->LoadAll(sprintf($sql_f, $prefix));
+        $data = $this->wakka->LoadAll(sprintf($sql_f, $prefix));
         
         $this->assertEquals(count($data), 3);
         $this->assertEquals($data[0]['tag'], 'TestPage1');
@@ -200,9 +229,9 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
      */
     public function testLoadSingle()
     {
-        $prefix = self::$wakka->GetConfigValue('table_prefix');
+        $prefix = $this->wakka->GetConfigValue('table_prefix');
         $sql_f = 'SELECT tag, body FROM %spages ORDER BY tag ASC';
-        $data = self::$wakka->LoadSingle(sprintf($sql_f, $prefix));
+        $data = $this->wakka->LoadSingle(sprintf($sql_f, $prefix));
         
         $this->assertEquals($data['tag'], 'TestPage1');
         $this->assertEquals($data['body'], 'A test in WakkaClassTest');
@@ -213,7 +242,7 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
      */
     public function testGetCount()
     {
-        $count = self::$wakka->getCount('comments', "status IS NULL");
+        $count = $this->wakka->getCount('comments', "status IS NULL");
         $this->assertEquals($count, 10);
     }
     
@@ -410,7 +439,7 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
     public function testSavePageAndPageExists()
     {
         # Test params
-        $prefix = self::$wakka->GetConfigValue('table_prefix');
+        $prefix = $this->wakka->GetConfigValue('table_prefix');
         $tag = 'TestSavePage';
         $body = 'covers Wakka::SavePage';
         $note = 'also covers Wakka::existsPage';
@@ -421,20 +450,20 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
         # exists when this test should test creation of a new page, as well
         # as an existing page.
         $sql_f = 'INSERT INTO %sacls SET page_tag="%s", write_acl="*"';
-        $result = self::$wakka->query(sprintf($sql_f, $prefix, $tag));
+        $result = $this->wakka->query(sprintf($sql_f, $prefix, $tag));
         
         # Save page
-        self::$wakka->SavePage($tag, $body, $note, $owner);
+        $this->wakka->SavePage($tag, $body, $note, $owner);
         
         # Verify page created
         $sql_f = 'SELECT COUNT(*) as count FROM %spages WHERE tag="%s"';
-        $result = self::$wakka->query(sprintf($sql_f, $prefix, $tag));
+        $result = $this->wakka->query(sprintf($sql_f, $prefix, $tag));
         $row = mysql_fetch_assoc($result);
         $this->assertEquals($row['count'], 1);
         
         # Test existsPage
-        $this->assertTrue(self::$wakka->existsPage($tag, $prefix));
-        $this->assertFalse(self::$wakka->existsPage('PageDoesNotExist', $prefix));
+        $this->assertTrue($this->wakka->existsPage($tag, $prefix));
+        $this->assertFalse($this->wakka->existsPage('PageDoesNotExist', $prefix));
     }
 
     /**
@@ -887,7 +916,7 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
     public function testLogReferrer()
     {
         # Test params
-        $prefix = self::$wakka->GetConfigValue('table_prefix');
+        $prefix = $this->wakka->GetConfigValue('table_prefix');
         $page_tag = 'TestReferredPage';
         $referrer = 'http://delicious.com/';
         
@@ -896,11 +925,11 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
         }
         
         # Log referrer
-        self::$wakka->LogReferrer($page_tag, $referrer);
+        $this->wakka->LogReferrer($page_tag, $referrer);
         
         # Verify referrer logged
         $sql_f = 'SELECT COUNT(*) as count FROM %sreferrers WHERE page_tag="%s"';
-        $result = self::$wakka->query(sprintf($sql_f, $prefix, $page_tag));
+        $result = $this->wakka->query(sprintf($sql_f, $prefix, $page_tag));
         $row = mysql_fetch_assoc($result);
         $this->assertEquals($row['count'], 1);
     }
@@ -1180,8 +1209,8 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
      */
     public function testCheckMySQLVersion()
     {
-        $version_greater_than_1 = self::$wakka->CheckMySQLVersion(1, 0, 0);
-        $version_greater_than_1000 = self::$wakka->CheckMySQLVersion(1000, 0, 0);
+        $version_greater_than_1 = $this->wakka->CheckMySQLVersion(1, 0, 0);
+        $version_greater_than_1000 = $this->wakka->CheckMySQLVersion(1000, 0, 0);
         $this->assertTrue((bool) $version_greater_than_1);
         $this->assertFalse((bool) $version_greater_than_1000);
     }
@@ -1405,8 +1434,8 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
     public function testMicroTime()
     {
         $utime_2000 = (float) DateTime::createFromFormat('Y-m-d', '2000-01-01')->format('U');
-        $microtime = self::$wakka->GetMicroTime();
-        $diff = self::$wakka->microTimeDiff($microtime);
+        $microtime = $this->wakka->GetMicroTime();
+        $diff = $this->wakka->microTimeDiff($microtime);
         
         $this->assertGreaterThan($utime_2000, $microtime);
         $this->assertLessThan(.01, $diff);
