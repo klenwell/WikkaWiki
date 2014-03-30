@@ -9,12 +9,6 @@
  *  4. Write Files
  *  5. Conclusion
  *
- * USAGE
- *
- * NOTES
- * A refactor of the Wikka show handler to function as a more independent
- * modular unit that can be more effectively tested.
- *
  * @package     Handlers
  * @license     http://www.gnu.org/copyleft/gpl.html GNU General Public License
  * @author      {@link https://github.com/klenwell/WikkaWiki Tom Atwell}
@@ -327,7 +321,7 @@ XHTML;
     }
     
     private function state_save_config_file() {
-        $submit_val = $this->request->get_post_var('submit');
+        $submit_val = $this->get_form_value('submit');
         $do_config_dir_check = in_array($submit_val, array('Continue', 'Submit'));
       
         if ( $do_config_dir_check && ! is_writeable('config') ) {
@@ -488,9 +482,6 @@ XHTML;
     
     private function is_fresh_install() {
         return !($this->is_upgrade());
-    }
-    
-    private function run_migrations() {
     }
     
     private function get_config_value($key, $default='') {
