@@ -66,6 +66,6 @@ class WikkaBlobTest extends PHPUnit_Framework_TestCase {
      */
     public function testInstantiates() {
         $this->assertInstanceOf('WikkaBlob', $this->wikka);
-        $this->assertEquals('wikkawiki_test', $this->config['mysql_database']);
+        $this->assertNotEmpty($this->config['mysql_database']);
     }
 }
