@@ -202,9 +202,6 @@ class WikkaWebServiceTest extends PHPUnit_Framework_TestCase {
     }
     
     public function testLoadConfig() {
-        # Check PDO property (should throw exception if not able to load)
-        $this->assertInstanceOf('PDO', $this->web_service->pdo);
-        
         # Test wikka/language_defaults.php loaded
         $this->assertEquals('lang/en', WIKKA_LANG_PATH);
         
