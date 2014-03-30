@@ -49,8 +49,9 @@ class MockWikkaMigrator extends WikkaMigrator {
 
 class WikkaMigratorTest extends PHPUnit_Framework_TestCase {
     
-    protected static $config;
-    protected static $migrator;
+    protected $config;
+    protected $pdo;
+    protected $migrator;
  
     /**
      * Test Fixtures

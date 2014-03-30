@@ -32,9 +32,9 @@ require_once('version.php');
 
 class WakkaClassTest extends PHPUnit_Framework_TestCase {
     
-    protected static $pdo;
-    protected static $wakka;
-    protected static $config;
+    protected $pdo;
+    protected $wakka;
+    protected $config;
  
     /**
      * Test Fixtures

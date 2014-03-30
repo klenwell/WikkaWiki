@@ -22,9 +22,8 @@ require_once('libs/Wikka.class.php');
 
 class WikkaBlobTest extends PHPUnit_Framework_TestCase {
     
-    protected static $config;
-    protected static $wikka;
-    protected static $pdo;
+    protected $config;
+    protected $wikka;
  
     /**
      * Test Fixtures
