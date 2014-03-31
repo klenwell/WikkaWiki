@@ -339,18 +339,18 @@ XHTML;
         
         # Various handler types
         if ( preg_match('/\.(xml|mm)$/', $this->GetHandler()) ) {
-            $content = $this->handler($this->GetHandler());
+            $handler_response = $this->handler($this->GetHandler());
             header('Content-Type: text/xml');
         }
         elseif ( $this->GetHandler() == "raw" ) {
-            $content = $this->handler($this->GetHandler());
+            $handler_response = $this->handler($this->GetHandler());
             header('Content-Type: text/plain');
         }
         elseif ( $this->GetHandler() == 'grabcode' ) {
-            $content = $this->handler($this->GetHandler());
+            $handler_response = $this->handler($this->GetHandler());
         }
         elseif ( $this->GetHandler() == 'html' ) {
-            $content = $this->handler($this->GetHandler());
+            $handler_response = $this->handler($this->GetHandler());
             header('Content-Type: text/html');
         }
         
@@ -393,17 +393,10 @@ XHTML;
             );
             
             $content = implode("\n", $content_items);
+            $handler_response->body = $content;
         }
         
-        if ( $handler_response instanceof WikkaResponse  ) {
-            $response = $handler_response;
-            $response->body = $content;
-        }
-        else {
-            $response = new WikkaResponse($content);
-        }
-        
-        return $response;
+        return $handler_response;
     }
     
     public function Handler($handler_name) {

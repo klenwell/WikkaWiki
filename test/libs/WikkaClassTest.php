@@ -19,6 +19,7 @@ require_once('libs/Compatibility.lib.php');
 require_once('3rdparty/core/php-gettext/gettext.inc');
 require_once('lang/en/en.inc.php');
 require_once('libs/Wikka.class.php');
+require_once('wikka/functions.php');
 require_once('wikka/web_service.php');
 require_once('handlers/show.php');
 
@@ -38,9 +39,15 @@ class WikkaBlobTest extends PHPUnit_Framework_TestCase {
         $this->pdo = $this->setUpDatabase();
         $this->setUpTables();
         
+        # Prepare Wikka object
         $this->wikka = new WikkaBlob($this->config);
+        $this->wikka->globalize_this_as_wakka_var();
         $this->wikka->connect_to_db();
         $this->wikka->handler = 'show';
+        
+        # Prepare request
+        $web_service = new WikkaWebService('test/test.config.php');
+        $web_service->prepare_request();
         
         $this->setUpUsers();
         $this->setUpPages();
@@ -168,6 +175,7 @@ class WikkaBlobTest extends PHPUnit_Framework_TestCase {
      */
     public function testShowHandler() {
         # Params
+        $handler = 'show';
         $page_tag = 'HelloWorld';
         
         # Set page and ACLs
@@ -175,11 +183,8 @@ class WikkaBlobTest extends PHPUnit_Framework_TestCase {
         $this->wikka->ACLs = $this->wikka->LoadAllACLs($this->wikka->GetPageTag());
         $this->wikka->ACLs['read_acl'] = '*';
         
-        # Prepare Handler
-        $handler = new ShowHandler($this->wikka);
-        
         # Test handle
-        $response = $handler->handle();
+        $response = $this->wikka->Run($page_tag, $handler);
         
         # Test results
         $this->assertInstanceOf('WikkaResponse', $response);
@@ -188,15 +193,34 @@ class WikkaBlobTest extends PHPUnit_Framework_TestCase {
     }
     
     public function testWikkaHandlerError() {
+        $this->markTestIncomplete('TODO');
     }
     
     public function testGrabCodeHandler() {
+        $this->markTestIncomplete('TODO');
     }
     
     public function testRawHandler() {
+        # Params
+        $handler = 'raw';
+        $page_tag = 'HelloWorld';
+        
+        # Set page and ACLs
+        $this->wikka->SetPage($this->wikka->LoadPage($page_tag));
+        $this->wikka->ACLs = $this->wikka->LoadAllACLs($this->wikka->GetPageTag());
+        $this->wikka->ACLs['read_acl'] = '*';
+        
+        # Test handle
+        $response = $this->wikka->Run($page_tag, $handler);
+        
+        # Test results
+        $this->assertInstanceOf('WikkaResponse', $response);
+        $this->assertEquals(0, $response->status);
+        $this->assertEquals('Hello World', $response->body);
     }
     
-    public function testXmlHandler() {
+    public function testRecentChangesXmlHandler() {
+        $this->markTestIncomplete('TODO');
     }
     
     public function testInstantiates() {
