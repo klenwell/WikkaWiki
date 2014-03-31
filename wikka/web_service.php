@@ -133,12 +133,22 @@ class WikkaWebService {
     }
     
     public function process_error($error) {
+        #
+        # Process error and display within the regular page template. Hopefully
+        # no other errors will occur at this point.
+        #
+        # TODO: make the templating more foolproof. Seems too easy currently to
+        # have another error occur and end up displaying an ugly (and potentially
+        # insecure) error message.
+        #
         $route = $this->route_request();
 
         $wikka = new WikkaBlob($this->config);
         $wikka->globalize_this_as_wakka_var();
         $wikka->connect_to_db();
         $wikka->handler = $route['handler'];
+        
+        # Must set page for header
         $wikka->SetPage($wikka->LoadPage($route['page']));
         
         $content_items = array(

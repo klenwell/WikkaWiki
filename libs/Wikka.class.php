@@ -419,4 +419,46 @@ XHTML;
             return $this->run_legacy_handler($handler_name);
         }
     }
+    
+    public function Query($query, $dblink='') {
+        # TODO: stop grinding teeth
+        if ( $dblink == '' ) {
+            # This apparently signals the call was made from an object
+            $object = TRUE;
+            $dblink = $this->dblink;
+            $start = $this->GetMicroTime();
+        }
+        else {
+            # This means method was called externally
+            $object = FALSE;
+        }
+        
+        if ( ! $result = mysql_query($query, $dblink) ) {
+            # Dump the buffer. (Easier to debug).
+            print ob_get_contents();
+            
+            # Throw an exception
+            throw new WikkaQueryError(sprintf('Query [%s] failed %s',
+                $query, mysql_error())
+            );
+        }
+        
+        if ( $object && $this->GetConfigValue('sql_debugging') ) {
+            $time = $this->GetMicroTime() - $start;
+            $this->queryLog[] = array(
+                "query" => $query,
+                "time"  => $time
+            );
+        }
+
+        return $result;
+    }
+    
+    public function HasAccess($privilege, $tag='', $username='') {
+        if ( ! isset($this->ACLs) ) {
+            $this->ACLs = $this->LoadAllACLs($tag);
+        }
+        
+        return parent::HasAccess($privilege, $tag, $username);
+    }
 }

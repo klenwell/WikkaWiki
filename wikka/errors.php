@@ -32,6 +32,8 @@ class WikkaCsrfError extends WikkaError {}
 
 class WikkaHandlerError extends WikkaError {}
 
+class WikkaQueryError extends WikkaError {}
+
 /*
  * Access Errors
  */
