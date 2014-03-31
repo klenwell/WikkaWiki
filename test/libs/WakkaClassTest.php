@@ -50,9 +50,6 @@ class WakkaClassTest extends PHPUnit_Framework_TestCase {
         $this->setUpUserTable();
         $this->setUpPagesTable();
         $this->setUpCommentsTable();
-        
-        $_SERVER['REMOTE_ADDR'] = ( isset($_SERVER['REMOTE_ADDR']) ) ?
-            $_SERVER['REMOTE_ADDR'] : '127.0.0.1';
     }
     
     public function tearDown() {

@@ -17,12 +17,16 @@ require_once('wikka/constants.php');
 require_once('version.php');
 require_once('libs/Compatibility.lib.php');
 require_once('3rdparty/core/php-gettext/gettext.inc');
+require_once('lang/en/en.inc.php');
 require_once('libs/Wikka.class.php');
+require_once('wikka/web_service.php');
+require_once('handlers/show.php');
 
 
 class WikkaBlobTest extends PHPUnit_Framework_TestCase {
     
     protected $config;
+    protected $pdo;
     protected $wikka;
  
     /**
@@ -30,14 +34,22 @@ class WikkaBlobTest extends PHPUnit_Framework_TestCase {
      */
     public function setUp() {
         $this->config = $this->setUpConfig();
+        $this->setUpMockServerEnvironment();
+        $this->pdo = $this->setUpDatabase();
+        $this->setUpTables();
+        
         $this->wikka = new WikkaBlob($this->config);
+        $this->wikka->connect_to_db();
         $this->wikka->handler = 'show';
         
-        $this->setUpMockServerEnvironment();
+        $this->setUpUsers();
+        $this->setUpPages();
     }
     
     public function tearDown() {
         $_SERVER = array();
+        $this->tearDownDatabase();
+        $this->tearDownSession();
         $this->config = array();
         $this->wikka = null;
     }
@@ -59,10 +71,134 @@ class WikkaBlobTest extends PHPUnit_Framework_TestCase {
         );
     }
     
+    private function setUpDatabase() {
+        # Create db connection
+        $host = sprintf('mysql:host=%s', $this->config['mysql_host']);
+        $pdo = new PDO($host, $this->config['mysql_user'],
+            $this->config['mysql_password']);
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+        # Create database
+        $pdo->exec(sprintf('DROP DATABASE IF EXISTS `%s`',
+            $this->config['mysql_database']));
+        $pdo->exec(sprintf('CREATE DATABASE `%s`',
+            $this->config['mysql_database']));
+        $pdo->query(sprintf('USE %s', $this->config['mysql_database']));
+        
+        return $pdo;
+    }
+    
+    private function setUpTables() {
+        $config = $this->config;
+        require('setup/database.php');
+        
+        # Create tables
+        foreach ($install_queries as $key => $query) {
+            $this->pdo->exec($query);
+        }
+    }
+    
+    private function setUpUsers() {
+        # User parameters
+        $users = array(
+            # name, status 
+            array('WikkaAdmin', 'active')
+        );
+        $prefix = $this->wikka->GetConfigValue('table_prefix');
+        $sql_f = 'INSERT INTO %susers SET name="%s", email="%s", status="%s"';
+        
+        # Save pages
+        foreach ($users as $user) {
+            list($name, $status) = $user;
+            $email = sprintf('%s@test.wikkawiki.org', $name);
+            $this->wikka->query(sprintf($sql_f, $prefix,
+                $name, $email, $status));
+        }
+    }
+    
+    private function setUpPages() {
+        $pages = array(
+            array(
+                'tag' => 'HelloWorld',
+                'body' => 'Hello World',
+                'note' => 'first version',
+                'owner' => 'WikkaAdmin'
+            )
+        );
+        
+        # Page parameters
+        foreach ( $pages as $page ) {
+            # Insert page
+            $sql_f = 'INSERT INTO %spages (tag, body, owner, note, latest, time) ' .
+                'VALUES (:tag, :body, :owner, :note, "Y", NOW())';
+            $sql = sprintf($sql_f, $this->config['table_prefix']);
+            $query = $this->pdo->prepare($sql);
+            $inserted = $query->execute(array(':tag' => $page['tag'],
+                                              ':body' => $page['body'],
+                                              ':owner' => $page['owner'],
+                                              ':note' => $page['note']));
+            $this->assertTrue($inserted);
+            
+            # Insert ACLs to make readable
+            $sql_f = 'INSERT INTO %sacls (page_tag, write_acl, read_acl) '.
+                'VALUES (:tag, "*", "*")';
+            $sql = sprintf($sql_f, $this->config['table_prefix']);
+            $query = $this->pdo->prepare($sql);
+            $inserted = $query->execute(array(':tag' => $page['tag']));
+            $this->assertTrue($inserted);
+        }
+    }
+    
+    private function tearDownDatabase() {
+        $this->pdo->exec(sprintf('DROP DATABASE `%s`',
+            $this->config['mysql_database']));
+        $this->pdo = NULL;
+    }
+    
+    private function tearDownSession() {
+        if ( session_id() ) {
+            session_destroy();
+            $_SESSION = array();
+        }
+    }
+    
     
     /**
      * Tests
      */
+    public function testShowHandler() {
+        # Params
+        $page_tag = 'HelloWorld';
+        
+        # Set page and ACLs
+        $this->wikka->SetPage($this->wikka->LoadPage($page_tag));
+        $this->wikka->ACLs = $this->wikka->LoadAllACLs($this->wikka->GetPageTag());
+        $this->wikka->ACLs['read_acl'] = '*';
+        
+        # Prepare Handler
+        $handler = new ShowHandler($this->wikka);
+        
+        # Test handle
+        $response = $handler->handle();
+        
+        # Test results
+        $this->assertInstanceOf('WikkaResponse', $response);
+        $this->assertEquals(200, $response->status);
+        $this->assertContains('Hello World', $response->body);
+    }
+    
+    public function testWikkaHandlerError() {
+    }
+    
+    public function testGrabCodeHandler() {
+    }
+    
+    public function testRawHandler() {
+    }
+    
+    public function testXmlHandler() {
+    }
+    
     public function testInstantiates() {
         $this->assertInstanceOf('WikkaBlob', $this->wikka);
         $this->assertNotEmpty($this->config['mysql_database']);

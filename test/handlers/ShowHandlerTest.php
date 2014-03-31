@@ -63,7 +63,7 @@ class ShowHandlerTest extends PHPUnit_Framework_TestCase {
     public function setUp() {
         $this->wikka = new Wakka(self::$config);
         $this->wikka->handler = 'show';
-        $this->show_handler =  new ShowHandler($this->wikka);
+        $this->show_handler = new ShowHandler($this->wikka);
         
         $this->save_users();
         $this->save_pages();
