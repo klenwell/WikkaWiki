@@ -198,7 +198,30 @@ class WikkaBlobTest extends PHPUnit_Framework_TestCase {
     }
     
     public function testGrabCodeHandler() {
-        $this->markTestIncomplete('TODO');
+        # Params
+        $handler = 'grabcode';
+        $page_tag = 'HelloWorld';
+        
+        # Grab Code Params (makes a POST request with content from page)
+        $this->wikka->config['grabcode_button'] = 1;
+        $_SESSION = ( isset($_SESSION) ) ? $_SESSION : array('CSRFToken' => 'abc');
+        $_POST['CSRFToken'] = $_SESSION['CSRFToken'];
+        $_POST['code'] = '%23+Here+have+some+grabbable+code%3A' .
+            '%0A%24h+%3D+%22hello+world%22%3B%0Aecho+%24h%3B';
+        $_POST['filename'] = 'hello_world';
+        $_POST['save'] = 'Grab';
+        
+        # Set page and ACLs
+        $this->wikka->SetPage($this->wikka->LoadPage($page_tag));
+        $this->wikka->ACLs = $this->wikka->LoadAllACLs($this->wikka->GetPageTag());
+        $this->wikka->ACLs['read_acl'] = '*';
+        
+        # Test handle
+        $response = $this->wikka->Run($page_tag, $handler);
+        
+        # Test result (headers not sent by phpunit test)
+        $lines = explode("\n", $response->body);
+        $this->assertEquals('# Here have some grabbable code:', $lines[0]);
     }
     
     public function testRawHandler() {
