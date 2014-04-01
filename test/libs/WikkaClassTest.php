@@ -194,7 +194,18 @@ class WikkaBlobTest extends PHPUnit_Framework_TestCase {
     }
     
     public function testWikkaHandlerError() {
-        $this->markTestIncomplete('TODO');
+        # Params
+        $handler = 'unknownhandler';
+        $page_tag = 'HelloWorld';
+        
+        # Set page and ACLs
+        $this->wikka->SetPage($this->wikka->LoadPage($page_tag));
+        $this->wikka->ACLs = $this->wikka->LoadAllACLs($this->wikka->GetPageTag());
+        $this->wikka->ACLs['read_acl'] = '*';
+        
+        # Test handle
+        $this->setExpectedException('WikkaHandlerError');
+        $response = $this->wikka->Run($page_tag, $handler);
     }
     
     public function testGrabCodeHandler() {
