@@ -333,9 +333,11 @@ XHTML;
         $this->ReadInterWikiConfig();
         
         # Time for some maintenance?
-        if ( !($this->GetMicroTime() % 3) ) {
-            $this->Maintenance();
-        }
+        # This will be handled elsewhere
+        # See https://trello.com/c/bXVPrnmX/reimplement-maintenance
+        #if ( !($this->GetMicroTime() % 3) ) {
+        #    $this->Maintenance();
+        #}
         
         # Various handler types
         if ( preg_match('/\.(xml|mm)$/', $this->GetHandler()) ) {
