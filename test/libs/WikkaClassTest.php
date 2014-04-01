@@ -69,12 +69,13 @@ class WikkaBlobTest extends PHPUnit_Framework_TestCase {
     
     private function setUpMockServerEnvironment() {
         $_SERVER = array(
-            'SERVER_NAME' => 'localhost',
-            'SERVER_PORT' => '80',
-            'QUERY_STRING' => 'wakka=HomePage',
-            'REQUEST_URI' => '/WikkaWiki/wikka.php?wakka=HomePage',
-            'SCRIPT_NAME' => '/WikkaWiki/wikka.php',
-            'REMOTE_ADDR' => '127.0.0.1'
+            'SERVER_NAME'   => 'localhost',
+            'SERVER_PORT'   => '80',
+            'QUERY_STRING'  => 'wakka=HomePage',
+            'REQUEST_URI'   => '/WikkaWiki/wikka.php?wakka=HomePage',
+            'SCRIPT_NAME'   => '/WikkaWiki/wikka.php',
+            'PHP_SELF'      => '/WikkaWiki/wikka.php',
+            'REMOTE_ADDR'   => '127.0.0.1'
         );
     }
     
@@ -220,7 +221,23 @@ class WikkaBlobTest extends PHPUnit_Framework_TestCase {
     }
     
     public function testRecentChangesXmlHandler() {
-        $this->markTestIncomplete('TODO');
+        # Params
+        $handler = 'recentchanges.xml';
+        $page_tag = 'HelloWorld';
+        
+        # Set page and ACLs
+        $this->wikka->SetPage($this->wikka->LoadPage($page_tag));
+        $this->wikka->ACLs = $this->wikka->LoadAllACLs($this->wikka->GetPageTag());
+        $this->wikka->ACLs['read_acl'] = '*';
+        
+        # Test handle
+        $response = $this->wikka->Run($page_tag, $handler);
+        
+        # Test results
+        $rss = new SimpleXMLElement($response->body);
+        $this->assertEquals('WakkaWikiTesting - recently changed pages',
+            (string) $rss->channel->title);
+        $this->assertEquals(1, count($rss->channel->item));
     }
     
     public function testInstantiates() {
