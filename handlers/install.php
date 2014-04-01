@@ -36,6 +36,7 @@ class InstallHandler extends WikkaHandler {
     
     # States
     private $states = array('intro',
+                            'downgrade_warning',
                             'database_form',
                             'wiki_settings_form',
                             'admin_form',
@@ -182,10 +183,26 @@ XHTML;
     }
     
     private function state_intro() {
+        if ( $this->is_downgrade() ) {
+            return $this->change_state('downgrade_warning');
+        }
+      
         # Set template variables
         $this->head = $this->format_head();
         $this->header = $this->format_header();
         $this->stage_content = $this->format_intro();
+        $this->footer = $this->format_footer();
+        
+        # Return output
+        $content = $this->format_content();
+        return $content;
+    }
+    
+    private function state_downgrade_warning() {
+        # Set template variables
+        $this->head = $this->format_head();
+        $this->header = $this->format_header();
+        $this->stage_content = $this->format_downgrade_warning();
         $this->footer = $this->format_footer();
         
         # Return output
@@ -476,6 +493,11 @@ XHTML;
     /*
      * Private Methods
      */
+    private function is_downgrade() {
+        return (bool) $this->wikka->GetConfigValue('wakka_version') && (
+            $this->wikka->GetConfigValue('wakka_version') > WAKKA_VERSION);
+    }
+    
     private function is_upgrade() {
         return (bool) $this->wikka->GetConfigValue('wakka_version');
     }
@@ -604,6 +626,50 @@ XHTML;
         return <<<XHTML
         <p class="text-muted">WikkaWiki</p>
 XHTML;
+    }
+    
+    protected function format_downgrade_warning() {
+        $intro_f = <<<XHTML
+    <div class="intro">
+      <div class="alert alert-danger">Hmmm... Something is not right here.</div>
+      <div class="preamble">
+        <p>
+          The Wikka code you have installed is reporting itself as version
+          <code>%s</code>. Your configuration is reporting that you had version
+          <code>%s</code> previously running. Please verify that you have 
+          downloaded and installed the correct version of WikkaWiki.
+        </p>
+        
+        <p>
+          If you want to <strong>downgrade</strong> your code, it is recommended
+          you back up your current database and WikkaWiki directory, and then
+          install the new older version from scratch by removing your
+          <code>%s</code> file.
+        </p>
+        
+        <p>
+          You can circumvent this message and attempt to restore your site to
+          its normal operation by editing the config file, <code>%s</code>,
+          and manually changing the <code>wakka_version</code> setting to 
+          <code>%s</code>. 
+        </p>
+        
+        <p>
+          For additional information, see the <a href="%s"
+          target="_blank">documentation</a>.
+        </p>
+      </div>
+    </div>
+XHTML;
+
+        return sprintf($intro_f,
+            WAKKA_VERSION,
+            $this->wikka->GetConfigValue('wakka_version'),
+            WIKKA_CONFIG_PATH,
+            WIKKA_CONFIG_PATH,
+            WAKKA_VERSION,
+            WIKKA_INSTALL_DOCS_URL
+        );
     }
     
     protected function format_intro() {
