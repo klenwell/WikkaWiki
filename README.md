@@ -1,4 +1,5 @@
 # WikkaWiki
+[![Build Status](https://travis-ci.org/klenwell/WikkaWiki.svg?branch=klenwell-refactor)](https://travis-ci.org/klenwell/WikkaWiki)
 
 ## What is Wikka?
 
