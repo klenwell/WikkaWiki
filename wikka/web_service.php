@@ -122,14 +122,32 @@ class WikkaWebService {
     
     public function process_request() {
         $route = $this->route_request();
-        $response = $this->run_wikka_handler($route['page'], $route['handler']);
+        $handler_response = $this->run_wikka_handler($route['page'], $route['handler']);
+        
+        # Prepare response (this is where templating would come in)
+        # Need wikka to retrieve header and footer from theme
+        $wikka = new WikkaBlob($this->config);
+        $wikka->globalize_this_as_wakka_var();
+        $wikka->connect_to_db();
+        $wikka->SetPage($wikka->LoadPage($route['page']));
+        $wikka->handler = $route['handler'];
+        $wikka->wikka_url = ((bool) $wikka->GetConfigValue('rewrite_mode')) ?
+            WIKKA_BASE_URL : WIKKA_BASE_URL.WIKKA_URL_EXTENSION;
+        
+        $body_parts = array(
+            $wikka->Header(),
+            $handler_response->body,
+            $wikka->Footer()
+        );
+        $new_body = implode("\n", $body_parts);
+        $handler_response->body = $new_body;
         
         # Set common headers
-        $response->set_header('Cache-Control', 'no-cache');
-        $response->set_header('ETag', md5($response->body));
-        $response->set_header('Content-Length', strlen($response->body));
+        $handler_response->set_header('Cache-Control', 'no-cache');
+        $handler_response->set_header('ETag', md5($handler_response->body));
+        $handler_response->set_header('Content-Length', strlen($handler_response->body));
         
-        return $response;
+        return $handler_response;
     }
     
     public function process_error($error) {
@@ -244,8 +262,8 @@ class WikkaWebService {
         $wikka->globalize_this_as_wakka_var();
         $wikka->connect_to_db();
         $wikka->save_session_to_db();
-        $response = $wikka->Run($page_name, $handler_name);
-        return $response;
+        $handler_response = $wikka->Run($page_name, $handler_name);
+        return $handler_response;
     }
     
     private function set_csrf_token_if_not_set() {

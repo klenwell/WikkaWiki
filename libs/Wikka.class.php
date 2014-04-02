@@ -256,7 +256,8 @@ XHTML;
      * Overridden Methods
      */
     #
-    # Loads page and calls appropriate handler. Return page content.
+    # Loads page and calls appropriate handler. Returns WikkaResponse object
+    # with handler content as body.
     #
     public function Run($page_name, $handler_name='') {
         #
@@ -351,6 +352,8 @@ XHTML;
         elseif ( $this->GetHandler() == 'grabcode' ) {
             $handler_response = $this->handler($this->GetHandler());
         }
+        
+        # This cause a missing formatter error
         elseif ( $this->GetHandler() == 'html' ) {
             $handler_response = $this->handler($this->GetHandler());
             header('Content-Type: text/html');
@@ -377,24 +380,15 @@ XHTML;
             $handler_response = $this->handler($this->GetHandler());
             
             if ( $handler_response instanceof WikkaResponse ) {
-                $content_body = $handler_response->body;
+                return $handler_response;
             }
             elseif ( is_string($handler_response) ) {
-                $content_body = $handler_response;
+                return new WikkaResponse($handler_response);
             }
             else {
                 throw new WikkaHandlerError('Handler %s returned unexpected type: %s',
                     $this->GetHandler(), gettype($handler_response));
             }
-            
-            $content_items = array(
-                $this->Header(),
-                $content_body,
-                $this->Footer()
-            );
-            
-            $content = implode("\n", $content_items);
-            $handler_response->body = $content;
         }
         
         return $handler_response;
