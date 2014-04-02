@@ -126,14 +126,7 @@ class WikkaWebService {
         
         # Prepare response (this is where templating would come in)
         # Need wikka to retrieve header and footer from theme
-        $wikka = new WikkaBlob($this->config);
-        $wikka->globalize_this_as_wakka_var();
-        $wikka->connect_to_db();
-        $wikka->SetPage($wikka->LoadPage($route['page']));
-        $wikka->handler = $route['handler'];
-        $wikka->wikka_url = ((bool) $wikka->GetConfigValue('rewrite_mode')) ?
-            WIKKA_BASE_URL : WIKKA_BASE_URL.WIKKA_URL_EXTENSION;
-        
+        $wikka = WikkaBlob::autoload($this->config, $route['page'], $route['handler']);
         $body_parts = array(
             $wikka->Header(),
             $handler_response->body,
@@ -160,15 +153,8 @@ class WikkaWebService {
         # insecure) error message.
         #
         $route = $this->route_request();
-
-        $wikka = new WikkaBlob($this->config);
-        $wikka->globalize_this_as_wakka_var();
-        $wikka->connect_to_db();
-        $wikka->handler = $route['handler'];
         
-        # Must set page for header
-        $wikka->SetPage($wikka->LoadPage($route['page']));
-        
+        $wikka = WikkaBlob::autoload($this->config, $route['page'], $route['handler']);
         $content_items = array(
             $wikka->Header(),
             $wikka->format_error($error->getMessage()),
@@ -258,9 +244,7 @@ class WikkaWebService {
      * Private Methods
      */
     private function run_wikka_handler($page_name, $handler_name) {
-        $wikka = new WikkaBlob($this->config);
-        $wikka->globalize_this_as_wakka_var();
-        $wikka->connect_to_db();
+        $wikka = WikkaBlob::autoload($this->config, $page_name, $handler_name);
         $wikka->save_session_to_db();
         $handler_response = $wikka->Run($page_name, $handler_name);
         return $handler_response;

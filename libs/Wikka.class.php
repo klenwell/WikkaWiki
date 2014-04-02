@@ -37,6 +37,17 @@ class WikkaBlob extends Wakka {
         $this->PATCH_LEVEL = WIKKA_PATCH_LEVEL;
     }
     
+    static function autoload($config, $page, $handler='show') {
+        $instance = new WikkaBlob($config);
+        $instance->globalize_this_as_wakka_var();
+        $instance->connect_to_db();
+        $instance->SetPage($instance->LoadPage($page));
+        $instance->handler = $handler;
+        $instance->wikka_url = ((bool) $instance->GetConfigValue('rewrite_mode')) ?
+            WIKKA_BASE_URL : WIKKA_BASE_URL.WIKKA_URL_EXTENSION;
+        return $instance;
+    }
+    
     /*
      * New Methods
      */
