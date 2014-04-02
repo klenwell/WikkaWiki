@@ -387,7 +387,6 @@ XHTML;
                     $this->GetHandler(), gettype($handler_response));
             }
             
-            
             $content_items = array(
                 $this->Header(),
                 $content_body,
