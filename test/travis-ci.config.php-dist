@@ -1,0 +1,33 @@
+<?php
+/**
+ * WikkaWiki Test Configuration File for travis-ci
+ *
+ * In your travis.yml file include the following command:
+ *
+ * > cp test/travis-ci.config.php-dist test/test.config.php
+ *
+ * For more information, see: http://docs.travis-ci.com/user/database-setup/#MySQL
+ * 
+ */
+$wakkaConfig = array(
+
+    # database
+    'mysql_host'                => 'localhost',
+    'mysql_user'                => 'root',
+    'mysql_password'            => '',
+    'mysql_database'            => 'myapp_test',
+    'table_prefix'              => '',
+    
+    # wikka settings
+    'wakka_name'                => 'WakkaWikiTesting',
+    'wakka_version'             => WAKKA_VERSION,
+    'enable_user_host_lookup'   => false,
+    
+    # paths
+    'wikka_formatter_path'      => 'formatters',   
+);
+
+# For multisite tests
+$multiConfig = array(
+    'http_wikkawiki_org'      => '/tmp/wikkawiki-test',
+);

@@ -117,7 +117,7 @@ HTML;
         
         if ( ! $this->page_exists() ) {
             $create_link = sprintf('<a href="%s">%s</a>',
-                $this->wikka->Href('edit'),
+                $this->wikka->Href('edit', $this->page_tag),
                 T_("create"));
             
             $this->error = sprintf("<p>%s</p>\n",

@@ -32,14 +32,13 @@ You should see something like this:
 
     PHPUnit 3.7.28 by Sebastian Bergmann.
     
-    I..IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII  63 / 137 ( 45%)
-    IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII 126 / 137 ( 91%)
-    IIIIIIIIII.
+    I..I.III......IIIIIIIIIIIII.IIIIIIIII..II.IIIIIIIIIIIII......I... 65 / 74 ( 87%)
+    .........
     
-    Time: 208 ms, Memory: 11.25Mb
+    Time: 26.51 seconds, Memory: 13.75Mb
     
     OK, but incomplete or skipped tests!
-    Tests: 137, Assertions: 3, Incomplete: 134.
+    Tests: 74, Assertions: 70, Incomplete: 43.
 
 To generate coverage reports, install Xdebug following [[http://xdebug.org/docs/install installation instructions]] and run like so:
 

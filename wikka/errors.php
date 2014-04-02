@@ -32,6 +32,8 @@ class WikkaCsrfError extends WikkaError {}
 
 class WikkaHandlerError extends WikkaError {}
 
+class WikkaQueryError extends WikkaError {}
+
 /*
  * Access Errors
  */
@@ -76,7 +78,7 @@ class BasicAuthenticationError extends WikkaAccessError {}
  * Install Error
  */
 class WikkaInstallerError extends WikkaError {
-    public function render_solution() { /* Interface Method */ }
+    public function render_solution($installer) { /* Interface Method */ }
 }
 
 class ConfigDirWriteError extends WikkaInstallerError {    

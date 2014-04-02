@@ -269,9 +269,12 @@ XHTML;
         $this->wikka_url = ((bool) $this->GetConfigValue('rewrite_mode')) ?
             WIKKA_BASE_URL : WIKKA_BASE_URL.WIKKA_URL_EXTENSION;
         
-        # If no page name provided, redirect to root page
+        # Set tag (page name) or redirect to home page if empty
         if ( ! trim($page_name) ) {
             $this->Redirect($this->Href('', $this->GetConfigValue('root_page')));
+        }
+        else {
+            $this->tag = $page_name;
         }
         
         # Set handler
@@ -330,24 +333,26 @@ XHTML;
         $this->ReadInterWikiConfig();
         
         # Time for some maintenance?
-        if ( !($this->GetMicroTime() % 3) ) {
-            $this->Maintenance();
-        }
+        # This will be handled elsewhere
+        # See https://trello.com/c/bXVPrnmX/reimplement-maintenance
+        #if ( !($this->GetMicroTime() % 3) ) {
+        #    $this->Maintenance();
+        #}
         
         # Various handler types
         if ( preg_match('/\.(xml|mm)$/', $this->GetHandler()) ) {
-            $content = $this->handler($this->GetHandler());
+            $handler_response = $this->handler($this->GetHandler());
             header('Content-Type: text/xml');
         }
         elseif ( $this->GetHandler() == "raw" ) {
-            $content = $this->handler($this->GetHandler());
+            $handler_response = $this->handler($this->GetHandler());
             header('Content-Type: text/plain');
         }
         elseif ( $this->GetHandler() == 'grabcode' ) {
-            $content = $this->handler($this->GetHandler());
+            $handler_response = $this->handler($this->GetHandler());
         }
         elseif ( $this->GetHandler() == 'html' ) {
-            $content = $this->handler($this->GetHandler());
+            $handler_response = $this->handler($this->GetHandler());
             header('Content-Type: text/html');
         }
         
@@ -371,24 +376,29 @@ XHTML;
         else {
             $handler_response = $this->handler($this->GetHandler());
             
+            if ( $handler_response instanceof WikkaResponse ) {
+                $content_body = $handler_response->body;
+            }
+            elseif ( is_string($handler_response) ) {
+                $content_body = $handler_response;
+            }
+            else {
+                throw new WikkaHandlerError('Handler %s returned unexpected type: %s',
+                    $this->GetHandler(), gettype($handler_response));
+            }
+            
+            
             $content_items = array(
                 $this->Header(),
-                $handler_response->body,
+                $content_body,
                 $this->Footer()
             );
             
             $content = implode("\n", $content_items);
+            $handler_response->body = $content;
         }
         
-        if ( $handler_response ) {
-            $response = $handler_response;
-            $response->body = $content;
-        }
-        else {
-            $response = new WikkaResponse($content);
-        }
-        
-        return $response;
+        return $handler_response;
     }
     
     public function Handler($handler_name) {
@@ -403,5 +413,47 @@ XHTML;
         else {
             return $this->run_legacy_handler($handler_name);
         }
+    }
+    
+    public function Query($query, $dblink='') {
+        # TODO: stop grinding teeth
+        if ( $dblink == '' ) {
+            # This apparently signals the call was made from an object
+            $object = TRUE;
+            $dblink = $this->dblink;
+            $start = $this->GetMicroTime();
+        }
+        else {
+            # This means method was called externally
+            $object = FALSE;
+        }
+        
+        if ( ! $result = mysql_query($query, $dblink) ) {
+            # Dump the buffer. (Easier to debug).
+            print ob_get_contents();
+            
+            # Throw an exception
+            throw new WikkaQueryError(sprintf('Query [%s] failed %s',
+                $query, mysql_error())
+            );
+        }
+        
+        if ( $object && $this->GetConfigValue('sql_debugging') ) {
+            $time = $this->GetMicroTime() - $start;
+            $this->queryLog[] = array(
+                "query" => $query,
+                "time"  => $time
+            );
+        }
+
+        return $result;
+    }
+    
+    public function HasAccess($privilege, $tag='', $username='') {
+        if ( ! isset($this->ACLs) ) {
+            $this->ACLs = $this->LoadAllACLs($tag);
+        }
+        
+        return parent::HasAccess($privilege, $tag, $username);
     }
 }

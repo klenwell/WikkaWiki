@@ -49,8 +49,9 @@ class MockWikkaMigrator extends WikkaMigrator {
 
 class WikkaMigratorTest extends PHPUnit_Framework_TestCase {
     
-    protected static $config;
-    protected static $migrator;
+    protected $config;
+    protected $pdo;
+    protected $migrator;
  
     /**
      * Test Fixtures
@@ -192,7 +193,7 @@ class WikkaMigratorTest extends PHPUnit_Framework_TestCase {
     public function testInstantiates() {
         $result = $this->pdo->query('SELECT * FROM pages');
         $this->assertInstanceOf('WikkaMigrator', $this->migrator);
-        $this->assertEquals('wikkawiki_test', $this->config['mysql_database']);
+        $this->assertNotEmpty($this->config['mysql_database']);
         $this->assertEquals(20, $result->rowCount());
     }
 }

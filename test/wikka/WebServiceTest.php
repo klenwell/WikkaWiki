@@ -127,6 +127,29 @@ class WikkaWebServiceTest extends PHPUnit_Framework_TestCase {
     /**
      * Tests
      */
+    public function testProcessError() {
+        $this->setUpTables();
+        
+        $this->web_service->prepare_request();
+        $this->web_service->start_session();
+        
+        $e_message = 'testing process error';
+        $e = new Exception($e_message);
+        $response = $this->web_service->process_error($e);
+        
+        # Assert status
+        $this->assertEquals(500, $response->status);
+        
+        # Assert content
+        $doc = new DOMDocument();
+        $doc->loadHTML($response->body);
+        $content_node = $doc->getElementById('content');
+        $this->assertNotNull($content_node);
+        
+        $inner_html = $content_node->ownerDocument->saveXML($content_node);
+        $this->assertContains($e_message, $inner_html);
+    }
+    
     public function testInstallInterrupt() {
         # Install not needed
         $this->web_service->interrupt_if_install_required();
@@ -210,11 +233,10 @@ class WikkaWebServiceTest extends PHPUnit_Framework_TestCase {
         
         # Test test.config.php loaded
         $this->assertArrayHasKey('mysql_database', $this->web_service->config);
-        $this->assertEquals('wikkawiki_test', $this->web_service->config['mysql_database']);
+        $this->assertNotEmpty($this->web_service->config['mysql_database']);
     }
     
     public function testInstantiates() {
         $this->assertInstanceOf('WikkaWebService', $this->web_service);
-        $this->assertEquals('wikkawiki_test', $this->config['mysql_database']);
     }
 }

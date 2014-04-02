@@ -1,0 +1,13 @@
+language: php
+
+
+php:
+  # 5.2 not supported: see http://stackoverflow.com/a/8721165/1093087
+  - 5.3
+  - 5.4
+  - 5.5
+  
+before_script:
+  - cp test/travis-ci.config.php-dist test/test.config.php
+
+script: phpunit --stderr test

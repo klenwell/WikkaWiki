@@ -38,12 +38,3 @@ $wakkaConfig = array(
 $multiConfig = array(
     'http_wikkawiki_org'      => '/tmp/wikkawiki-test',
 );
-
-/*
- * If test involves including wikka.php, it will set this constant, which
- * will then assign test $wikkaTestConfig values to $wakkaConfig so that
- * wikka.php script will use these values.
- */
-if ( defined('WIKKA_MAIN_TEST') && WIKKA_MAIN_TEST ) {
-    $wakkaConfig = array_merge($wakkaConfig, $wikkaTestConfig);
-}
