@@ -37,6 +37,12 @@ class WikkaResponse {
     /*
      * Public Methods
      */
+    public function merge_php_headers() {
+        # Merges headers sent using PHP header function into headers array
+        # so that they can be sent with send_headers method
+        return $this->merge_headers(headers_list());
+    }
+    
     public function set_header($field, $value) {
         # Header field names are case-insensitive.
         # See http://stackoverflow.com/a/5259004/1093087
