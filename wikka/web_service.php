@@ -15,6 +15,7 @@
  */
 require_once('wikka/request.php');
 require_once('wikka/response.php');
+require_once('wikka/templater.php');
 require_once('libs/Wikka.class.php');
 
 
@@ -124,9 +125,13 @@ class WikkaWebService {
         $route = $this->route_request();
         $handler_response = $this->run_wikka_handler($route['page'], $route['handler']);
         
-        # Prepare response (this is where templating would come in)
-        # Need wikka to retrieve header and footer from theme
         $wikka = WikkaBlob::autoload($this->config, $route['page'], $route['handler']);
+        $templater = new WikkaTemplater($wikka);
+        $templater->set('content', $handler_response->body);
+        $handler_response->body = $templater->output();
+        
+        # Need wikka to retrieve header and footer from theme
+        /*$wikka = WikkaBlob::autoload($this->config, $route['page'], $route['handler']);
         $body_parts = array(
             $wikka->Header(),
             $handler_response->body,
@@ -134,7 +139,7 @@ class WikkaWebService {
         );
         $new_body = implode("\n", $body_parts);
         $handler_response->body = $new_body;
-        
+        */
         # Set common headers
         $handler_response->set_header('Cache-Control', 'no-cache');
         $handler_response->set_header('ETag', md5($handler_response->body));
