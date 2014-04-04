@@ -30,7 +30,12 @@
       
             <div class="navbar-collapse collapse">
               <?php echo $t->menu('main_menu', 'nav navbar-nav'); ?>
-              <?php echo $t->build_search_form(); ?>
+              
+              <ul class="nav navbar-nav navbar-right">
+                <li>
+                  <?php echo $t->build_search_form(); ?>
+                </li>
+              </ul>
             </div><!--/.nav-collapse -->
           </div><!--/.container-fluid -->
         </div><!--/.navbar -->

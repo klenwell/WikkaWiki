@@ -233,21 +233,20 @@ HTML5;
         $form_tag = 'TextSearch';
         $form_method ='get';
         $form_id = '';
-        $form_class = 'navbar-search pull-right';
-        
+        $form_class = 'navbar-search navbar-form';
+
         $input_tag_f = '<input type="text" id="%s" class="%s" name="%s" ' .
             'placeholder="%s" />';
         $input_id = 'searchbox';
         $input_name = 'phrase';
-        $input_class = 'searchbox search-query';
+        $input_class = 'form-control searchbox search-query';
         $input_placeholder = 'Search';
 
         return sprintf($html_f,
-            $this->wikka->FormOpen($handler, $form_tag, $form_method, $form_id,
-                $form_class),
+            $this->open_form($form_tag, $form_id, $form_class, $form_method),
             sprintf($input_tag_f, $input_id, $input_class, $input_name,
                 $input_placeholder),
-            $this->wikka->FormClose());
+            $this->close_form());
     }
     
     /*
