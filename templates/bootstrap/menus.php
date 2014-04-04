@@ -1,6 +1,5 @@
 <?php
 
-global $BootstrapMenus;
 $BootstrapMenus = array(
 	'main_menu' => array(
 		'admin' => array(

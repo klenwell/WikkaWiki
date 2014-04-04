@@ -160,21 +160,23 @@ class WikkaWebService {
         $route = $this->route_request();
         
         $wikka = WikkaBlob::autoload($this->config, $route['page'], $route['handler']);
-        $content_items = array(
-            $wikka->Header(),
-            $wikka->format_error($error->getMessage()),
-            $wikka->Footer()
-        );
+        #$content_items = array(
+        #    $wikka->Header(),
+        #    $wikka->format_error($error->getMessage()),
+        #    $wikka->Footer()
+        #);
         
         if ( $error instanceof WikkaAccessError ) {
-            $content = sprintf($error->template, $content_items[1]);
+            $content = sprintf($error->template,
+                $wikka->format_error($error->getMessage()));
             $response = new WikkaResponse($content, 401);
         }
         else {
-            $content = implode("\n", $content_items);
-            $response = new WikkaResponse($content, 500);
+            $templater = new WikkaTemplater($wikka);
+            $templater->set('content', $wikka->format_error($error->getMessage()));
+            $response = new WikkaResponse($templater->output(), 500);
         }
-        
+
         $response->set_header('Cache-Control', 'no-cache');
         $response->set_header('ETag', md5($response->body));
         $response->set_header('Content-Length', strlen($response->body));
