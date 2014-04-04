@@ -29,6 +29,15 @@ class WikkaTemplater {
       <div class="content">
         {{content}}
       </div>
+      <div id="page-controls">
+        <div id="footer-navbar" class="navbar">
+          <div class="navbar-inner-disabled">
+            <div class="container">
+              {{page_controls_menu}}
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
     <div id="footer">
       <div class="container">
@@ -97,9 +106,13 @@ HTML5;
     }
     
     public function output() {
-        $tokens = array('{{head}}', '{{header}}', '{{content}}', '{{footer}}');
-        $blocks = array($this->head, $this->header, $this->content, $this->footer);
-        
+        # TODO: this could be generalized to extract {{token}}'s and replace
+        # them with $this->$token properties.
+        $tokens = array('{{head}}', '{{header}}', '{{content}}',
+            '{{page_controls_menu}}', '{{footer}}');
+        $blocks = array($this->head, $this->header, $this->content,
+            $this->menu('options_menu', 'nav navbar-nav'), $this->footer);
+
         return str_replace(
             $tokens,
             $blocks,

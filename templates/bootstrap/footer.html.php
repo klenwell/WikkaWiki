@@ -2,24 +2,6 @@
     $t = $this;   # templater object
 ?>
 
-      <!-- BEGIN PAGE CONTROLS -->
-      <div id="page-controls">
-        <div id="footer-navbar" class="navbar">
-          <div class="navbar-inner-disabled">
-            <div class="container">
-              <?php echo $t->menu('options_menu');	?>
-            </div>
-          </div>
-        </div>
-      </div>
-      <!-- END PAGE CONTROLS -->
-    
-    <!-- END CONTAINER -->
-    </div>
-
-    <!-- BEGIN FOOTER -->
-    <div id="footer">
-      <div class="container">
         <p>
           Template theme built with <?php echo $t->link(
             'http://twitter.github.io/bootstrap/', 'Bootstrap'); ?>
@@ -46,9 +28,6 @@
                 T_("Valid CSS")); ?>
           </li>
         </ul>
-      </div>
-    </div>
-    <!-- END FOOTER -->
     
     <!-- LOGOUT FORM: to logout logged in users using logout link -->
     <?php if ( $t->get_user() ): ?>
