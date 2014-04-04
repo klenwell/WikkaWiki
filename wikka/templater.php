@@ -51,8 +51,8 @@ HTML5;
     public $content = '';
     public $footer = '';
     
-    private $wikka = array();
-    private $config = array();
+    public $wikka = array();
+    public $config = array();
     
     private $theme_path = '';
     private $theme_css_path = '';
@@ -122,12 +122,49 @@ HTML5;
         return $this->escape($this->get_config_value($key));
     }
     
+    public function link($href, $text, $title='', $class='') {
+        $handler = '';
+        $track = true;
+        $escapeText = true;
+        $assumePageExists = true;
+
+        return $this->wikka->Link($href, $handler, $text, $track,
+            $escapeText, $title, $class, $assumePageExists);
+    }
+    
+    public function open_form($tag, $id='', $class='', $method='post') {
+        return $this->wikka->FormOpen('', $tag, $method, $id, $class);
+    }
+    
+    public function close_form() {
+        return "</form>\n";
+    }
+    
     public function get_page_title() {
         return $this->wikka->PageTitle();
     }
     
     public function get_page_tag() {
         return $this->wikka->GetPageTag();
+    }
+    
+    public function get_user() {
+        return $this->wikka->GetUser();
+    }
+    
+    public function get_wikka_version() {
+        $version = $this->wikka->GetWakkaVersion();
+        $patch_level = '';
+        
+        if ( $this->wikka->GetWikkaPatchLevel() != '0' ) {
+            $patch_level = sprintf('-p%s', $this->wikka->GetWikkaPatchLevel());
+        }
+            
+        return sprintf('%s%s', $version, $patch_level);
+    }
+    
+    public function is_admin() {
+        return $this->wikka->IsAdmin();
     }
     
     public function build_masthead() {
@@ -149,7 +186,7 @@ HTML5;
         return sprintf($html_f, $homepage_link, $backlinks_link);
     }
     
-    public function menu($menu) {
+    public function menu($menu, $ul_class='nav') {
         include($this->menus_path);
         $menu_array = $BootstrapMenus[$menu];
         
@@ -173,7 +210,7 @@ HTML5;
             }
         }
 
-        return $this->build_ul($menu_li, 'nav');
+        return $this->build_ul($menu_li, $ul_class);
     }
     
     public function build_search_form() {
@@ -201,6 +238,47 @@ HTML5;
     }
     
     /*
+     * Debug Methods
+     */
+    public function output_sql_debugging() {
+        $html_f = <<<HTML5
+    <div id="sql_debug" class="smallprint">
+        <h4>Query Log</h4>
+        <table>
+          <thead>
+            <tr><th>query</th><th>time</th></tr>
+          </thead>
+          <tbody>
+            %s
+            <tr class="total">
+                <td class="query">total time</td>
+                <td class="time">%0.4f</td>
+            </tr>
+          </tbody>          
+        </table>
+    </div>        
+HTML5;
+        
+        $query_tr = array();
+        $tr_f = '<tr><td class="query">%s</td><td class="time">%0.4f</td></tr>';
+        foreach ($this->wikka->queryLog as $query) {
+            $query_tr[] = sprintf($tr_f, $query['query'], $query['time']);
+        }
+
+        printf($html_f, implode("\n", $query_tr), $this->get_load_time);
+    }
+    
+    public function get_load_time() {
+        global $tstart;
+        return $this->wikka->microTimeDiff($tstart);
+    }
+    
+    public function output_load_time() {
+        $f = T_("Page was generated in %.4f seconds");
+        return sprintf($f, $this->get_load_time());
+    }
+    
+    /*
      * Private Methods
      */
     private function buffer($path) {
@@ -224,7 +302,9 @@ HTML5;
     }
     
     private function footer() {
-        return 'FOOTER HERE';
+        $path = sprintf('%s%s%s',
+            $this->theme_path, DIRECTORY_SEPARATOR, 'footer.html.php');
+        return $this->buffer($path);
     }
     
     private function build_drop_down($submenu, $href="#") {

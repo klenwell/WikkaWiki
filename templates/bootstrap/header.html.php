@@ -1,5 +1,5 @@
 <?php
-  $t = $this;
+	$t = $this;   # templater object
 ?>
 	  <?php
 	    # display system messages
@@ -15,13 +15,24 @@
           <?php echo $t->build_masthead(); ?>
         </h2>
         
-        <div class="navbar">
-          <div class="navbar-inner">
-            <div class="container">
-              <?php echo $t->menu('main_menu'); ?>
-              <?php echo $t->build_search_form(); ?>
+        <div class="navbar navbar-default" role="navigation">
+          <div class="container-fluid">
+      
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle" data-toggle="collapse"
+                data-target=".navbar-collapse">
+              <span class="sr-only">Toggle navigation</span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+              </button>
             </div>
-          </div>
-        </div>
+      
+            <div class="navbar-collapse collapse">
+              <?php echo $t->menu('main_menu', 'nav navbar-nav'); ?>
+              <?php echo $t->build_search_form(); ?>
+            </div><!--/.nav-collapse -->
+          </div><!--/.container-fluid -->
+        </div><!--/.navbar -->
       </div>
       <!-- END MASTHEAD -->
