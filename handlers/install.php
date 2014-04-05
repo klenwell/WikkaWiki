@@ -71,7 +71,8 @@ class InstallHandler extends WikkaHandler {
     <!-- Bootstrap -->
     <link rel="stylesheet"
       href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="templates/install/bootstrap-override.css" />
+    <link rel="stylesheet"
+      href="templates/_install/bootstrap-override.css" />
 
     <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
