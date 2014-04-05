@@ -56,6 +56,9 @@ class InstallHandler extends WikkaHandler {
 <!DOCTYPE html>
 <html lang="en">
   <head>
+    <!--
+      Template is property of InstallHandler class: /handlers/install.php
+    -->
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -63,16 +66,16 @@ class InstallHandler extends WikkaHandler {
     <title>Wikka Installation</title>
     <meta name="keywords" content="Wikka Wiki" />
     <meta name="description" content="WikkaWiki Install" />
-    <link rel="icon" href="images/favicon.ico" type="image/x-icon" />
-    <link rel="shortcut icon" href="images/favicon.ico" type="image/x-icon" />
+    <link rel="icon" type="image/x-icon"
+      href="templates/bootstrap/images/favicon.ico" />
+    <link rel="shortcut icon" type="image/x-icon"
+      href="templates/bootstrap/images/favicon.ico" />
     
-    %s
-
     <!-- Bootstrap -->
     <link rel="stylesheet"
       href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" />
     <link rel="stylesheet"
-      href="templates/_install/bootstrap-override.css" />
+      href="templates/bootstrap/css/wikka-install.css" />
 
     <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
@@ -109,7 +112,6 @@ class InstallHandler extends WikkaHandler {
 HTML;
 
     # Template Vars (%s from template above in order)
-    protected $head = '<!-- head not set -->';
     protected $header = '<!-- header not set -->';
     protected $stage_content = '<!-- content not set -->';
     protected $footer = '<!-- footer not set -->';
@@ -189,7 +191,6 @@ XHTML;
         }
       
         # Set template variables
-        $this->head = $this->format_head();
         $this->header = $this->format_header();
         $this->stage_content = $this->format_intro();
         $this->footer = $this->format_footer();
@@ -201,7 +202,6 @@ XHTML;
     
     private function state_downgrade_warning() {
         # Set template variables
-        $this->head = $this->format_head();
         $this->header = $this->format_header();
         $this->stage_content = $this->format_downgrade_warning();
         $this->footer = $this->format_footer();
@@ -232,7 +232,6 @@ XHTML;
         }
       
         # Set template variables
-        $this->head = $this->format_head();
         $this->header = $this->format_header();
         $this->stage_content = $this->format_database_form();
         $this->footer = $this->format_footer();
@@ -265,7 +264,6 @@ XHTML;
         }
 
         # Set template variables
-        $this->head = $this->format_head();
         $this->header = $this->format_header();
         $this->stage_content = $this->format_wiki_settings_form();
         $this->footer = $this->format_footer();
@@ -293,7 +291,6 @@ XHTML;
         }
       
         # Set template variables
-        $this->head = $this->format_head();
         $this->header = $this->format_header();
         $this->stage_content = $this->format_admin_form();
         $this->footer = $this->format_footer();
@@ -308,7 +305,6 @@ XHTML;
         $installer->install_wiki();
         
         # Set template variables
-        $this->head = $this->format_head();
         $this->header = $this->format_header();
         $this->stage_content = $this->format_installer_report($installer);
         $this->footer = $this->format_footer();
@@ -328,7 +324,6 @@ XHTML;
         $migrator->run_migrations($old_version, $new_version);
         
         # Set template variables
-        $this->head = $this->format_head();
         $this->header = $this->format_header();
         $this->stage_content = $this->format_installer_report($migrator);
         $this->footer = $this->format_footer();
@@ -350,7 +345,6 @@ XHTML;
         }
         
         # Set template variables
-        $this->head = $this->format_head();
         $this->header = $this->format_header();
         $this->footer = $this->format_footer();
         
@@ -363,7 +357,6 @@ XHTML;
         $_SESSION['install']['config'] = NULL;
         
         # Set template variables
-        $this->head = $this->format_head();
         $this->header = $this->format_header();
         $this->stage_content = $this->format_conclusion();
         $this->footer = $this->format_footer();
@@ -586,22 +579,10 @@ XHTML;
      */
     protected function format_content() {
         return sprintf($this->template,
-            $this->head,
             $this->header,
             $this->stage_content,
             $this->footer
         );
-    }
-    
-    protected function format_head() {
-        $head_f = <<<XHTML
-    <link rel="stylesheet" href="templates/install/bootstrap-override.css?%s" />
-XHTML;
-
-        $hash = $this->wikka->htmlspecialchars_ent(
-            $this->wikka->GetConfigValue('stylesheet_hash'));
-
-        return sprintf($head_f, $hash);
     }
     
     protected function format_header() {
