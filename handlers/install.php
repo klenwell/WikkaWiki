@@ -338,23 +338,14 @@ XHTML;
     }
     
     private function state_save_config_file() {
-        $submit_val = $this->get_form_value('submit');
-        $do_config_dir_check = in_array($submit_val, array('Continue', 'Submit'));
-      
-        if ( $do_config_dir_check && ! is_writeable('config') ) {
-            $e = new ConfigDirWriteError('config directory not writeable');
-            $this->stage_content = $this->format_write_config_error($e);
+        # Attempt to write config file
+        try {
+            $installer = new WikkaInstaller($this->config);
+            $installer->write_config_file();
+            return $this->change_state('conclusion');
         }
-        else {
-            # Attempt to write config file
-            try {
-                $installer = new WikkaInstaller($this->config);
-                $installer->write_config_file();
-                return $this->change_state('conclusion');
-            }
-            catch (ConfigFileWriteError $e) {
-                $this->stage_content = $this->format_write_config_error($e);
-            }
+        catch (ConfigFileWriteError $e) {
+            $this->stage_content = $this->format_write_config_error($e);
         }
         
         # Set template variables
@@ -692,8 +683,7 @@ XHTML;
             this in advance by running the following commands from the command
             line:
           </p>
-          <pre>$ chmod -v 777 config
-$ touch %s ; chmod -v 666 %s</pre>
+          <pre>$ touch %s ; chmod -v 666 %s</pre>
           <p>
             If the installer is unable to write to the necessary files, you
             will receive a warning during the %s process.
@@ -1094,8 +1084,7 @@ XHTML;
           <p>
             Don't forget to remove write access from your configuration files:
           </p>
-          <pre>$ chmod -v 755 config
-$ chmod -v 644 wikka.config.php</pre>
+          <pre>$ chmod -v 644 wikka.config.php</pre>
         </div>
       </div>
     </div>
