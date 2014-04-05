@@ -29,7 +29,7 @@ $wakkaDefaultConfig = array(
     'lang_path'                 => 'plugins/lang',
     'gui_editor'                => '1',
     'default_comment_display'   => 'threaded',
-    'theme'                     => 'light',
+    'theme'                     => 'bootstrap',
 
     #
     # formatter and code highlighting paths
