@@ -1,13 +1,9 @@
 <?php
+
 	$t = $this;   # templater object
+
 ?>
-	  <?php
-	    # display system messages
-	    if ( isset($t->message) && strlen($t->message)>0 ) {
-		  printf('<div class="alert alert-success">%s</div>',
-		    $t->message);
-	    }
-	  ?>
+	  <?php echo $t->show_flash_message_if_set(); ?>
     
       <!-- BEGIN MASTHEAD -->
       <div class="masthead">

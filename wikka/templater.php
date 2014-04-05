@@ -59,13 +59,14 @@ HTML5;
     public $wikka = array();
     public $config = array();
     
+    public $page_title = '';
+    private $flash_message = '';
+    
     protected $partial = array();
     
     private $theme_path = '';
     private $partials_path = '';
     private $menus_path = '';
-    
-    private $page_title = '';
 
     /*
      * Constructor
@@ -88,6 +89,7 @@ HTML5;
             $this->escape_config('wakka_name', 'WikkaWiki'),
             $this->get_page_title()
         );
+        $this->flash_message = $wikka->GetRedirectMessage();
     }
     
     /*
@@ -112,6 +114,23 @@ HTML5;
         $current_value = $this->load_partial($name);
         $this->partial[$name] = $value;
         return $current_value;
+    }
+    
+    public function show_flash_message_if_set() {
+        $format = <<<HTML5
+      <div class="alert alert-info alert-dismissable">
+        <button type="button" class="close" data-dismiss="alert"
+          aria-hidden="true">&times;</button>
+        %s
+      </div>
+HTML5;
+
+        if ( $this->flash_message ) {
+            return sprintf($format, $this->flash_message);
+        }
+        else {
+            return '';
+        }
     }
     
     /*
