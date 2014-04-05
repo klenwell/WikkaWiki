@@ -52,7 +52,6 @@ $wakkaDefaultConfig = array(
     # (location of Wikka template files - REQUIRED)
     'wikka_template_path'       => 'plugins/templates,templates',        
     'feedcreator_path'          => '3rdparty/core/feedcreator',
-    'menu_config_path'          => 'plugins/config,config', #858
     'safehtml_path'             => '3rdparty/core/safehtml',
     'referrers_purge_time'      => '30',
     'pages_purge_time'          => '0',

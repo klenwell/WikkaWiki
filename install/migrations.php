@@ -280,5 +280,10 @@ $WikkaCommandMigrations = array(
         array('update_page', array('AdminBadWords')),
         array('update_page', array('AdminSpamLog')),
         array('update_page', array('WikkaMenulets'))
+    ),
+    
+    '1.5' => array(
+        array('delete_path', array('config')),
+        array('delete_config', array('menu_config_path'))
     )
 );

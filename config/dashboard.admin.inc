@@ -1,4 +1,0 @@
-AdminUsers
-AdminPages
-SysInfo
-WikkaConfig

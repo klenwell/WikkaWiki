@@ -76,6 +76,11 @@ class WikkaMigrator extends WikkaInstaller {
         return '';
     }
     
+    public function delete_config($key) {
+        unset($this->config[$key]);
+        return '';
+    }
+    
     public function delete_path($path) {
         if ( ! file_exists($path) ) {
             return "path not found";
