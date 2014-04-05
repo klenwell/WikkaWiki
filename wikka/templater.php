@@ -235,7 +235,7 @@ HTML5;
     
     public function menu($menu, $ul_class='nav') {
         include($this->menus_path);
-        $menu_array = $BootstrapMenus[$menu];
+        $menu_array = $WikkaMenus[$menu];
         
         if ( $this->wikka->IsAdmin() ) {
             $menu_items = $menu_array['admin'];
@@ -315,8 +315,7 @@ HTML5;
     }
     
     public function get_load_time() {
-        global $tstart;
-        return $this->wikka->microTimeDiff($tstart);
+        return $this->wikka->microTimeDiff(WIKKA_TIMER_START);
     }
     
     public function output_load_time() {
@@ -327,7 +326,7 @@ HTML5;
     /*
      * Private Methods
      */
-    private function buffer($path) {
+    protected function buffer($path) {
         ob_start();
         include($path);
         $html = ob_get_contents();
@@ -335,8 +334,7 @@ HTML5;
         return $html;
     }
     
-    private function build_drop_down($submenu, $href="#") {
-        # TODO: add this to an HtmlHelper class
+    protected function build_drop_down($submenu, $href="#") {
         $keys = array_keys($submenu);
         $head = $keys[0];
         $lis = $submenu[$head];
@@ -359,7 +357,7 @@ HTML5;
         return sprintf($li_f, $active_class, $a_toggle, $sub_ul);
     }
     
-    private function build_ul($li_list, $class=null, $id=null) {
+    protected function build_ul($li_list, $class=null, $id=null) {
         # TODO: add this to an HtmlHelper class
         $ul_f = "<ul%s%s>\n%s\n</ul>";
         $lis = array();
@@ -370,7 +368,7 @@ HTML5;
         return sprintf($ul_f, $ul_id, $ul_class, implode("\n", $li_list));
     }
     
-    private function menu_li($wikka_item) {
+    protected function menu_li($wikka_item) {
         # pseudo-action formatters
         $contains_pseudo_action = preg_match('/<<([^>]+)>>/', $wikka_item,
             $match);

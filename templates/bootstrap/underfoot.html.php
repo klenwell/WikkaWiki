@@ -34,6 +34,6 @@
       src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js">
     </script>
     <script
-      src="<?php echo $t->theme_js_path; ?>/onload.js">
+      src="templates/bootstrap/js/onload.js">
     </script>
     

@@ -3,7 +3,6 @@
  *
  */
 $(document).ready(function() {
-    console.debug('onload running');
     $('#handler-content').addClass('well well-large');
     $('#comments').addClass('well well-large');
     $('#page-controls').addClass('well well-small');

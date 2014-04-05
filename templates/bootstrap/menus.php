@@ -1,6 +1,6 @@
 <?php
 
-$BootstrapMenus = array(
+$WikkaMenus = array(
 	'main_menu' => array(
 		'admin' => array(
 			array('Admin' => array(
