@@ -294,6 +294,11 @@ HTML5;
             $this->close_form());
     }
     
+    public function build_alternate_link($type, $title, $href) {
+        $format = '<link rel="alternate" type="%s" title="%s" href="%s" />';
+        return sprintf($format, $type, $title, $href);
+    }
+    
     /*
      * Debug Methods
      */
