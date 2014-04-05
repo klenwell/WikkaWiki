@@ -23,22 +23,24 @@ class WikkaTemplater {
   {{ head }}
   <body>
     <div class="container">
-      <div class="page-header">
+      <div id="page-header">
         {{ header }}
       </div>
-      <div class="content">
+      
+      <div id="handler-content">
         {{ content }}
       </div>
-      <div id="page-controls">
-        <div id="footer-navbar" class="navbar">
-          <div class="navbar-inner-disabled">
-            <div class="container">
-              {{ page_controls_menu }}
-            </div>
+      
+      <div id="page-controls" class="navbar">
+        <div class="navbar-inner-disabled">
+          <div class="container">
+            {{ page_controls_menu }}
           </div>
         </div>
       </div>
+      
     </div>
+    
     <div id="footer">
       <div class="container">
         {{ footer }}
@@ -46,17 +48,6 @@ class WikkaTemplater {
     </div>
     
     {{underfoot}}
-    
-    <!-- Bootstrap core JavaScript
-    ================================================== -->
-    <!-- Placed at the end of the document so the pages load faster -->
-    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
-    <script
-      src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js">
-    </script>
-    <script
-      src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js">
-    </script>
     
   </body>
 </html>

@@ -80,6 +80,13 @@ div.code {
 }
 
 /*
+ * Content
+ */
+div#handler-content {
+  background-color:#fff;
+}
+
+/*
  * Header
  */
 input#searchbox {
@@ -103,6 +110,10 @@ input#searchbox {
 
 #footer ul {
   margin:10px 0 0;
+}
+
+#footer .footer-links {
+  padding:0px;
 }
 
 #footer .footer-links li {
