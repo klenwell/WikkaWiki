@@ -19,7 +19,7 @@
     <!-- Stylesheets -->
     <link rel="stylesheet"
       href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="templates/bootstrap/css/wikka-bootstrap.css" />
+    <link rel="stylesheet" href="templates/bootstrap/css/bootstrap-override.css" />
 	<link rel="stylesheet" type="text/css" media="print" 
 		  href="templates/bootstrap/css/print.css"  />
 
