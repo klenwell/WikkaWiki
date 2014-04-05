@@ -454,10 +454,87 @@ XHTML;
     }
     
     public function HasAccess($privilege, $tag='', $username='') {
+        # Override to load ACLs by default if ACLs is not set
         if ( ! isset($this->ACLs) ) {
             $this->ACLs = $this->LoadAllACLs($tag);
         }
         
         return parent::HasAccess($privilege, $tag, $username);
+    }
+    
+    public function SelectTheme($default_theme='default') {
+        #
+        # Override to ignore directories starting with _
+        #
+        $plugin = array();
+        $core = array();
+        
+        // plugin path
+        $hdl = opendir('plugins/templates');
+        while ($g = readdir($hdl)) {
+            if ( in_array($g[0], array('.', '_')) ) {
+                continue;
+            }
+            else {
+                $plugin[] = $g;
+            }
+        }
+        
+        // default path
+        $hdl = opendir('templates');
+        while ($f = readdir($hdl)) {
+            // theme override
+            if ( in_array($f[0], array('.', '_')) ) {
+                continue;
+            }
+            elseif (!in_array($f, $plugin)) {
+                $core[] = $f;
+            }
+        }
+        
+        $select_f = <<<HTML5
+<select id="select_theme" name="theme">
+    %s
+    %s
+</select>
+HTML5;
+
+        $option_f = "<option value=\"%s\"%s>%s</option>";
+        
+        $core_options = array(
+            sprintf('<option disabled="disabled">%s</option>',
+                sprintf(T_("Default themes (%s)"), count($core))
+            )
+        );
+        foreach ($core as $theme) {
+            $core_options[] = sprintf($option_f,
+                $theme,
+                ($theme == $default_theme) ? ' selected="selected"' : '',
+                $theme
+            );
+        }
+        
+        $plugin_options = array();
+        if ( count($plugin) > 0 ) {
+            $plugin_options = array(
+                sprintf('<option disabled="disabled">%s</option>',
+                    sprintf(T_("Custom themes (%s)"), count($plugin))
+                )
+            );
+            
+            foreach ($plugin as $theme) {
+                $plugin_options[] = sprintf($option_f,
+                    $theme,
+                    ($theme == $default_theme) ? ' selected="selected"' : '',
+                    $theme
+                );
+            }
+        }
+        
+        $output = sprintf($select_f,
+            implode("\n", $core_options),
+            implode("\n", $plugin_options)
+        );
+        echo $output;
     }
 }
