@@ -62,8 +62,7 @@ HTML5;
     protected $partial = array();
     
     private $theme_path = '';
-    private $theme_css_path = '';
-    private $theme_js_path = '';
+    private $partials_path = '';
     private $menus_path = '';
     
     private $page_title = '';
@@ -79,14 +78,16 @@ HTML5;
         
         # Set template paths
         $this->theme_path = $wikka->GetThemePath('/');
-        $this->theme_css_path = sprintf('%s/css', $this->theme_path);
-        $this->theme_js_path = sprintf('%s/js', $this->theme_path);
-        $this->menus_path = sprintf('%s/menus.php', $this->theme_path);
+        $this->partials_path = sprintf('%s%spartials', $this->theme_path,
+            DIRECTORY_SEPARATOR);
+        $this->menus_path = sprintf('%s%smenus.php', $this->theme_path,
+            DIRECTORY_SEPARATOR);
         
         # Set template values
         $this->page_title = sprintf('%s : %s',
             $this->escape_config('wakka_name', 'WikkaWiki'),
-            $this->get_page_title());
+            $this->get_page_title()
+        );
     }
     
     /*
@@ -118,13 +119,13 @@ HTML5;
      */
     protected function head() {
         $path = sprintf('%s%s%s',
-            $this->theme_path, DIRECTORY_SEPARATOR, 'head.html.php');
+            $this->partials_path, DIRECTORY_SEPARATOR, 'head.html.php');
         return $this->buffer($path);
     }
     
     protected function header() {
         $path = sprintf('%s%s%s',
-            $this->theme_path, DIRECTORY_SEPARATOR, 'header.html.php');
+            $this->partials_path, DIRECTORY_SEPARATOR, 'header.html.php');
         return $this->buffer($path);
     }
     
@@ -135,13 +136,13 @@ HTML5;
     
     protected function footer() {
         $path = sprintf('%s%s%s',
-            $this->theme_path, DIRECTORY_SEPARATOR, 'footer.html.php');
+            $this->partials_path, DIRECTORY_SEPARATOR, 'footer.html.php');
         return $this->buffer($path);
     }
     
     protected function underfoot() {
         $path = sprintf('%s%s%s',
-            $this->theme_path, DIRECTORY_SEPARATOR, 'underfoot.html.php');
+            $this->partials_path, DIRECTORY_SEPARATOR, 'underfoot.html.php');
         return $this->buffer($path);
     }
     
