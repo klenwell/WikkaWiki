@@ -5,6 +5,9 @@
  * WikkaTemplater class. Object used by WikkaWebService object to construct
  * output.
  *
+ * Layout includes partials (html/php files loaded in buffers) signified by
+ * {{ foo }} or {{foo}}.
+ *
  * @package     Wikka
  * @license     http://www.gnu.org/copyleft/gpl.html GNU General Public License
  * @author      {@link https://github.com/klenwell/WikkaWiki Tom Atwell}
@@ -56,7 +59,7 @@ HTML5;
     public $wikka = array();
     public $config = array();
     
-    protected $dynamic = array();
+    protected $partial = array();
     
     private $theme_path = '';
     private $theme_css_path = '';
@@ -91,39 +94,27 @@ HTML5;
      */
     public function output() {
         $output = $this->layout;
-        $token_re = '/\{\{\s*[^\}]+\}\}/';
-        $tokens = array();
+        $partial_re = '/\{\{\s*[^\}]+\}\}/';
+        $partials = array();
         
-        $matched = preg_match_all($token_re, $this->layout, $tokens);
+        $matched = preg_match_all($partial_re, $this->layout, $partials);
         
-        foreach ( $tokens[0] as $token ) {
-            $name = preg_replace('/[\{\}\s]/', '', $token);
-            $output = str_replace($token, $this->get_dynamic_block($name), $output);
+        foreach ( $partials[0] as $partial ) {
+            $id = preg_replace('/[\{\}\s]/', '', $partial);
+            $output = str_replace($partial, $this->load_partial($id), $output);
         }
         
         return $output;
     }
     
     public function set($name, $value) {
-        $current_value = $this->get_dynamic_block($name);
-        $this->dynamic[$name] = $value;
+        $current_value = $this->load_partial($name);
+        $this->partial[$name] = $value;
         return $current_value;
     }
     
-    private function get_dynamic_block($name) {
-        if ( method_exists($this, $name) ) {
-            return $this->$name();
-        }
-        elseif ( isset($this->dynamic[$name]) ) {
-            return $this->dynamic[$name];
-        }
-        else {
-            return sprintf('<!-- block %s not found -->', $name);
-        }
-    }
-    
     /*
-     * Dynamic Content Methods
+     * Partial Methods
      */
     protected function head() {
         $path = sprintf('%s%s%s',
@@ -324,7 +315,7 @@ HTML5;
     }
     
     /*
-     * Private Methods
+     * Protected Methods
      */
     protected function buffer($path) {
         ob_start();
@@ -388,6 +379,21 @@ HTML5;
         
         $li_f = "<li%s>%s</li>";
         return sprintf($li_f, $class, $this->wikka->Format($wikka_item));
+    }
+    
+    /*
+     * Private Methods
+     */
+    private function load_partial($id) {
+        if ( method_exists($this, $id) ) {
+            return $this->$id();
+        }
+        elseif ( isset($this->partial[$id]) ) {
+            return $this->partial[$id];
+        }
+        else {
+            return sprintf('<!-- block %s not found -->', $id);
+        }
     }
     
     /*

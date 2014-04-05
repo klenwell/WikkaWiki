@@ -36,4 +36,3 @@
     <script
       src="templates/bootstrap/js/onload.js">
     </script>
-    
