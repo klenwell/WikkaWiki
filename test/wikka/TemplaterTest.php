@@ -126,6 +126,13 @@ class WikkaTemplaterTest extends PHPUnit_Framework_TestCase {
     /**
      * Tests
      */
+    public function testOutputPregReplacements() {
+        // Remove the following lines when you implement this test.
+        $this->markTestIncomplete(
+          'This test has not been implemented yet.'
+        );
+    }
+    
     public function testInstantiates() {
         $this->assertInstanceOf('WikkaTemplater', $this->templater);
     }

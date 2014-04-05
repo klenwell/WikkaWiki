@@ -20,20 +20,20 @@ class WikkaTemplater {
     public $layout = <<<HTML5
 <!DOCTYPE html>
 <html lang="en">
-  {{head}}
+  {{ head }}
   <body>
     <div class="container">
       <div class="page-header">
-        {{header}}
+        {{ header }}
       </div>
       <div class="content">
-        {{content}}
+        {{ content }}
       </div>
       <div id="page-controls">
         <div id="footer-navbar" class="navbar">
           <div class="navbar-inner-disabled">
             <div class="container">
-              {{page_controls_menu}}
+              {{ page_controls_menu }}
             </div>
           </div>
         </div>
@@ -41,27 +41,31 @@ class WikkaTemplater {
     </div>
     <div id="footer">
       <div class="container">
-        {{footer}}
+        {{ footer }}
       </div>
     </div>
+    
+    {{underfoot}}
     
     <!-- Bootstrap core JavaScript
     ================================================== -->
     <!-- Placed at the end of the document so the pages load faster -->
     <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
-    <script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+    <script
+      src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js">
+    </script>
+    <script
+      src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js">
+    </script>
+    
   </body>
 </html>
 HTML5;
-
-    public $head = '';
-    public $header = '';
-    public $content = '';
-    public $footer = '';
     
     public $wikka = array();
     public $config = array();
+    
+    protected $dynamic = array();
     
     private $theme_path = '';
     private $theme_css_path = '';
@@ -89,35 +93,74 @@ HTML5;
         $this->page_title = sprintf('%s : %s',
             $this->escape_config('wakka_name', 'WikkaWiki'),
             $this->get_page_title());
-        
-        # Set default page blocks
-        $this->set('head', $this->head());
-        $this->set('header', $this->header());
-        $this->set('footer', $this->footer());
     }
     
     /*
      * Public Methods
      */
-    public function set($token, $value) {
-        $current_value = $this->$token;
-        $this->$token = $value;
+    public function output() {
+        $output = $this->layout;
+        $token_re = '/\{\{\s*[^\}]+\}\}/';
+        $tokens = array();
+        
+        $matched = preg_match_all($token_re, $this->layout, $tokens);
+        
+        foreach ( $tokens[0] as $token ) {
+            $name = preg_replace('/[\{\}\s]/', '', $token);
+            $output = str_replace($token, $this->get_dynamic_block($name), $output);
+        }
+        
+        return $output;
+    }
+    
+    public function set($name, $value) {
+        $current_value = $this->get_dynamic_block($name);
+        $this->dynamic[$name] = $value;
         return $current_value;
     }
     
-    public function output() {
-        # TODO: this could be generalized to extract {{token}}'s and replace
-        # them with $this->$token properties.
-        $tokens = array('{{head}}', '{{header}}', '{{content}}',
-            '{{page_controls_menu}}', '{{footer}}');
-        $blocks = array($this->head, $this->header, $this->content,
-            $this->menu('options_menu', 'nav navbar-nav'), $this->footer);
-
-        return str_replace(
-            $tokens,
-            $blocks,
-            $this->layout
-        );
+    private function get_dynamic_block($name) {
+        if ( method_exists($this, $name) ) {
+            return $this->$name();
+        }
+        elseif ( isset($this->dynamic[$name]) ) {
+            return $this->dynamic[$name];
+        }
+        else {
+            return sprintf('<!-- block %s not found -->', $name);
+        }
+    }
+    
+    /*
+     * Dynamic Content Methods
+     */
+    protected function head() {
+        $path = sprintf('%s%s%s',
+            $this->theme_path, DIRECTORY_SEPARATOR, 'head.html.php');
+        return $this->buffer($path);
+    }
+    
+    protected function header() {
+        $path = sprintf('%s%s%s',
+            $this->theme_path, DIRECTORY_SEPARATOR, 'header.html.php');
+        return $this->buffer($path);
+    }
+    
+    protected function page_controls_menu() {
+        return $this->menu('options_menu', 'nav navbar-nav');
+    }
+    
+    
+    protected function footer() {
+        $path = sprintf('%s%s%s',
+            $this->theme_path, DIRECTORY_SEPARATOR, 'footer.html.php');
+        return $this->buffer($path);
+    }
+    
+    protected function underfoot() {
+        $path = sprintf('%s%s%s',
+            $this->theme_path, DIRECTORY_SEPARATOR, 'underfoot.html.php');
+        return $this->buffer($path);
     }
     
     /*
@@ -299,24 +342,6 @@ HTML5;
         $html = ob_get_contents();
         ob_end_clean();
         return $html;
-    }
-    
-    private function head() {
-        $path = sprintf('%s%s%s',
-            $this->theme_path, DIRECTORY_SEPARATOR, 'head.html.php');
-        return $this->buffer($path);
-    }
-    
-    private function header() {
-        $path = sprintf('%s%s%s',
-            $this->theme_path, DIRECTORY_SEPARATOR, 'header.html.php');
-        return $this->buffer($path);
-    }
-    
-    private function footer() {
-        $path = sprintf('%s%s%s',
-            $this->theme_path, DIRECTORY_SEPARATOR, 'footer.html.php');
-        return $this->buffer($path);
     }
     
     private function build_drop_down($submenu, $href="#") {
