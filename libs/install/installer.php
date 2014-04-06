@@ -56,16 +56,12 @@ class WikkaInstaller {
     public function write_config_file() {
         $config_path = WikkaInstaller::CONFIG_PATH;
         
-        $this->remove_obsolete_settings();
-        
-        # Force reloading of stylesheet
-        $this->config['stylesheet_hash'] = substr(md5(time()),1,5);
-        
-        # Update version
-        $this->config["wakka_version"] = WAKKA_VERSION;
+        # Copy config settings
+        $config = $this->config;
+        $config = $this->prepare_settings_for_config_file($config);
         
         # Prepare file contents
-        $config_content = $this->format_config_file($this->config);
+        $config_content = $this->format_config_file($config);
         
         # Write file
         $fp = @fopen($config_path, "w");
@@ -491,7 +487,7 @@ XPHP;
         );
     }
     
-    private function remove_obsolete_settings() {
+    private function prepare_settings_for_config_file($config) {
         $obsolete_settings = array(
             'allow_doublequote_html',
             'header_action',
@@ -500,13 +496,26 @@ XPHP;
             'default_config_loaded'
         );
         
-        foreach ( $obsolete_settings as $setting ) {
-            if ( isset($this->config[$setting]) ) {
-                unset($this->config[$setting]);
+        $sensitive_settings = array(
+            'password',
+            'password2'
+        );
+        
+        $excluded_settings = array_merge($obsolete_settings, $sensitive_settings);
+        
+        foreach ( $excluded_settings as $setting ) {
+            if ( isset($config[$setting]) ) {
+                unset($config[$setting]);
             }
         }
         
-        return $obsolete_settings; 
+        # Force reloading of stylesheet
+        $config['stylesheet_hash'] = substr(md5(time()),1,5);
+        
+        # Update version
+        $config["wakka_version"] = WAKKA_VERSION;
+        
+        return $config; 
     }
     
     /*
