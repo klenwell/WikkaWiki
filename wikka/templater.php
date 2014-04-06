@@ -20,46 +20,10 @@ class WikkaTemplater {
     /*
      * Properties
      */
-    public $layout = <<<HTML5
-<!DOCTYPE html>
-<html lang="en">
-  {{ head }}
-  <body>
-    <div class="container">
-      <div id="page-header">
-        {{ header }}
-      </div>
-      
-      <div id="handler-content">
-        {{ content }}
-      </div>
-      
-      <div id="page-controls" class="navbar">
-        <div class="navbar-inner-disabled">
-          <div class="container">
-            {{ page_controls_menu }}
-          </div>
-        </div>
-      </div>
-      
-    </div>
-    
-    <div id="footer">
-      <div class="container">
-        {{ footer }}
-      </div>
-    </div>
-    
-    {{underfoot}}
-    
-  </body>
-</html>
-HTML5;
-    
     public $wikka = array();
     public $config = array();
     
-    private $_layout = '';
+    private $layout = '';
     private $menus = array();
     
     public $page_title = '';
@@ -416,22 +380,22 @@ HTML5;
      * Private Methods
      */
     private function load_layout() {
-        # Looks for layout.php in with $WikkaLayout var in it. If not found,
-        # uses default layout property of this class.
-        $layout_file = sprintf('%s%slayout.php', $this->theme_path, DIRECTORY_SEPARATOR);
+        # Looks for layout.php in theme folder with $WikkaLayout var in it. If
+        #  not found, uses default layout.php file in templates root.
+        $ds = DIRECTORY_SEPARATOR;
+        $theme_layout_file = sprintf('%s%slayout.php', $this->theme_path, $ds);
+        $default_layout_file = sprintf('templates%s_defaults%slayout.php', $ds, $ds);
         
-        if ( file_exists($layout_file) ) {
-            include($layout_file);
-        }
-        else {
-            return $this->layout;
+        if ( file_exists($theme_layout_file) ) {
+            include($theme_layout_file);
         }
         
         if ( isset($WikkaLayout) ) {
             return $WikkaLayout;
         }
         else {
-            return $this->layout;
+            include($default_layout_file);
+            return $WikkaLayout;
         }
     }
     
