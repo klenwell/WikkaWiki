@@ -440,7 +440,7 @@ HTML5;
         # found, uses default menus.php in templates root.
         $ds = DIRECTORY_SEPARATOR;
         $theme_menus_file = sprintf('%s%smenus.php', $this->theme_path, $ds);
-        $default_menus_file = sprintf('templates%smenus.php', $ds);
+        $default_menus_file = sprintf('templates%s_defaults%smenus.php', $ds, $ds);
         
         if ( file_exists($theme_menus_file) ) {
             include($theme_menus_file);
