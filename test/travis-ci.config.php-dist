@@ -22,6 +22,7 @@ $wakkaConfig = array(
     'wakka_name'                => 'WakkaWikiTesting',
     'wakka_version'             => WAKKA_VERSION,
     'enable_user_host_lookup'   => false,
+    'theme'                     => 'bootstrap',
     
     # paths
     'wikka_formatter_path'      => 'formatters',   

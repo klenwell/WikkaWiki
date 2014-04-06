@@ -174,6 +174,17 @@ class WikkaBlobTest extends PHPUnit_Framework_TestCase {
     /**
      * Tests
      */
+    public function testAutoLoad() {
+        # Params
+        $handler = 'show';
+        $page_tag = 'HelloWorld';
+        
+        $wikka = WikkaBlob::autoload($this->config, $page_tag, $handler);
+        $this->assertInstanceOf('WikkaBlob', $wikka);
+        $this->assertEquals($handler, $wikka->handler);
+        $this->assertEquals($page_tag, $wikka->tag);
+    }
+    
     public function testShowHandler() {
         # Params
         $handler = 'show';

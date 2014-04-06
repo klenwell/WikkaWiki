@@ -15,6 +15,7 @@
  */
 require_once('wikka/request.php');
 require_once('wikka/response.php');
+require_once('wikka/templater.php');
 require_once('libs/Wikka.class.php');
 
 
@@ -122,14 +123,19 @@ class WikkaWebService {
     
     public function process_request() {
         $route = $this->route_request();
-        $response = $this->run_wikka_handler($route['page'], $route['handler']);
+        $handler_response = $this->run_wikka_handler($route['page'], $route['handler']);
+        
+        $wikka = WikkaBlob::autoload($this->config, $route['page'], $route['handler']);
+        $templater = new WikkaTemplater($wikka);
+        $templater->set('content', $handler_response->body);
+        $handler_response->body = $templater->output();
         
         # Set common headers
-        $response->set_header('Cache-Control', 'no-cache');
-        $response->set_header('ETag', md5($response->body));
-        $response->set_header('Content-Length', strlen($response->body));
+        $handler_response->set_header('Cache-Control', 'no-cache');
+        $handler_response->set_header('ETag', md5($handler_response->body));
+        $handler_response->set_header('Content-Length', strlen($handler_response->body));
         
-        return $response;
+        return $handler_response;
     }
     
     public function process_error($error) {
@@ -142,30 +148,20 @@ class WikkaWebService {
         # insecure) error message.
         #
         $route = $this->route_request();
-
-        $wikka = new WikkaBlob($this->config);
-        $wikka->globalize_this_as_wakka_var();
-        $wikka->connect_to_db();
-        $wikka->handler = $route['handler'];
         
-        # Must set page for header
-        $wikka->SetPage($wikka->LoadPage($route['page']));
-        
-        $content_items = array(
-            $wikka->Header(),
-            $wikka->format_error($error->getMessage()),
-            $wikka->Footer()
-        );
+        $wikka = WikkaBlob::autoload($this->config, $route['page'], $route['handler']);
         
         if ( $error instanceof WikkaAccessError ) {
-            $content = sprintf($error->template, $content_items[1]);
+            $content = sprintf($error->template,
+                $wikka->format_error($error->getMessage()));
             $response = new WikkaResponse($content, 401);
         }
         else {
-            $content = implode("\n", $content_items);
-            $response = new WikkaResponse($content, 500);
+            $templater = new WikkaTemplater($wikka);
+            $templater->set('content', $wikka->format_error($error->getMessage()));
+            $response = new WikkaResponse($templater->output(), 500);
         }
-        
+
         $response->set_header('Cache-Control', 'no-cache');
         $response->set_header('ETag', md5($response->body));
         $response->set_header('Content-Length', strlen($response->body));
@@ -240,12 +236,10 @@ class WikkaWebService {
      * Private Methods
      */
     private function run_wikka_handler($page_name, $handler_name) {
-        $wikka = new WikkaBlob($this->config);
-        $wikka->globalize_this_as_wakka_var();
-        $wikka->connect_to_db();
+        $wikka = WikkaBlob::autoload($this->config, $page_name, $handler_name);
         $wikka->save_session_to_db();
-        $response = $wikka->Run($page_name, $handler_name);
-        return $response;
+        $handler_response = $wikka->Run($page_name, $handler_name);
+        return $handler_response;
     }
     
     private function set_csrf_token_if_not_set() {

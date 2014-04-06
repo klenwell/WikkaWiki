@@ -63,6 +63,7 @@ define('PATTERN_REPLACE_IMG_WITH_ALTTEXT',
 #
 # Miscellaneous
 #
+define('WIKKA_TIMER_START', (float) strtok(microtime(), ' ') + strtok(''));
 define('ID_LENGTH', 10);
 define('MAX_HOSTNAME_LENGTH_DISPLAY', 50);
 define('SPAMLOG_SIG','-@-');

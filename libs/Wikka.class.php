@@ -37,6 +37,17 @@ class WikkaBlob extends Wakka {
         $this->PATCH_LEVEL = WIKKA_PATCH_LEVEL;
     }
     
+    static function autoload($config, $page, $handler='show') {
+        $instance = new WikkaBlob($config);
+        $instance->globalize_this_as_wakka_var();
+        $instance->connect_to_db();
+        $instance->SetPage($instance->LoadPage($page));
+        $instance->handler = $handler;
+        $instance->wikka_url = ((bool) $instance->GetConfigValue('rewrite_mode')) ?
+            WIKKA_BASE_URL : WIKKA_BASE_URL.WIKKA_URL_EXTENSION;
+        return $instance;
+    }
+    
     /*
      * New Methods
      */
@@ -256,7 +267,8 @@ XHTML;
      * Overridden Methods
      */
     #
-    # Loads page and calls appropriate handler. Return page content.
+    # Loads page and calls appropriate handler. Returns WikkaResponse object
+    # with handler content as body.
     #
     public function Run($page_name, $handler_name='') {
         #
@@ -351,6 +363,8 @@ XHTML;
         elseif ( $this->GetHandler() == 'grabcode' ) {
             $handler_response = $this->handler($this->GetHandler());
         }
+        
+        # This cause a missing formatter error
         elseif ( $this->GetHandler() == 'html' ) {
             $handler_response = $this->handler($this->GetHandler());
             header('Content-Type: text/html');
@@ -377,24 +391,15 @@ XHTML;
             $handler_response = $this->handler($this->GetHandler());
             
             if ( $handler_response instanceof WikkaResponse ) {
-                $content_body = $handler_response->body;
+                return $handler_response;
             }
             elseif ( is_string($handler_response) ) {
-                $content_body = $handler_response;
+                return new WikkaResponse($handler_response);
             }
             else {
                 throw new WikkaHandlerError('Handler %s returned unexpected type: %s',
                     $this->GetHandler(), gettype($handler_response));
             }
-            
-            $content_items = array(
-                $this->Header(),
-                $content_body,
-                $this->Footer()
-            );
-            
-            $content = implode("\n", $content_items);
-            $handler_response->body = $content;
         }
         
         return $handler_response;
@@ -449,10 +454,87 @@ XHTML;
     }
     
     public function HasAccess($privilege, $tag='', $username='') {
+        # Override to load ACLs by default if ACLs is not set
         if ( ! isset($this->ACLs) ) {
             $this->ACLs = $this->LoadAllACLs($tag);
         }
         
         return parent::HasAccess($privilege, $tag, $username);
+    }
+    
+    public function SelectTheme($default_theme='default') {
+        #
+        # Override to ignore directories starting with _
+        #
+        $plugin = array();
+        $core = array();
+        
+        // plugin path
+        $hdl = opendir('plugins/templates');
+        while ($g = readdir($hdl)) {
+            if ( in_array($g[0], array('.', '_')) ) {
+                continue;
+            }
+            else {
+                $plugin[] = $g;
+            }
+        }
+        
+        // default path
+        $hdl = opendir('templates');
+        while ($f = readdir($hdl)) {
+            // theme override
+            if ( in_array($f[0], array('.', '_')) ) {
+                continue;
+            }
+            elseif (!in_array($f, $plugin)) {
+                $core[] = $f;
+            }
+        }
+        
+        $select_f = <<<HTML5
+<select id="select_theme" name="theme">
+    %s
+    %s
+</select>
+HTML5;
+
+        $option_f = "<option value=\"%s\"%s>%s</option>";
+        
+        $core_options = array(
+            sprintf('<option disabled="disabled">%s</option>',
+                sprintf(T_("Default themes (%s)"), count($core))
+            )
+        );
+        foreach ($core as $theme) {
+            $core_options[] = sprintf($option_f,
+                $theme,
+                ($theme == $default_theme) ? ' selected="selected"' : '',
+                $theme
+            );
+        }
+        
+        $plugin_options = array();
+        if ( count($plugin) > 0 ) {
+            $plugin_options = array(
+                sprintf('<option disabled="disabled">%s</option>',
+                    sprintf(T_("Custom themes (%s)"), count($plugin))
+                )
+            );
+            
+            foreach ($plugin as $theme) {
+                $plugin_options[] = sprintf($option_f,
+                    $theme,
+                    ($theme == $default_theme) ? ' selected="selected"' : '',
+                    $theme
+                );
+            }
+        }
+        
+        $output = sprintf($select_f,
+            implode("\n", $core_options),
+            implode("\n", $plugin_options)
+        );
+        echo $output;
     }
 }

@@ -496,11 +496,14 @@ XPHP;
             'allow_doublequote_html',
             'header_action',
             'footer_action',
-            'external_link_tail'
+            'external_link_tail',
+            'default_config_loaded'
         );
         
         foreach ( $obsolete_settings as $setting ) {
-            unset($this->config[$setting]);
+            if ( isset($this->config[$setting]) ) {
+                unset($this->config[$setting]);
+            }
         }
         
         return $obsolete_settings; 
