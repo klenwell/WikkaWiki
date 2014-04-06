@@ -59,6 +59,9 @@ HTML5;
     public $wikka = array();
     public $config = array();
     
+    private $_layout = '';
+    private $menus = array();
+    
     public $page_title = '';
     private $flash_message = '';
     
@@ -84,8 +87,9 @@ HTML5;
         $this->menus_path = sprintf('%s%smenus.php', $this->theme_path,
             DIRECTORY_SEPARATOR);
         
-        # Load layout
+        # Load layout and menus
         $this->layout = $this->load_layout();
+        $this->menus = $this->load_menus();
         
         # Set template values
         $this->page_title = sprintf('%s : %s',
@@ -248,8 +252,7 @@ HTML5;
     }
     
     public function menu($menu, $ul_class='nav', $ul_id=null) {
-        include($this->menus_path);
-        $menu_array = $WikkaMenus[$menu];
+        $menu_array = $this->menus[$menu];
         
         if ( $this->wikka->IsAdmin() ) {
             $menu_items = $menu_array['admin'];
@@ -429,6 +432,26 @@ HTML5;
         }
         else {
             return $this->layout;
+        }
+    }
+    
+    private function load_menus() {
+        # Looks for menus.php in theme folder with $WikkaMenus var in it. If not 
+        # found, uses default menus.php in templates root.
+        $ds = DIRECTORY_SEPARATOR;
+        $theme_menus_file = sprintf('%s%smenus.php', $this->theme_path, $ds);
+        $default_menus_file = sprintf('templates%smenus.php', $ds);
+        
+        if ( file_exists($theme_menus_file) ) {
+            include($theme_menus_file);
+        }
+        
+        if ( isset($WikkaMenus) ) {
+            return $WikkaMenus;
+        }
+        else {
+            include($default_menus_file);
+            return $WikkaMenus;
         }
     }
     
