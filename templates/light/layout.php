@@ -14,20 +14,8 @@ $WikkaLayout = <<<HTML5
       <div id="handler-content">
         {{ content }}
       </div>
-      
-      <div id="page-controls" class="navbar">
-        <div class="navbar-inner-disabled">
-          <div class="container">
-            {{ page_controls_menu }}
-          </div>
-        </div>
-      </div>
     
-      <div id="footer">
-        <div class="container">
-          {{ footer }}
-        </div>
-      </div>
+      {{ footer }}
     
     </div>
     
