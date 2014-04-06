@@ -84,6 +84,9 @@ HTML5;
         $this->menus_path = sprintf('%s%smenus.php', $this->theme_path,
             DIRECTORY_SEPARATOR);
         
+        # Load layout
+        $this->layout = $this->load_layout();
+        
         # Set template values
         $this->page_title = sprintf('%s : %s',
             $this->escape_config('wakka_name', 'WikkaWiki'),
@@ -244,7 +247,7 @@ HTML5;
         return sprintf($html_f, $homepage_link, $backlinks_link);
     }
     
-    public function menu($menu, $ul_class='nav') {
+    public function menu($menu, $ul_class='nav', $ul_id=null) {
         include($this->menus_path);
         $menu_array = $WikkaMenus[$menu];
         
@@ -268,7 +271,7 @@ HTML5;
             }
         }
 
-        return $this->build_ul($menu_li, $ul_class);
+        return $this->build_ul($menu_li, $ul_class, $ul_id);
     }
     
     public function build_search_form() {
@@ -409,6 +412,26 @@ HTML5;
     /*
      * Private Methods
      */
+    private function load_layout() {
+        # Looks for layout.php in with $WikkaLayout var in it. If not found,
+        # uses default layout property of this class.
+        $layout_file = sprintf('%s%slayout.php', $this->theme_path, DIRECTORY_SEPARATOR);
+        
+        if ( file_exists($layout_file) ) {
+            include($layout_file);
+        }
+        else {
+            return $this->layout;
+        }
+        
+        if ( isset($WikkaLayout) ) {
+            return $WikkaLayout;
+        }
+        else {
+            return $this->layout;
+        }
+    }
+    
     private function load_partial($id) {
         if ( method_exists($this, $id) ) {
             return $this->$id();

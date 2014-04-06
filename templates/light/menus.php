@@ -3,32 +3,24 @@
 $WikkaMenus = array(
     'main_menu' => array(
         'admin' => array(
-            array('Admin' => array(
-                'AdminUsers',
-                'AdminPages',
-                'SysInfo',
-                'WikkaConfig'
-            )),
             '[[CategoryCategory Categories]]',
             'PageIndex',
             'RecentChanges',
             'RecentlyCommented',
-            array('Profile' => array(
-                '[[<<username>> My User Page]]',
-                '[[UserSettings Settings]]',
-                '<<logout>>',
-            )),
+            '[[UserSettings Settings]]',
+            'You are {{whoami}}',
+            '{{searchform}}',
+            '{{logout}}'
         ),
         'user' => array(
             '[[CategoryCategory Categories]]',
             'PageIndex',
             'RecentChanges',
             'RecentlyCommented',
-            array('Profile' => array(
-                '[[<<username>> My User Page]]',
-                '[[UserSettings Settings]]',
-                '<<logout>>',
-            )),
+            '[[UserSettings Settings]]',
+            'You are {{whoami}}',
+            '{{searchform}}',
+            '{{logout}}'
         ),
         'default' => array(
             '[[CategoryCategory Categories]]',
@@ -36,6 +28,16 @@ $WikkaMenus = array(
             'RecentChanges',
             'RecentlyCommented',
             '[[UserSettings Login/Register]]',
+            '{{searchform}}'
+        )
+    ),
+    
+    'dashboard' => array(
+        'admin' => array(
+            'AdminUsers',
+            'AdminPages',
+            'SysInfo',
+            'WikkaConfig'
         )
     ),
     

@@ -5,35 +5,18 @@
 ?>
 	  <?php echo $t->show_flash_message_if_set(); ?>
     
-      <!-- BEGIN MASTHEAD -->
-      <div class="masthead">
-        <h2 class="muted">
+      <!-- BEGIN PAGE HEADER -->
+      <div id="header">
+        <h2>
           <?php echo $t->build_masthead(); ?>
         </h2>
-        
-        <div class="navbar navbar-default" role="navigation">
-          <div class="container-fluid">
-      
-            <div class="navbar-header">
-              <button type="button" class="navbar-toggle" data-toggle="collapse"
-                data-target=".navbar-collapse">
-              <span class="sr-only">Toggle navigation</span>
-              <span class="icon-bar"></span>
-              <span class="icon-bar"></span>
-              <span class="icon-bar"></span>
-              </button>
-            </div>
-      
-            <div class="navbar-collapse collapse">
-              <?php echo $t->menu('main_menu', 'nav navbar-nav'); ?>
-              
-              <ul class="nav navbar-nav navbar-right">
-                <li>
-                  <?php echo $t->build_search_form(); ?>
-                </li>
-              </ul>
-            </div><!--/.nav-collapse -->
-          </div><!--/.container-fluid -->
-        </div><!--/.navbar -->
+		
+		<?php echo $t->menu('main_menu', 'menu', 'main_menu'); ?>
       </div>
-      <!-- END MASTHEAD -->
+	  
+	  <?php
+		if ( $t->is_admin() ) {
+			echo $t->menu('dashboard', 'menu', 'dashboard');
+		}
+	  ?>
+      <!-- END PAGE HEADER -->
