@@ -130,16 +130,6 @@ class WikkaWebService {
         $templater->set('content', $handler_response->body);
         $handler_response->body = $templater->output();
         
-        # Need wikka to retrieve header and footer from theme
-        /*$wikka = WikkaBlob::autoload($this->config, $route['page'], $route['handler']);
-        $body_parts = array(
-            $wikka->Header(),
-            $handler_response->body,
-            $wikka->Footer()
-        );
-        $new_body = implode("\n", $body_parts);
-        $handler_response->body = $new_body;
-        */
         # Set common headers
         $handler_response->set_header('Cache-Control', 'no-cache');
         $handler_response->set_header('ETag', md5($handler_response->body));
@@ -160,11 +150,6 @@ class WikkaWebService {
         $route = $this->route_request();
         
         $wikka = WikkaBlob::autoload($this->config, $route['page'], $route['handler']);
-        #$content_items = array(
-        #    $wikka->Header(),
-        #    $wikka->format_error($error->getMessage()),
-        #    $wikka->Footer()
-        #);
         
         if ( $error instanceof WikkaAccessError ) {
             $content = sprintf($error->template,
