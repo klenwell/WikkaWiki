@@ -23,63 +23,96 @@
  *
  */
 
+#
+# WikkaResources
+# Singleton registry pattern
+# TODO: move into its own file
+# 
+class WikkaResources {
+    
+    public static $config = null;
+    private static $pdo = null;
+    
+    static public function init($config) {
+        self::$config = $config;
+    }
+    
+    static public function connect_to_db() {
+        if ( is_null(self::$config) ) {
+            throw new Exception(
+                'Config not set: have you called WikkaResources::init?');
+        }
+        
+        if ( ! is_null(self::$pdo) ) {
+            return self::$pdo;
+        }
+        else {
+            $dsn = sprintf('mysql:host=%s;dbname=%s',
+                self::$config['mysql_host'],
+                self::$config['mysql_database']);
+            self::$pdo = new PDO($dsn,
+                self::$config['mysql_user'],
+                self::$config['mysql_password']
+            );
+            self::$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            return self::$pdo;
+        }
+    }
+}
+
+
 class WikkaModel {
     
     /*
-     * Table Schema
-     * (This is just a sample and should be overridden in base class)
+     * Static Properties
+     * (These are just a sample and should be overridden in base class)
      */
+    protected static $table = 'nonesuches'; # Don't include prefix. Will be added.
+    
     protected static $schema = <<<MYSQL
-CREATE TABLE {{prefix}}table (
+CREATE TABLE {{prefix}}nonesuches (
 	id int(10) unsigned NOT NULL auto_increment,
-	column varchar(75) NOT NULL default '',
+	nonce varchar(75) NOT NULL default '',
 	PRIMARY KEY  (id),
-	KEY idx_column (column),
+	KEY idx_nonce (nonce)
 ) CHARACTER SET utf8 COLLATE utf8_unicode_ci ENGINE={{engine}}
 MYSQL;
     
     /*
      * Properties
      */
-    protected static $global_pdo = null;
-    
     public $config = array();
     public $pdo = null;
+    public $fields = array();
     
     /*
      * Constructor
      */
-    public function __construct($config) {
-        $this->config = $config;
-        $this->pdo = self::connect($config);
-    }
-    
-    static private function connect($config) {
-        if ( ! is_null(self::$global_pdo) ) {
-            return self::$global_pdo;
-        }
-        else {
-            $dsn = sprintf('mysql:host=%s;dbname=%s',
-                $config['mysql_host'],
-                $config['mysql_database']);
-            self::$global_pdo = new PDO($dsn,
-                $config['mysql_user'],
-                $config['mysql_password']
-            );
-            self::$global_pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-            return self::$global_pdo;
-        }
+    public function __construct() {
+        $this->pdo = WikkaResources::connect_to_db();
     }
     
     /*
-     * Public Methods
+     * Static Methods
      */
-    public function get_schema() {
+    static public function init($fields=array()) {
+        $class = get_called_class();
+        $instance = new $class();
+        $instance->fields = $fields;
+        return $instance;
+    }
+    
+    static public function all() {
+        $sql = sprintf('SELECT * FROM %s', $this->get_table());
+        return $this->pdo->query($sql);
+    }
+    
+    static public function get_schema() {
         $schema = self::$schema;
         $vars = array();
         
         $replacement = array(
-            'prefix' => $this->config['table_prefix'],
+            'prefix' => WikkaResources::$config['table_prefix'],
             'engine' => WIKKA_MYSQL_ENGINE
         );
         
@@ -91,5 +124,35 @@ MYSQL;
         }
         
         return $schema;
+    }
+    
+    /*
+     * Public Methods
+     */
+    public function save() {
+        $sql_f = 'INSERT INTO %s (%s) VALUES (%s)';
+        $sql = sprintf($sql_f,
+            $this->get_table(),
+            implode(', ', array_keys($this->fields)),
+            implode(', ', array_fill(0, count($this->fields), '?'))
+        );
+        
+        $query = $this->pdo->prepare($sql);
+        $query->execute(array_values($this->fields));
+        return $query;
+    }
+    
+    public function find_by_column_value($column, $value) {
+        $sql = sprintf('SELECT * FROM %s WHERE %s = ?', $this->get_table(), $column);
+        $query = $this->pdo->prepare($sql);
+        return $query->execute(array($value));
+    }
+    
+    public function find_by_id($id) {
+        return $this->find_by_column_value('id', $id);
+    }
+                         
+    public function get_table() {
+        return WikkaResources::$config['table_prefix'] . self::$table;
     }
 }

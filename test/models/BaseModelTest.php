@@ -21,7 +21,9 @@ class BaseModelTest extends PHPUnit_Framework_TestCase {
         $this->setUpMockServerEnvironment();
         $this->pdo = $this->setUpDatabase();
         
+        WikkaResources::init($this->config);
         $this->model = new WikkaModel($this->config);
+        $this->model->pdo->exec(WikkaModel::get_schema());
     }
     
     public function tearDown() {
@@ -83,16 +85,37 @@ class BaseModelTest extends PHPUnit_Framework_TestCase {
     /**
      * Tests
      */
+    public function testSaveInstanceWithInvalidField() {
+        $instance = WikkaModel::init(array(
+            'invalid' => 'foo'
+        ));
+        
+        $this->setExpectedException('PDOException');
+        $query = $instance->save();
+    }
+    
+    public function testSaveNewInstance() {
+        $instance = WikkaModel::init(array(
+            'nonce' => 'foo'
+        ));
+        $this->assertEquals('foo', $instance->fields['nonce']);
+        
+        $query = $instance->save();
+        $this->assertEquals(1, $query->rowCount());
+    }
+    
     public function testReusableConnection() {
         // Remove the following lines when you implement this test.
         $this->markTestIncomplete(
           'This test has not been implemented yet.'
         );
+        
+        $base_conn_id = $this->model->pdo->query('SELECT CONNECTION_ID()')->fetchColumn();
     }
     
     public function testTableSchema() {
         $schema = trim($this->model->get_schema());
-        $this->assertStringStartsWith('CREATE TABLE table', $schema);
+        $this->assertStringStartsWith('CREATE TABLE nonesuches', $schema);
         $this->assertStringEndsWith('ENGINE=MyISAM', $schema);
     }
     
