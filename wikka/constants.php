@@ -13,6 +13,11 @@ define('WIKKA_ERROR_LEVEL', E_ALL ^ E_DEPRECATED);
 define('MINIMUM_PHP_VERSION', '5.0');
 define('MINIMUM_MYSQL_VERSION', '4.1');
 define('ERROR_WRONG_PHP_VERSION', 'Wikka requires PHP %s or higher!');
+
+#
+# Database
+#
+define('WIKKA_MYSQL_ENGINE', 'MyISAM');
  
 #
 # Config
@@ -46,6 +51,8 @@ define('PERSISTENT_COOKIE_EXPIRY', 7776000);
 
 #
 # Regex Patterns
+#   BRACKET_VAR_REGEX: Regex for matching {{ foo }} and {{foo}} used both in
+#       templates and model table schema
 #   PATTERN_INVALID_ID_CHARS: Defines characters that are not valid for an ID.
 #   PATTERN_REPLACE_IMG_WITH_ALTTEXT: To be used in replacing img tags having
 #       an alt attribute with the value of the alt attribute, trimmed.
@@ -55,6 +62,7 @@ define('PERSISTENT_COOKIE_EXPIRY', 7776000);
 #       - $result[2]: The content of the alt attribute, after it has been
 #           trimmed, if the attribute exists.
 #
+define('BRACKET_VAR_REGEX', '/\{\{\s*[^\}]+\}\}/');
 define('SHOW_INVALID_CHARS', '| ? = &lt; &gt; / \ " % &amp;');
 define('PATTERN_INVALID_ID_CHARS', '/[^A-Za-z0-9_:.-\s]/');
 define('PATTERN_REPLACE_IMG_WITH_ALTTEXT',

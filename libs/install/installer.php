@@ -10,11 +10,6 @@ require_once('3rdparty/core/php-gettext/gettext.inc');
 
 
 class WikkaInstaller {
-    
-    # Constants
-    const CONFIG_PATH = 'wikka.config.php';
-    const MYSQL_ENGINE = 'MyISAM';
-    
     /*
      * Properties
      */
@@ -54,13 +49,13 @@ class WikkaInstaller {
     }
     
     public function write_config_file() {
-        $config_path = WikkaInstaller::CONFIG_PATH;
+        $config_path = WIKKA_CONFIG_PATH;
         
         # Copy config settings
         $config = $this->config;
-        $config = $this->prepare_settings_for_config_file($config);
         
         # Prepare file contents
+        $config = $this->prepare_settings_for_config_file($config);
         $config_content = $this->format_config_file($config);
         
         # Write file
@@ -169,7 +164,7 @@ class WikkaInstaller {
             
             # Replace placeholders
             $sql = str_replace('{{prefix}}', $this->config['table_prefix'], $sql);
-            $sql = str_replace('{{engine}}', self::MYSQL_ENGINE, $sql);
+            $sql = str_replace('{{engine}}', WIKKA_MYSQL_ENGINE, $sql);
             $sql = str_replace('{{db_name}}', $this->config['mysql_database'], $sql);
             
             try {                
@@ -353,7 +348,7 @@ class WikkaInstaller {
     private function exec_sql($sql) {
         # Replace placeholders
         $sql = str_replace('{{prefix}}', $this->config['table_prefix'], $sql);
-        $sql = str_replace('{{engine}}', self::MYSQL_ENGINE, $sql);
+        $sql = str_replace('{{engine}}', WIKKA_MYSQL_ENGINE, $sql);
         $sql = str_replace('{{db_name}}', $this->config['mysql_database'], $sql);
         
         $rows_affected = $this->pdo->exec($sql);

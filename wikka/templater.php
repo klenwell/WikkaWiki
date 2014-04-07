@@ -68,10 +68,9 @@ class WikkaTemplater {
      */
     public function output() {
         $output = $this->layout;
-        $partial_re = '/\{\{\s*[^\}]+\}\}/';
         $partials = array();
         
-        $matched = preg_match_all($partial_re, $this->layout, $partials);
+        $matched = preg_match_all(BRACKET_VAR_REGEX, $this->layout, $partials);
         
         foreach ( $partials[0] as $partial ) {
             $id = preg_replace('/[\{\}\s]/', '', $partial);
