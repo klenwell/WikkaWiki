@@ -9,6 +9,7 @@
 require_once('version.php');
 require_once('wikka/constants.php');
 require_once('models/base.php');
+require_once('models/page.php');
 
 
 class BaseModelTest extends PHPUnit_Framework_TestCase {
@@ -105,12 +106,13 @@ class BaseModelTest extends PHPUnit_Framework_TestCase {
     }
     
     public function testReusableConnection() {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
+        $page = new PageModel();
         
         $base_conn_id = $this->model->pdo->query('SELECT CONNECTION_ID()')->fetchColumn();
+        $page_conn_id = $page->pdo->query('SELECT CONNECTION_ID()')->fetchColumn();
+        
+        $this->assertTrue((bool) $base_conn_id);
+        $this->assertEquals($base_conn_id, $page_conn_id);
     }
     
     public function testTableSchema() {
