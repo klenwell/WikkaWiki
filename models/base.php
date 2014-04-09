@@ -67,9 +67,7 @@ class WikkaModel {
      * Static Properties
      * (These are just a sample and should be overridden in base class)
      */
-    protected static $table = 'nonesuches'; # Don't include prefix. Will be added.
-    
-    protected static $schema = <<<MYSQL
+    public static $schema = <<<MYSQL
 CREATE TABLE {{prefix}}nonesuches (
 	id int(10) unsigned NOT NULL auto_increment,
 	nonce varchar(75) NOT NULL default '',
@@ -77,6 +75,8 @@ CREATE TABLE {{prefix}}nonesuches (
 	KEY idx_nonce (nonce)
 ) CHARACTER SET utf8 COLLATE utf8_unicode_ci ENGINE={{engine}}
 MYSQL;
+    
+    protected static $table = 'nonesuches'; # Don't include prefix. Will be added.
     
     /*
      * Properties

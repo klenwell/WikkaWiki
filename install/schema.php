@@ -3,30 +3,15 @@
 # Database Schema
 # Configures database and creates tables
 #
-$WikkaDatabaseSchema = array();
+require_once('models/page.php');
 
-$WikkaDatabaseSchema['character set'] = "ALTER DATABASE {{db_name}} DEFAULT CHARACTER " .
-	"SET utf8 COLLATE utf8_unicode_ci";
 
-$WikkaDatabaseSchema['pages table'] = <<<EOC
-CREATE TABLE {{prefix}}pages (
-	id int(10) unsigned NOT NULL auto_increment,
-	tag varchar(75) NOT NULL default '',
-	title varchar(75) NOT NULL default '',
-	time datetime NOT NULL default '0000-00-00 00:00:00',
-	body mediumtext NOT NULL,
-	owner varchar(75) NOT NULL default '',
-	user varchar(75) NOT NULL default '',
-	latest enum('Y','N') NOT NULL default 'N',
-	note varchar(100) NOT NULL default '',
-	PRIMARY KEY  (id),
-	KEY idx_tag (tag),
-	FULLTEXT KEY body (body),
-	KEY idx_time (time),
-	KEY idx_owner (owner), 
-	KEY idx_latest (latest)
-) CHARACTER SET utf8 COLLATE utf8_unicode_ci ENGINE={{engine}}
-EOC;
+
+$WikkaDatabaseSchema = array(
+	'character set' => 'ALTER DATABASE {{db_name}} DEFAULT CHARACTER ' .
+		'SET utf8 COLLATE utf8_unicode_ci',
+	'pages table' => PageModel::$schema
+);
 
 $WikkaDatabaseSchema['acls table'] = <<<EOC
 CREATE TABLE {{prefix}}acls (
