@@ -17,9 +17,7 @@ class PageModel extends WikkaModel {
      * Static Properties
      * (These are just a sample and should be overridden in base class)
      */
-    protected static $table = 'pages';
-    
-    protected static $schema = <<<MYSQL
+    public static $schema = <<<MYSQL
 CREATE TABLE {{prefix}}pages (
 	id int(10) unsigned NOT NULL auto_increment,
 	tag varchar(75) NOT NULL default '',
@@ -38,5 +36,7 @@ CREATE TABLE {{prefix}}pages (
 	KEY idx_latest (latest)
 ) CHARACTER SET utf8 COLLATE utf8_unicode_ci ENGINE={{engine}}
 MYSQL;
+    
+    protected static $table = 'pages';
     
 }
