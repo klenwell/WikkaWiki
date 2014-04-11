@@ -4,13 +4,15 @@
 # Configures database and creates tables
 #
 require_once('models/page.php');
+require_once('models/user.php');
 
 
 
 $WikkaDatabaseSchema = array(
 	'character set' => 'ALTER DATABASE {{db_name}} DEFAULT CHARACTER ' .
 		'SET utf8 COLLATE utf8_unicode_ci',
-	'pages table' => PageModel::$schema
+	'pages table' => PageModel::get_schema(),
+	'users table' => UserModel::get_schema()
 );
 
 $WikkaDatabaseSchema['acls table'] = <<<EOC
@@ -47,25 +49,6 @@ $WikkaDatabaseSchema['referrer_blacklist table'] = <<<EOC
 CREATE TABLE {{prefix}}referrer_blacklist (
 	spammer varchar(255) NOT NULL default '',
 	KEY idx_spammer (spammer)
-) CHARACTER SET utf8 COLLATE utf8_unicode_ci ENGINE={{engine}}
-EOC;
-
-$WikkaDatabaseSchema['users table'] = <<<EOC
-CREATE TABLE {{prefix}}users (
-	name varchar(75) NOT NULL default '',
-	password varchar(32) NOT NULL default '',
-	email varchar(50) NOT NULL default '',
-	revisioncount int(10) unsigned NOT NULL default '20',
-	changescount int(10) unsigned NOT NULL default '50',
-	doubleclickedit enum('Y','N') NOT NULL default 'Y',
-	signuptime datetime NOT NULL default '0000-00-00 00:00:00',
-	show_comments enum('Y','N') NOT NULL default 'N',
-	status enum('invited','signed-up','pending','active','suspended','banned','deleted'),
-	theme varchar(50) default '',
-	default_comment_display enum ('date_asc', 'date_desc', 'threaded') NOT NULL default 'threaded',
-	challenge varchar(8) default '',
-	PRIMARY KEY  (name),
-	KEY idx_signuptime (signuptime)
 ) CHARACTER SET utf8 COLLATE utf8_unicode_ci ENGINE={{engine}}
 EOC;
 

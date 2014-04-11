@@ -10,14 +10,16 @@
  * @copyright   Copyright 2014  Tom Atwell <klenwell@gmail.com>
  *
  */
+require_once('models/base.php');
+
+
 
 class PageModel extends WikkaModel {
-    
     /*
      * Static Properties
      * (These are just a sample and should be overridden in base class)
      */
-    public static $schema = <<<MYSQL
+    protected static $schema = <<<MYSQL
 CREATE TABLE {{prefix}}pages (
 	id int(10) unsigned NOT NULL auto_increment,
 	tag varchar(75) NOT NULL default '',

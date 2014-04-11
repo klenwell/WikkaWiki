@@ -67,7 +67,7 @@ class WikkaModel {
      * Static Properties
      * (These are just a sample and should be overridden in base class)
      */
-    public static $schema = <<<MYSQL
+    protected static $schema = <<<MYSQL
 CREATE TABLE {{prefix}}nonesuches (
 	id int(10) unsigned NOT NULL auto_increment,
 	nonce varchar(75) NOT NULL default '',
@@ -108,7 +108,7 @@ MYSQL;
     }
     
     static public function get_schema() {
-        $schema = self::$schema;
+        $schema = static::$schema;
         $vars = array();
         
         $replacement = array(
