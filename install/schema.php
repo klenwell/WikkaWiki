@@ -5,6 +5,7 @@
 #
 require_once('models/page.php');
 require_once('models/user.php');
+require_once('models/acl.php');
 
 
 
@@ -12,19 +13,9 @@ $WikkaDatabaseSchema = array(
 	'character set' => 'ALTER DATABASE {{db_name}} DEFAULT CHARACTER ' .
 		'SET utf8 COLLATE utf8_unicode_ci',
 	'pages table' => PageModel::get_schema(),
-	'users table' => UserModel::get_schema()
+	'users table' => UserModel::get_schema(),
+	'acls table' => AccessControlListModel::get_schema()
 );
-
-$WikkaDatabaseSchema['acls table'] = <<<EOC
-CREATE TABLE {{prefix}}acls (
-	page_tag varchar(75) NOT NULL default '',
-	read_acl text NOT NULL,
-	write_acl text NOT NULL,
-	comment_read_acl text NOT NULL,
-	comment_post_acl text NOT NULL,
-	PRIMARY KEY  (page_tag)
-) CHARACTER SET utf8 COLLATE utf8_unicode_ci ENGINE={{engine}}
-EOC;
 
 $WikkaDatabaseSchema['links table'] = <<<EOC
 CREATE TABLE {{prefix}}links (
