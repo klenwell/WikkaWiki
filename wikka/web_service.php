@@ -121,7 +121,31 @@ class WikkaWebService {
         return $token;
     }
     
-    public function process_request() {
+    public function dispatch() {
+        if ( $this->is_new_style_handler_request() ) {
+            $response = $this->dispatch_to_handler();
+        }
+        else {
+            $response = $this->dispatch_to_legacy_handler();
+        }
+        
+        # Set common headers
+        $response->set_header('Cache-Control', 'no-cache');
+        $response->set_header('ETag', md5($response->body));
+        $response->set_header('Content-Length', strlen($response->body));
+        
+        return $response;
+    }
+    
+    private function is_new_style_handler_request() {
+        return FALSE;
+    }
+    
+    private function dispatch_to_handler() {
+        throw new Exception('TO DO');
+    }
+    
+    private function dispatch_to_legacy_handler() {
         $route = $this->route_request();
         $handler_response = $this->run_wikka_handler($route['page'], $route['handler']);
         
@@ -129,11 +153,6 @@ class WikkaWebService {
         $templater = new WikkaTemplater($wikka);
         $templater->set('content', $handler_response->body);
         $handler_response->body = $templater->output();
-        
-        # Set common headers
-        $handler_response->set_header('Cache-Control', 'no-cache');
-        $handler_response->set_header('ETag', md5($handler_response->body));
-        $handler_response->set_header('Content-Length', strlen($handler_response->body));
         
         return $handler_response;
     }

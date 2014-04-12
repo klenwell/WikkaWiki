@@ -160,7 +160,7 @@ class WikkaWebServiceTest extends PHPUnit_Framework_TestCase {
         $this->web_service->interrupt_if_install_required();
     }
     
-    public function testProcessRequest() {
+    public function testDispatch() {
         $page_body = 'Lorem ipsum etc...';
         $page_note = 'for unit test';
         $page_owner = 'TestUser';
@@ -169,7 +169,7 @@ class WikkaWebServiceTest extends PHPUnit_Framework_TestCase {
         $this->createPage('HomePage', $page_body, $page_note);
         $this->web_service->prepare_request();
         $this->web_service->start_session();
-        $response = $this->web_service->process_request();
+        $response = $this->web_service->dispatch();
 
         $this->assertEquals(200, $response->status);
         $this->assertNotEmpty($response->headers['etag']);
