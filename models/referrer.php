@@ -1,8 +1,8 @@
 <?php
 /**
- * models/comment.php
+ * models/referrer.php
  *
- * WikkaWiki Comment model class.
+ * WikkaWiki Access Control List model class.
  *
  * @package		Models
  * @license		http://www.gnu.org/copyleft/gpl.html GNU General Public License
@@ -14,26 +14,20 @@ require_once('models/base.php');
 
  
 
-class CommentModel extends WikkaModel {
+class ReferrerModel extends WikkaModel {
     /*
      * Static Properties
      */
     protected static $schema = <<<MYSQL
-CREATE TABLE {{prefix}}comments (
-	id int(10) unsigned NOT NULL auto_increment,
+CREATE TABLE {{prefix}}referrers (
 	page_tag varchar(75) NOT NULL default '',
+	referrer varchar(255) NOT NULL default '',
 	time datetime NOT NULL default '0000-00-00 00:00:00',
-	comment text NOT NULL,
-	user varchar(75) NOT NULL default '',
-	parent int(10) unsigned default NULL,. 
-	status enum('deleted') default NULL,
-	deleted char(1) default NULL,
-	PRIMARY KEY  (id),
 	KEY idx_page_tag (page_tag),
 	KEY idx_time (time)
 ) CHARACTER SET utf8 COLLATE utf8_unicode_ci ENGINE={{engine}}
 MYSQL;
     
-    protected static $table = 'comments';
+    protected static $table = 'referrers';
     
 }

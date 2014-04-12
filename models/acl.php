@@ -17,7 +17,6 @@ require_once('models/base.php');
 class AccessControlListModel extends WikkaModel {
     /*
      * Static Properties
-     * (These are just a sample and should be overridden in base class)
      */
     protected static $schema = <<<MYSQL
 CREATE TABLE {{prefix}}acls (

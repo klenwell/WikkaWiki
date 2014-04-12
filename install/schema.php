@@ -11,12 +11,13 @@ require_once('models/comment.php');
 
 
 $WikkaDatabaseSchema = array(
-	'character set' => 'ALTER DATABASE {{db_name}} DEFAULT CHARACTER ' .
+	'character set' 	=> 'ALTER DATABASE {{db_name}} DEFAULT CHARACTER ' .
 		'SET utf8 COLLATE utf8_unicode_ci',
-	'pages table' => PageModel::get_schema(),
-	'users table' => UserModel::get_schema(),
-	'acls table' => AccessControlListModel::get_schema(),
-	'comments table' => CommentModel::get_schema()
+	'pages table' 		=> PageModel::get_schema(),
+	'users table' 		=> UserModel::get_schema(),
+	'acls table' 		=> AccessControlListModel::get_schema(),
+	'comments table'	=> CommentModel::get_schema(),
+	'referrers table'	=> ReferrerModel::get_schema()
 );
 
 $WikkaDatabaseSchema['links table'] = <<<EOC
@@ -25,16 +26,6 @@ CREATE TABLE {{prefix}}links (
 	to_tag varchar(75) NOT NULL default '',
 	UNIQUE KEY from_tag (from_tag,to_tag),
 	KEY idx_to (to_tag)
-) CHARACTER SET utf8 COLLATE utf8_unicode_ci ENGINE={{engine}}
-EOC;
-
-$WikkaDatabaseSchema['referrers table'] = <<<EOC
-CREATE TABLE {{prefix}}referrers (
-	page_tag varchar(75) NOT NULL default '',
-	referrer varchar(255) NOT NULL default '',
-	time datetime NOT NULL default '0000-00-00 00:00:00',
-	KEY idx_page_tag (page_tag),
-	KEY idx_time (time)
 ) CHARACTER SET utf8 COLLATE utf8_unicode_ci ENGINE={{engine}}
 EOC;
 
