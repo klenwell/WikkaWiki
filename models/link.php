@@ -2,7 +2,7 @@
 /**
  * models/link.php
  *
- * Session model class.
+ * Link model class.
  *
  * @package		Models
  * @license		http://www.gnu.org/copyleft/gpl.html GNU General Public License

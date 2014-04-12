@@ -10,6 +10,7 @@ require_once('models/comment.php');
 require_once('models/referrer.php');
 require_once('models/session.php');
 require_once('models/link.php');
+require_once('models/referrer_blacklist.php');
 
 
 $WikkaDatabaseSchema = array(
@@ -21,12 +22,6 @@ $WikkaDatabaseSchema = array(
 	'comments table'	=> CommentModel::get_schema(),
 	'referrers table'	=> ReferrerModel::get_schema(),
 	'sessions table'	=> SessionModel::get_schema(),
-	'links table'		=> LinkModel::get_schema()
+	'links table'		=> LinkModel::get_schema(),
+	'referrer_blacklist table' => ReferrerBlacklistModel::get_schema()
 );
-
-$WikkaDatabaseSchema['referrer_blacklist table'] = <<<EOC
-CREATE TABLE {{prefix}}referrer_blacklist (
-	spammer varchar(255) NOT NULL default '',
-	KEY idx_spammer (spammer)
-) CHARACTER SET utf8 COLLATE utf8_unicode_ci ENGINE={{engine}}
-EOC;
