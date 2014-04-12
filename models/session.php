@@ -1,8 +1,8 @@
 <?php
 /**
- * models/referrer.php
+ * models/session.php
  *
- * Referrer model class.
+ * Session model class.
  *
  * @package		Models
  * @license		http://www.gnu.org/copyleft/gpl.html GNU General Public License
@@ -14,20 +14,19 @@ require_once('models/base.php');
 
  
 
-class ReferrerModel extends WikkaModel {
+class SessionModel extends WikkaModel {
     /*
      * Static Properties
      */
     protected static $schema = <<<MYSQL
-CREATE TABLE {{prefix}}referrers (
-	page_tag varchar(75) NOT NULL default '',
-	referrer varchar(255) NOT NULL default '',
-	time datetime NOT NULL default '0000-00-00 00:00:00',
-	KEY idx_page_tag (page_tag),
-	KEY idx_time (time)
+CREATE TABLE {{prefix}}sessions (
+	sessionid char(32) NOT NULL,
+	userid varchar(75) NOT NULL,
+	PRIMARY KEY (sessionid, userid),
+	session_start datetime NOT NULL
 ) CHARACTER SET utf8 COLLATE utf8_unicode_ci ENGINE={{engine}}
 MYSQL;
     
-    protected static $table = 'referrers';
+    protected static $table = 'sessions';
     
 }
