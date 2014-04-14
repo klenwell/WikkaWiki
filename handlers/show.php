@@ -24,7 +24,12 @@
  *
  */
 require_once('handlers/base.php');
+require_once('wikka/errors.php');
 require_once('wikka/response.php');
+require_once('models/page.php');
+require_once('models/user.php');
+require_once('models/comment.php');
+
 
 
 class ShowHandler extends WikkaHandler {
@@ -46,6 +51,10 @@ class ShowHandler extends WikkaHandler {
 %s
 HTML;
 
+    # Models
+    private $page = null;
+    private $user = null;
+
     # Template Vars (%s from template above in order)
     protected $double_click_edit = '';
     protected $revision_info = '';
@@ -61,6 +70,34 @@ HTML;
     );
     
     /*
+     * Constructor
+     */
+    public function __construct($request) {
+        parent::__construct($request);
+        $this->page = $this->load_page($request);
+        $this->user = UserModel::load();
+    }
+    
+    private function load_page($request) {
+        $page = null;
+        $revision_requested = $request->get_get_var('time', FALSE);
+        
+        if ( $revision_requested ) {
+            $page = PageModel::find_by_tag_and_time(
+                $request->route['page'],
+                $revision_requested
+            );    
+        }
+        
+        if ( $page ) {
+            return $page;
+        }
+        else {
+            return PageModel::find_by_tag($request->route['page']);
+        }
+    }
+    
+    /*
      * Main Handler Method
      */
     public function handle() {
@@ -70,11 +107,11 @@ HTML;
         
         if ( $this->double_click_is_active() ) {
             $this->double_click_edit = sprintf(' ondblclick="document.location=\'%s\'"',
-                $this->wikka->Href('edit', '', 'id='.$this->wikka->page['id'])
+                $this->href($this->page->fields['tag'], 'edit', array('id' => $this->page))
             );
         }
         
-        if ( ! $this->page_is_latest() ) {
+        if ( ! $this->page->is_latest_version() ) {
             $this->revision_info = $this->format_revision_info();
         }
         
@@ -102,22 +139,17 @@ HTML;
      * Validation Methods
      */
     private function request_is_valid() {
-        if ( ! $this->user_has_read_access() ) {
-            $this->error = T_("You are not allowed to read this page.");
-            return false;
-        }
-        
-        if ( ! $this->page_name_is_valid() ) {
+        if ( ! $this->page->tag_is_valid() ) {
             $this->error = sprintf(
                 T_("This page name is invalid. " +
                    "Valid page names must not contain the characters %s."),
-                SHOW_INVALID_CHARS);
+                WIKKA_INVALID_CHARS);
             return false;
         }
         
-        if ( ! $this->page_exists() ) {
+        if ( ! $this->page->exists() ) {
             $create_link = sprintf('<a href="%s">%s</a>',
-                $this->wikka->Href('edit', $this->page_tag),
+                $this->href($this->page->fields['tag']),
                 T_("create"));
             
             $this->error = sprintf("<p>%s</p>\n",
@@ -129,33 +161,20 @@ HTML;
             return false;
         }
         
+        if ( ! $this->user->can('read', $this->page) ) {
+            $this->error = T_("You are not allowed to read this page.");
+            return false;
+        }
+        
         return true;
-    }
-    
-    private function user_has_read_access() {
-        return $this->wikka->HasAccess('read');
-    }
-    
-    private function page_name_is_valid() {
-        return $this->wikka->IsWikiName($this->wikka->GetPageTag());
-    }
-    
-    private function page_exists() {
-        return isset($this->wikka->page) && (! empty($this->wikka->page));
-    }
-    
-    private function page_is_latest() {
-        return isset($this->wikka->page['latest']) &&
-            ($this->wikka->page['latest'] == 'Y');
     }
     
     /*
      * Status Methods
      */
     private function double_click_is_active() {
-        $user = $this->user;
-        return $user && ($user['doubleclickedit'] == 'Y') &&
-            ($this->wikka->HasAccess('write'));
+        return ($this->user->fields['doubleclickedit'] == 'Y') &&
+            $this->user->can('write', $this->page);
     }
      
     private function raw_page_requested() {
@@ -169,14 +188,14 @@ HTML;
      * Comment Methods
      */
     private function show_comments() {
-        return ($this->wikka->GetConfigValue('hide_comments') != 1) &&
-            $this->wikka->HasAccess('comment_read');
+        return ($this->config['hide_comments'] != 1) &&
+            $this->user->can('comment_read', $this->page);
     }
     
     private function load_comments() {
-        $page_tag = $this->page_tag;
+        $page_tag = $this->page->fields['tag'];
         $order = $this->get_requested_comment_display_mode();
-        return $this->wikka->LoadComments($page_tag, $order);
+        return CommentModel::find_by_page_tag($page_tag, $order);
     }
     
     private function get_requested_comment_display_mode() {
@@ -184,8 +203,8 @@ HTML;
         $display_modes = array_values($this->comment_display_modes);
         
         # Params
-        $page_tag = $this->page_tag;
-        $wants_comments = $this->wikka->UserWantsComments($page_tag);
+        $page_tag = $this->page->fields['tag'];
+        $wants_comments = $this->user->wants_comments_for_page($this->page);
         
         # Init display mode
         if ( isset($_SESSION['show_comments'][$page_tag]) ) {
@@ -199,7 +218,7 @@ HTML;
         
         # GET value holds precedence
         if ( isset($_GET['show_comments']) ) {
-            $requested_mode = $this->wikka->GetSafeVar('show_comments', 'get');
+            $requested_mode = $this->request->get_get_var('show_comments');
             if ( in_array($requested_mode, $display_modes) ) {
                 $display_mode = $requested_mode;
             }
@@ -214,12 +233,11 @@ HTML;
         $display_mode = null;
         
         # Params
-        $user = $this->user;
-        $configured_display = $this->wikka->GetConfigValue('default_comment_display');
+        $configured_display = $this->config['default_comment_display'];
         
         # Determine preference
-        if ( isset($user['default_comment_display']) ) {
-            $display_mode = $user['default_comment_display'];
+        if ( isset($this->user->fields['default_comment_display']) ) {
+            $display_mode = $this->user->fields['default_comment_display'];
         }
         elseif ( !(is_null($configured_display)) ) {
             $display_mode = $configured_display;
@@ -266,6 +284,250 @@ HTML;
     }
     
     /*
+     * Helper Methods
+     */
+    private function href($page_name, $handler='', $params=array()) {
+        $in_rewrite_mode = (bool) $this->config['rewrite_mode'];
+        $page_name = preg_replace('/\s+/', '_', $page_name);
+        
+        if ( $in_rewrite_mode ) {
+            $wikka_url = $this->request->wikka_base_url;
+        }
+        else {
+            $wikka_url = $this->request->wikka_base_url . WIKKA_URL_EXTENSION;
+        }
+        
+        if ( $handler ) {
+            $route = sprintf('%s/%s', $page_name, $handler);
+        }
+        else {
+            $route = $page_name;
+        }
+        
+        if ( $params ) {
+            $hitch = ( $in_rewrite_mode ) ? '?' : '&';
+            $query_string = $hitch . http_build_query($params);
+        }
+        else {
+            $query_string = '';
+        }
+        
+        return sprintf('%s%s%s', $wikka_url, $route, $query_string);
+    }
+    
+    private function build_link($href, $label=NULL, $attr_dict=array()) {
+        $format = '<a href="%s"%s>%s</a>';
+        
+        if ( is_null($label) ) {
+            $label = $href;
+        }
+        
+        if ( $attr_dict ) {
+            $attr_list = array();
+            foreach ( $attr_dict as $attr => $value ) {
+                $attr_list[] = sprintf('%s="%s"', $attr,
+                    str_replace('"', '\"', $value));
+            }
+            $attrs = sprintf(' %s', implode(' ', $attr_list));
+        }
+        else {
+            $attrs = '';
+        }
+        
+        return sprintf($format, $href, $attrs, $label);
+    }
+    
+    private function wiki_link($page_tag, $handler=NULL, $label=NULL, $track=TRUE,
+        $assume_page_exists=TRUE) {
+        
+        $href = '';
+        $label = ( ! $label ) ? $page_tag : $label;
+        $attr_dict = array();
+        
+        $page_tag = htmlspecialchars($page_tag);
+        $handler = htmlspecialchars($handler);
+        $label = htmlspecialchars($label);
+        
+        $is_fully_qualified_url = preg_match(RE_FULLY_QUALIFIED_URL, $page_tag);
+        $is_email_address = preg_match(RE_EMAIL_ADDRESS, $page_tag);
+        
+        if ( $is_fully_qualified_url ) {
+            $href = $page_tag;
+            
+            $re_pattern = sprintf('/%s/', preg_quote($_SERVER['SERVER_NAME']));
+            if (! preg_match($re_pattern, $page_tag)) {
+                $attr_dict['class'] = 'ext';
+            }
+        }
+        elseif ( $is_email_address ) {
+            $href = sprintf('mailto:%s', $page_tag);
+            $attr_dict['class'] = 'mailto';
+        }
+        else {
+            $page = PageModel::find_by_tag($page_tag);
+            
+            if (isset($_SESSION['linktracking']) && $_SESSION['linktracking']
+                && $track) {
+                $_SESSION['linktable'][] = $page_tag;
+            }
+            
+            if ( (! $assume_page_exists) && (! $page->exists()) ) {
+                $href = $this->href($page_tag, 'edit');
+                $attr_dict['class'] = 'missingpage';
+                $attr_dict['title'] = T_("Create this page");
+            }
+            else {
+                $href = $this->href($page_tag, $handler);
+            }
+        }
+        
+        return $this->build_link($href, $label, $attr_dict);
+    }
+    
+    private function format_user($user_name, $as_link=TRUE) {
+        $format = '<span class="%s">%s</span>';
+        
+        if ( ! $user_name ) {
+            return 'anonymous';
+        }
+        
+        $user = UserModel::find_by_name($user_name);
+        
+        if ( $user->exists() ) {
+            $class = 'user';
+            $user_page = PageModel::find_by_tag($user_name);
+            
+            if ( $user_page->exists() && $as_link ) {
+                $label = sprintf('Open user profile for %s', $user_name);
+                $href = $this->href($user_name);
+                $user_name = $this->build_link($href, $label);
+            }
+        }
+        else {
+            $class = 'user_anonymous';
+        }
+
+        return sprintf($format, $class, $user_name);
+    }
+    
+    private function open_form($page_tag, $handler='', $method='post', $options=null) {
+        /*
+         * Does not support file uploads.
+         */
+        $attr_dict = array();
+        $hidden_fields = array();
+        
+        # Optional args
+        $id = ( isset($options['id']) ) ? $options['id'] : '';
+        $class = ( isset($options['class']) ) ? $options['class'] : '';
+        $anchor = ( isset($options['anchor']) ) ? $options['anchor'] : '';
+        
+        $page = PageModel::find_by_tag($page_tag);
+        if ( ! $page->exists() ) {
+            $page = $this->page;
+        }
+        $page_tag = $page->field('tag');
+        
+        # Set action attr
+        $attr_dict['action'] = $this->href($page_tag, $handler);
+        $attr_dict['method'] = strtolower($method);
+        $attr_dict['id'] = $id;
+        
+        # Add anchor
+        if ( $anchor ) {
+            $attr_dict['action'] = sprintf('%s#%s', $attr_dict['action'], $anchor);
+        }
+        
+        # If rewrite mode off, must add hidden field with page tag
+        if ( ! $this->config['rewrite_mode'] ) {
+            $fs = ( $handler ) ? '/' : '';
+            $hidden_fields['wakka'] = $page_tag . $fs . $handler;
+        }
+        
+        # If id blank, generate an ID
+        if ( ! $attr_dict['id'] ) {
+            $md5 = md5($handler.$page_tag.$method.$class);
+            $id = substr($md5, 0, ID_LENGTH);
+            $attr_dict['id'] = generate_wikka_form_id('form', $id);
+        }
+        
+        if ( $class ) {
+            $attr_dict['class'] = $class;
+        }
+        
+        # If POST form, add hidden field for CSRF token
+        if ( $attr_dict['method'] == 'post' ) {
+            $hidden_fields['CSRFToken'] = $_SESSION['CSRFToken'];
+        }
+        
+        # Build attrs
+        $attr_list = array();
+        foreach ( $attr_dict as $attr => $value ) {
+            $attr_list[] = sprintf('%s="%s"', $attr,
+                str_replace('"', '\"', $value));
+        }
+        $attrs = sprintf(' %s', implode(' ', $attr_list));
+        
+        # Build hidden fieldset
+        if ( $hidden_fields ) {
+            $format = '<input type="hidden" name="%s" value="%s" />';
+            $hidden_field_elements = array('<fieldset class="hidden">');
+            foreach ( $hidden_fields as $name => $value ) {
+                $element = sprintf($format, $name, $value);
+                $hidden_field_elements[] = $element;
+            }
+            $hidden_field_elements[] = '</fieldset>';
+            $hidden_fieldset = sprintf("\n%s", implode("\n", $hidden_field_elements));
+        }
+        else {
+            $hidden_fieldset = '';
+        }
+        
+        return sprintf("<form%s>%s", $attrs, $hidden_fieldset);
+    }
+    
+    private function close_form() {
+        return "</form>\n";
+    }
+    
+    private function render_using_formatter($text, $formatter='wakka', $options='') {
+        if ( ! preg_match(RE_VALID_FORMATTER_NAME, $formatter) ) {
+            throw new WikkaFormatterError(T_(
+                'Formatter name contains invalid characters'));
+        }
+        
+        $formatter = strtolower($formatter);
+        $formatter_fname = sprintf('%s.php', $formatter);
+        $formatter_path = sprintf('formatters%s%s', DIRECTORY_SEPARATOR,
+            $formatter_fname);
+        
+        if ( ! file_exists($formatter_path) ) {
+            throw new WikkaFormatterError(sprintf(T_(
+                'Formatter "%s" not found'), $formatter_path));
+        }
+        
+        /*
+         * TODO: remove this when Formatter refactored
+         */
+        $wikka = WikkaBlob::autoload($this->config, $this->request->route['page']);
+        
+        ob_start();
+        include($formatter_path);
+        $output = ob_get_contents();
+        ob_end_clean();
+
+        return $output;
+    }
+    
+    public function GetHandler() {
+        /*
+         * Required by formatter in render_using_formatter
+         * TODO: remove when Formatter refactored
+         */
+        return $this->request->route['handler'];
+    }
+    
+    /*
      * Format Methods
      */
     protected function format_content() {
@@ -295,28 +557,26 @@ HTML;
         $edit_revision_form = '';
         
         # Params
-        $page_data = $this->wikka->LoadPage($this->wikka->GetPageTag());
+        $page_data = $this->page->fields;
         $wants_raw_page = $this->raw_page_requested();
         
         # Set revision header
-        $link_param = sprintf('time=%s', urlencode($this->wikka->page['time']));
         $revision_link = sprintf('<a href="%s">[%s]</a>',
-            $this->wikka->Href('', '', $link_param),
-            $this->wikka->page['id']
+            $this->href($page_data['tag'], 'show', array('time' => $page_data['time'])),
+            $page_data['id']
         );
         $revision_header = sprintf(T_('Revision %s'), $revision_link);
         
         # Set revision message
         $page_link = sprintf('<a href="%s">%s</a>',
-            $this->wikka->Href(),
-            $this->wikka->GetPageTag()
+            $this->href($page_data['tag']),
+            $this->page->pretty_page_tag()
         );
         $revision_message = sprintf(
             T_("This is an old revision of %s made by %s on %s."),
             $page_link,
-            $this->wikka->FormatUser($this->wikka->page['user']),
-            $this->wikka->Link($this->wikka->GetPageTag(), 'revisions',
-                $this->wikka->page['time'], TRUE, TRUE, '', 'datetime')
+            $this->format_user($page_data['user']),
+            $this->wiki_link($page_data['tag'], 'revisions', $page_data['time'])
         );
         
         # Show formatting form
@@ -329,11 +589,11 @@ HTML;
 XHTML;
         if ( $page_data ) {
             $show_formatting_form = sprintf($formatting_form_f,
-                $this->wikka->FormOpen('show', '', 'GET', '', 'left'),
-                $this->wikka->GetSafeVar('time', 'get'),
+                $this->open_form('', 'show', 'GET', array('class' => 'left')),
+                $this->request->get_get_var('time', ''),
                 ($wants_raw_page) ? '0' :'1',
                 ($wants_raw_page) ? T_("Show formatted") : T_("Show source"),
-                $this->wikka->FormClose()
+                $this->close_form()
             );
         }
         
@@ -345,13 +605,13 @@ XHTML;
                 <input type="submit" name="submit" value="%s" />
             %s
 XHTML;
-        if ( $page_data && $this->wikka->HasAccess('write') ) {
+        if ( $page_data && $this->user->can('write', $this->page) ) {
             $edit_revision_form = sprintf($revision_form_f,
-                $this->wikka->FormOpen('edit'),
+                $this->open_form($page_data['tag'], 'edit'),
                 $page_data['id'],
-                $this->wikka->htmlspecialchars_ent($this->wikka->page['body']),
+                htmlspecialchars($page_data['body']),
                 T_("Re-edit this old revision"),
-                $this->wikka->FormClose()
+                $this->close_form()
             );
         }
         
@@ -378,7 +638,8 @@ XHTML;
     }
     
     private function format_page_content() {
-        return $this->wikka->Format($this->wikka->page['body'], 'wakka', 'page');
+        return $this->render_using_formatter($this->page->fields['body'],
+            'wakka', 'page');
     }
     
     /*
@@ -476,32 +737,34 @@ XHTML;
         $comment_form = '';
 
         if ( $this->collapse_comments() ) {
-            $comment_count = $this->wikka->CountComments($this->page_tag);
+            $comment_count = CommentModel::count_by_page_tag($this->page->field('tag'));
             $display_mode = $this->get_preferred_comment_display_mode();
             $header_title = $this->format_comment_count($comment_count);
             
             if ( $comment_count < 1 ) {
-                if ( $this->wikka->HasAccess('comment_post') ) {
+                #if ( $this->wikka->HasAccess('comment_post') ) {
+                if ( $this->user->can('comment_post', $this->page) ) {
                     $comment_form = $this->format_comment_form();
                 }
             }
             else {
-                $params = sprintf('show_comments=%s#comments', $display_mode);
+                $params = array('show_comments' => $display_mode);
                 $label = ($comment_count == 1) ? T_("Show comment") : T_("Show comments");
-                $display_link = sprintf('[<a href="%s">%s</a>]',
-                    $this->wikka->Href('', '', $params),
+                $display_link = sprintf('[<a href="%s#comments">%s</a>]',
+                    $this->href($this->page->fields['name'], 'show', $params),
                     $label
                 );
             }
         }
         else {
+            $params = array('show_comments' => '0');
             $header_title = T_("Comments");
             $display_link = sprintf('[<a href="%s">%s</a>]',
-                $this->wikka->Href('', '', 'show_comments=0'),
+                $this->href($this->page->field('name'), 'show', $params),
                 T_("Hide comments")
             );
             
-            if ( $this->wikka->HasAccess('comment_post') ) {
+            if ( $this->user->can('comment_post', $this->page) ) {
                 $comment_form = $this->format_comment_form();
             }
         }
@@ -585,10 +848,10 @@ XHTML;
                     <input type="submit" name="submit" value="%s" />
                     %s
 XHTML;
-        $open_form_tag = $this->wikka->FormOpen("processcomment", "", "post",
-            "", "", FALSE, "#comments");
+        $open_form_tag = $this->open_form($this->page->field('tag'), 'processcomment',
+            'post', array('anchor' => 'comments'));
         $submit_value = T_("New Comment");
-        $close_form_tag = $this->wikka->FormClose();
+        $close_form_tag = $this->close_form();
         
         return sprintf($format, $open_form_tag, $submit_value, $close_form_tag);
     }
