@@ -31,4 +31,32 @@ MYSQL;
     
     protected static $table = 'acls';
     
+    /*
+     * Static Methods
+     */
+    public static function find_by_page_tag($tag) {
+        $sql_f = "SELECT * FROM %s WHERE page_tag = ? LIMIT 1";
+        $sql = sprintf($sql_f, parent::get_table());
+        
+        $pdo = WikkaResources::connect_to_db();
+        $query = $pdo->prepare($sql);
+        $query->execute(array($tag));
+        $result = $query->fetch(PDO::FETCH_ASSOC);
+        
+        if ( ! $result ) {
+            $config = WikkaResources::$config;
+            $result = array(
+                'page_tag' => $tag,
+                'read_acl' => $config['default_read_acl'],
+                'write_acl' => $config['default_write_acl'],
+                'comment_read_acl' => $config['default_comment_read_acl'],
+                'comment_post_acl' => $config['default_comment_post_acl']
+            );
+        }
+        
+        $acl = new AccessControlListModel();
+        $acl->fields = $result;
+        return $acl;
+    }
+    
 }

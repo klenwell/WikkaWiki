@@ -90,6 +90,7 @@ MYSQL;
      */
     public function __construct() {
         $this->pdo = WikkaResources::connect_to_db();
+        $this->config = WikkaResources::$config;
     }
     
     /*
@@ -126,9 +127,22 @@ MYSQL;
         return $schema;
     }
     
+    static public function get_table() {
+        return WikkaResources::$config['table_prefix'] . static::$table;
+    }
+    
     /*
      * Public Methods
      */
+    public function field($name, $default=NULL) {
+        if ( isset($this->fields[$name]) ) {
+            return $this->fields[$name];
+        }
+        else {
+            return $default;
+        }
+    }
+    
     public function save() {
         $sql_f = 'INSERT INTO %s (%s) VALUES (%s)';
         $sql = sprintf($sql_f,
@@ -143,16 +157,12 @@ MYSQL;
     }
     
     public function find_by_column_value($column, $value) {
-        $sql = sprintf('SELECT * FROM %s WHERE %s = ?', $this->get_table(), $column);
+        $sql = sprintf('SELECT * FROM %s WHERE %s = ?', self::get_table(), $column);
         $query = $this->pdo->prepare($sql);
         return $query->execute(array($value));
     }
     
     public function find_by_id($id) {
         return $this->find_by_column_value('id', $id);
-    }
-                         
-    public function get_table() {
-        return WikkaResources::$config['table_prefix'] . self::$table;
     }
 }

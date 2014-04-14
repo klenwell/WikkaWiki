@@ -36,4 +36,75 @@ MYSQL;
     
     protected static $table = 'comments';
     
+    public static function find_by_page_tag($tag, $order=NULL) {
+        $sql_f = <<<SQLF
+SELECT * FROM %s
+    WHERE page_tag = ?
+    AND (status IS NULL or status != 'deleted')
+    ORDER BY time %s
+SQLF;
+
+        if ( ! $order ) {
+            if ( isset($_SESSION['show_comments'][$tag]) ) {
+                $order = $_SESSION['show_comments'][$tag];
+            }
+            else {
+                $order = COMMENT_ORDER_DATE_ASC;
+            }
+        }
+        
+        if ( $order == COMMENT_ORDER_THREADED ) {
+            return self::find_by_page_tag_in_threaded_order($tag);
+        }
+        else {
+            $order_by = ( $order == COMMENT_ORDER_DATE_DESC ) ? 'DESC' : 'ASC';
+        }
+        
+        $sql = sprintf($sql_f, parent::get_table(), $order_by);
+        
+        $pdo = WikkaResources::connect_to_db();
+        $query = $pdo->prepare($sql);
+        $query->execute(array($tag));
+        $rows = $query->fetchAll(PDO::FETCH_ASSOC);
+        
+        if ( ! $rows ) {
+            return array();
+        }
+        
+        $comments = array();
+        foreach ( $rows as $row ) {
+            $comment = new CommentModel();
+            $comment->fields = $row;
+            $comments[] = $comment;
+        }
+
+        return $comments;
+    }
+    
+    public static function find_by_page_tag_in_threaded_order($tag) {
+        throw new Exception('TODO: CommentModel::find_by_page_tag_in_threaded_order');
+    }
+    
+    public static function count_by_page_tag($tag) {
+        $sql_f = <<<SQLF
+SELECT COUNT(*) as count FROM %s
+    WHERE page_tag = ?
+    AND (status IS NULL or status != 'deleted')
+SQLF;
+        
+        $sql = sprintf($sql_f, parent::get_table());
+        
+        $pdo = WikkaResources::connect_to_db();
+        $query = $pdo->prepare($sql);
+        $query->execute(array($tag));
+        $result = $query->fetch(PDO::FETCH_ASSOC);
+        
+        if ( ! $result ) {
+            return 0;
+        }
+        else {
+            return $result['count'];
+        }
+    }
+    
 }
