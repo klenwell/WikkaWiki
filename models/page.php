@@ -45,13 +45,13 @@ MYSQL;
     /*
      * Static Methods
      */
-    public static function find_by_name($name) {
-        $sql_f = "SELECT * FROM %s WHERE latest = 'Y' AND tag = ?";
+    public static function find_by_tag($tag) {
+        $sql_f = "SELECT * FROM %s WHERE tag = ? AND latest = 'Y'";
         $sql = sprintf($sql_f, parent::get_table());
         
         $pdo = WikkaResources::connect_to_db();
         $query = $pdo->prepare($sql);
-        $query->execute(array($name));
+        $query->execute(array($tag));
         $result = $query->fetch(PDO::FETCH_ASSOC);
         
         $page = new PageModel();
@@ -60,7 +60,28 @@ MYSQL;
             $page->fields = $result;
         }
         else {
-            $page->fields['tag'] = $name;
+            $page->fields['tag'] = $tag;
+        }
+        
+        return $page;
+    }
+    
+    public static function find_by_tag_and_time($tag, $time) {
+        $sql_f = "SELECT * FROM %s WHERE tag = ? AND time = ?";
+        $sql = sprintf($sql_f, parent::get_table());
+        
+        $pdo = WikkaResources::connect_to_db();
+        $query = $pdo->prepare($sql);
+        $query->execute(array($tag, $time));
+        $result = $query->fetch(PDO::FETCH_ASSOC);
+        
+        $page = new PageModel();
+        
+        if ( $result ) {
+            $page->fields = $result;
+        }
+        else {
+            $page->fields['tag'] = $tag;
         }
         
         return $page;
@@ -92,6 +113,6 @@ MYSQL;
     }
     
     public function is_latest_version() {
-         return $this->field('latest') == 'Y';
+        return $this->field('latest') == 'Y';
     }
 }
