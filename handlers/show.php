@@ -29,6 +29,7 @@ require_once('wikka/response.php');
 require_once('models/page.php');
 require_once('models/user.php');
 require_once('models/comment.php');
+require_once('libs/Wikka.class.php');
 
 
 
@@ -751,7 +752,7 @@ XHTML;
                 $params = array('show_comments' => $display_mode);
                 $label = ($comment_count == 1) ? T_("Show comment") : T_("Show comments");
                 $display_link = sprintf('[<a href="%s#comments">%s</a>]',
-                    $this->href($this->page->fields['name'], 'show', $params),
+                    $this->href($this->page->field('name'), 'show', $params),
                     $label
                 );
             }

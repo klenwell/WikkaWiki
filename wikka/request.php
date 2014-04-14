@@ -13,6 +13,7 @@
  * REFERENCES
  *
  */
+require_once('wikka/functions.php');
 
  
  
