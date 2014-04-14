@@ -185,25 +185,6 @@ class WikkaBlobTest extends PHPUnit_Framework_TestCase {
         $this->assertEquals($page_tag, $wikka->tag);
     }
     
-    public function testShowHandler() {
-        # Params
-        $handler = 'show';
-        $page_tag = 'HelloWorld';
-        
-        # Set page and ACLs
-        $this->wikka->SetPage($this->wikka->LoadPage($page_tag));
-        $this->wikka->ACLs = $this->wikka->LoadAllACLs($this->wikka->GetPageTag());
-        $this->wikka->ACLs['read_acl'] = '*';
-        
-        # Test handle
-        $response = $this->wikka->Run($page_tag, $handler);
-        
-        # Test results
-        $this->assertInstanceOf('WikkaResponse', $response);
-        $this->assertEquals(200, $response->status);
-        $this->assertContains('Hello World', $response->body);
-    }
-    
     public function testWikkaHandlerError() {
         # Params
         $handler = 'unknownhandler';
