@@ -23,7 +23,9 @@
  * @copyright   Copyright 2014  Tom Atwell <klenwell@gmail.com>
  *
  */
-
+require_once('models/base.php');
+ 
+ 
 class WikkaHandler {
     
     /*
@@ -50,19 +52,15 @@ HTML;
     public $error = 'There was an unspecified error.';
     
     # Wikka object
-    public $wikka = null;
-    
-    # Wikka parameters
-    public $user = null;
-    public $page_tag = null;
+    protected $request = null;
+    protected $config = array();
     
     /*
      * Constructor
      */
-    public function __construct($wikka_object) {
-        $this->wikka = $wikka_object;
-        $this->user = $this->wikka->GetUser();
-        $this->page_tag = $this->wikka->GetPageTag();
+    public function __construct($request) {
+        $this->request = $request;
+        $this->config = WikkaResources::$config;
         
         if ( $this->debug ) {
             error_reporting(E_ALL);
