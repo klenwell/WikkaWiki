@@ -29,8 +29,7 @@ class ShowHandlerTest extends PHPUnit_Framework_TestCase {
      * Test Fixtures
      */
     public static function setUpBeforeClass() {
-        require('test/test.config.php');
-        self::$config = $wakkaConfig;
+        self::$config = self::setUpConfig();
         
         # Must set $config for setup/database.php
         $config = self::$config;
@@ -54,6 +53,13 @@ class ShowHandlerTest extends PHPUnit_Framework_TestCase {
             self::$pdo->exec($query);
         }
     }
+    
+    private static function setUpConfig() {
+        include('wikka/default.config.php');
+        include('test/test.config.php');
+        return array_merge($wakkaDefaultConfig, $wakkaConfig);
+    }
+    
  
     public static function tearDownAfterClass() {       
         # Cleanup database
@@ -63,9 +69,8 @@ class ShowHandlerTest extends PHPUnit_Framework_TestCase {
     }
     
     public function setUp() {
-        $this->config = $this->setUpConfig();
         $this->setUpMockServerEnvironment();
-        WikkaResources::init($this->config);
+        WikkaResources::init(self::$config);
         
         $request = new WikkaRequest();
         $this->show_handler = new ShowHandler($request);
@@ -83,12 +88,6 @@ class ShowHandlerTest extends PHPUnit_Framework_TestCase {
         foreach (self::$pdo->query('SHOW TABLES') as $row) {
             self::$pdo->query(sprintf('TRUNCATE TABLE %s', $row[0]));
         };
-    }
-    
-    private function setUpConfig() {
-        include('wikka/default.config.php');
-        include('test/test.config.php');
-        return array_merge($wakkaDefaultConfig, $wakkaConfig);
     }
     
     private function setUpMockServerEnvironment() {
@@ -112,7 +111,7 @@ class ShowHandlerTest extends PHPUnit_Framework_TestCase {
             # name, status 
             array('admin', 'active')
         );
-        $prefix = $this->config['table_prefix'];
+        $prefix = self::$config['table_prefix'];
         $sql_f = 'INSERT INTO %susers SET name="%s", email="%s", status="%s"';
         
         # Save pages
@@ -128,7 +127,7 @@ class ShowHandlerTest extends PHPUnit_Framework_TestCase {
         # Page parameters
         $page_tags = array('TestPage1', 'TestPage2', 'TestPage3');
         $page_body = "A test in WakkaClassTest";
-        $prefix = $this->config['table_prefix'];
+        $prefix = self::$config['table_prefix'];
         $sql_f = 'INSERT INTO %spages SET tag="%s", body="%s", latest="Y", time=NOW()';
         
         # Save pages
@@ -141,7 +140,7 @@ class ShowHandlerTest extends PHPUnit_Framework_TestCase {
         # Page parameters
         $page_tag = 'TestPage1';
         $comment_f = "Comment #%d";
-        $prefix = $this->config['table_prefix'];
+        $prefix = self::$config['table_prefix'];
         $sql_f = 'INSERT INTO %scomments SET page_tag="%s", comment="%s"';
         
         # Save pages
