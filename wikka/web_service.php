@@ -192,7 +192,7 @@ class WikkaWebService {
         # have another error occur and end up displaying an ugly (and potentially
         # insecure) error message.
         #
-        $route = $this->request->route();
+        $route = $this->request->route;
         
         $wikka = WikkaBlob::autoload($this->config, $route['page'], $route['handler']);
         
