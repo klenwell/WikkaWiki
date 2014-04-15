@@ -34,6 +34,17 @@ MYSQL;
     /*
      * Static Methods
      */
+    public static function load_defaults() {
+        $config = WikkaResources::$config;
+        $default_acls = array(
+            'read_acl' => $config['default_read_acl'],
+            'write_acl' => $config['default_write_acl'],
+            'comment_read_acl' => $config['default_comment_read_acl'],
+            'comment_post_acl' => $config['default_comment_post_acl']
+        );
+        return $default_acls;
+    }
+    
     public static function find_by_page_tag($tag) {
         $sql_f = "SELECT * FROM %s WHERE page_tag = ? LIMIT 1";
         $sql = sprintf($sql_f, parent::get_table());
@@ -41,21 +52,17 @@ MYSQL;
         $pdo = WikkaResources::connect_to_db();
         $query = $pdo->prepare($sql);
         $query->execute(array($tag));
-        $result = $query->fetch(PDO::FETCH_ASSOC);
+        $row = $query->fetch(PDO::FETCH_ASSOC);
         
-        if ( ! $result ) {
-            $config = WikkaResources::$config;
-            $result = array(
-                'page_tag' => $tag,
-                'read_acl' => $config['default_read_acl'],
-                'write_acl' => $config['default_write_acl'],
-                'comment_read_acl' => $config['default_comment_read_acl'],
-                'comment_post_acl' => $config['default_comment_post_acl']
-            );
+        if ( ! $row ) {
+            $row = array('page_tag' => $tag);
         }
         
+        $defaults = AccessControlListModel::load_defaults();
+        $row = array_merge($defaults, $row);
+        
         $acl = new AccessControlListModel();
-        $acl->fields = $result;
+        $acl->fields = $row;
         return $acl;
     }
     

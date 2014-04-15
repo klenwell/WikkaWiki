@@ -264,9 +264,9 @@ HTML;
          * 2. Current user owns the comment;
          * 3. Current non-logged-in user matches IP or hostname of comment
          */
-        $is_logged_in = $this->wikka->GetUser();
-        $is_page_owner = $this->wikka->UserIsOwner();
-        $current_user = $this->wikka->GetUserName();
+        $is_logged_in = $this->user->is_logged_in();
+        $is_page_owner = $this->page->is_owned_by($this->user);
+        $current_user = $this->user->field('name');
         $is_comment_owner = ($current_user == $comment['user']);
         
         if ( $is_logged_in && $is_page_owner ) {
@@ -275,8 +275,7 @@ HTML;
         elseif ( $is_logged_in && $is_comment_owner ) {
             return true;
         }
-        elseif ( $this->wikka->config['anony_delete_own_comments'] &&
-            $is_comment_owner ) {
+        elseif ( $this->config['anony_delete_own_comments'] && $is_comment_owner ) {
             return true;
         }
         else {
@@ -399,9 +398,12 @@ HTML;
             $user_page = PageModel::find_by_tag($user_name);
             
             if ( $user_page->exists() && $as_link ) {
-                $label = sprintf('Open user profile for %s', $user_name);
+                $label = $user_name;
                 $href = $this->href($user_name);
-                $user_name = $this->build_link($href, $label);
+                $attrs = array(
+                    'title' => sprintf('Open user profile for %s', $user_name)
+                );
+                $user_name = $this->build_link($href, $label, $attrs);
             }
         }
         else {
@@ -752,7 +754,7 @@ XHTML;
                 $params = array('show_comments' => $display_mode);
                 $label = ($comment_count == 1) ? T_("Show comment") : T_("Show comments");
                 $display_link = sprintf('[<a href="%s#comments">%s</a>]',
-                    $this->href($this->page->field('name'), 'show', $params),
+                    $this->href($this->page->field('tag'), 'show', $params),
                     $label
                 );
             }
@@ -761,7 +763,7 @@ XHTML;
             $params = array('show_comments' => '0');
             $header_title = T_("Comments");
             $display_link = sprintf('[<a href="%s">%s</a>]',
-                $this->href($this->page->field('name'), 'show', $params),
+                $this->href($this->page->field('tag'), 'show', $params),
                 T_("Hide comments")
             );
             
@@ -789,12 +791,15 @@ XHTML;
 
         $comment_level = (isset($comment['level'])) ? $comment['level'] : 0;
         $comment_class = sprintf('comment-layout-%d', (($comment_level + 1) % 2) + 1);
-        $comment_author = $this->wikka->FormatUser($comment['user']);
+        $comment_author = $this->format_user($comment['user']);
         $comment_byline = T_("Comment by ") . $comment_author;
         $comment_ts = sprintf("%s", $comment['time']);
         
-        if ( $this->wikka->HasAccess('comment_post') ) {
+        if ( $this->user->can('comment_post', $this->page) ) {
             $comment_action = $this->format_comment_action($comment);
+        }
+        else {
+            $comment_action = '';
         }
 
         return sprintf($format,
@@ -885,12 +890,13 @@ XHTML;
                             %s
                         </div>
 XHTML;
-        $open_form_tag = $this->wikka->FormOpen("processcomment","","post",
-            "","",FALSE,"#comments");
+
+        $open_form_tag = $this->open_form($this->page->field('tag'), 'processcomment',
+            'post', array('anchor' => 'comments'));
         $comment_id = $comment['id'];
         $submit_button_label = T_("Reply");
         $delete_button = '';
-        $close_form_tag = $this->wikka->FormClose();
+        $close_form_tag = $this->close_form();
         
         if ( $this->show_delete_button_for_comment($comment) ) {
             $delete_button = sprintf(

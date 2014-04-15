@@ -112,7 +112,7 @@ MYSQL;
         # Go line-by-line until you hit a matching rule
         foreach ($acl_list as $acl) {
             $acl = trim($acl);
-            $negated = substr($acl, 0, 1) == '!';
+            $negated = (int) (substr($acl, 0, 1) == '!');
             $acl = ( $negated ) ? trim(substr($acl, 1)) : $acl;
             
             # Skip empty lines and comments
@@ -163,9 +163,12 @@ MYSQL;
     }
     
     public function is_logged_in() {
+        return $this->exists();
     }
     
     public function belongs_to_group($page_tag) {
+        #TODO: See Wakka::isGroupMember
+        return FALSE;
     }
     
     public function exists() {
