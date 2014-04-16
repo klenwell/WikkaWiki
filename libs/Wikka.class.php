@@ -520,4 +520,10 @@ HTML5;
         );
         echo $output;
     }
+    
+    function ReadInterWikiConfig() {
+        # Interwiki config file has been removed. No indication that file
+        # was being maintained.
+        $this->interWiki = array();
+    }
 }
