@@ -57,6 +57,10 @@ class WikkaRegistry {
         }
     }
     
+    static public function disconnect_from_db() {
+        self::$pdo = null;
+    }
+    
     /*
      * Private Methods
      */
