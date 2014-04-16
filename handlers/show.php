@@ -630,8 +630,8 @@ XHTML;
             </div>
 XHTML;
         return sprintf($format,
-            nl2br($this->wikka->htmlspecialchars_ent(
-                $this->wikka->page["body"],
+            nl2br(htmlspecialchars(
+                $this->page->field('body'),
                 ENT_QUOTES
             ))
         );
