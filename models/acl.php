@@ -46,6 +46,10 @@ MYSQL;
     }
     
     public static function find_by_page_tag($tag) {
+        /*
+         * Returns ACL for given page tag. If ACL not found, returns defaults
+         * from config file.
+         */
         $sql_f = "SELECT * FROM %s WHERE page_tag = ? LIMIT 1";
         $sql = sprintf($sql_f, parent::get_table());
         

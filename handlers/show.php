@@ -179,10 +179,7 @@ HTML;
     }
      
     private function raw_page_requested() {
-        # TODO(klenwell): make this less insane.
-        # (bool) works as expected with '0' and '1'
-        return (! empty($_GET['raw'])) &&
-            ((bool) $this->wikka->GetSafeVar('raw', 'get'));
+        return $this->request->get_get_var('raw', FALSE);
     }
     
     /*
@@ -745,7 +742,6 @@ XHTML;
             $header_title = $this->format_comment_count($comment_count);
             
             if ( $comment_count < 1 ) {
-                #if ( $this->wikka->HasAccess('comment_post') ) {
                 if ( $this->user->can('comment_post', $this->page) ) {
                     $comment_form = $this->format_comment_form();
                 }

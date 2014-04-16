@@ -36,10 +36,6 @@ MYSQL;
     
     protected static $table = 'comments';
     
-    public static function find_all($tag, $order=NULL) {
-        
-    }
-    
     public static function find_by_page_tag($tag, $order=NULL) {
         $sql_f = <<<SQLF
 SELECT * FROM %s
@@ -109,6 +105,7 @@ SQLF;
     }
     
     public static function find_by_page_tag_in_threaded_order($tag) {
+        # TODO: replace with single query version
         $adjacency_list = array();
         
         # find parents first
@@ -135,7 +132,6 @@ SELECT COUNT(*) as count FROM %s
     WHERE page_tag = ?
     AND (status IS NULL or status != 'deleted')
 SQLF;
-        
         $sql = sprintf($sql_f, parent::get_table());
         
         $pdo = WikkaResources::connect_to_db();
