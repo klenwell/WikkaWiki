@@ -167,8 +167,15 @@ MYSQL;
     }
     
     public function belongs_to_group($page_tag) {
-        #TODO: See Wakka::isGroupMember
-        return FALSE;
+        $group_page = PageModel::find_by_tag($page_tag);
+        
+        if ( $group_page->exists() ) {
+            $needle = sprintf('+%s+', $this->field('name'));
+            return strpos($group_page->field('body'), $needle) !== FALSE;
+        }
+        else {
+            return FALSE;
+        }
     }
     
     public function exists() {
