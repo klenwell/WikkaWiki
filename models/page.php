@@ -10,6 +10,7 @@
  * @copyright   Copyright 2014  Tom Atwell <klenwell@gmail.com>
  *
  */
+require_once('wikka/registry.php');
 require_once('models/base.php');
 require_once('models/acl.php');
 
@@ -49,7 +50,7 @@ MYSQL;
         $sql_f = "SELECT * FROM %s WHERE tag = ? AND latest = 'Y'";
         $sql = sprintf($sql_f, parent::get_table());
         
-        $pdo = WikkaResources::connect_to_db();
+        $pdo = WikkaRegistry::connect_to_db();
         $query = $pdo->prepare($sql);
         $query->execute(array($tag));
         $result = $query->fetch(PDO::FETCH_ASSOC);
@@ -70,7 +71,7 @@ MYSQL;
         $sql_f = "SELECT * FROM %s WHERE tag = ? AND time = ?";
         $sql = sprintf($sql_f, parent::get_table());
         
-        $pdo = WikkaResources::connect_to_db();
+        $pdo = WikkaRegistry::connect_to_db();
         $query = $pdo->prepare($sql);
         $query->execute(array($tag, $time));
         $result = $query->fetch(PDO::FETCH_ASSOC);

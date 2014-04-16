@@ -8,6 +8,7 @@
  */
 require_once('version.php');
 require_once('wikka/constants.php');
+require_once('wikka/registry.php');
 require_once('models/user.php');
 
 
@@ -21,7 +22,7 @@ class UserModelTest extends PHPUnit_Framework_TestCase {
         $this->setUpMockServerEnvironment();
         $this->pdo = $this->setUpDatabase();
         
-        WikkaResources::init($this->config);
+        WikkaRegistry::init($this->config);
         $this->model = new UserModel($this->config);
         $this->model->pdo->exec(UserModel::get_schema());
     }

@@ -22,43 +22,8 @@
  * @copyright   Copyright 2014  Tom Atwell <klenwell@gmail.com>
  *
  */
+require_once('wikka/registry.php');
 
-#
-# WikkaResources
-# Singleton registry pattern
-# TODO: move into its own file
-# 
-class WikkaResources {
-    
-    public static $config = null;
-    private static $pdo = null;
-    
-    static public function init($config) {
-        self::$config = $config;
-    }
-    
-    static public function connect_to_db() {
-        if ( is_null(self::$config) ) {
-            throw new Exception(
-                'Config not set: have you called WikkaResources::init?');
-        }
-        
-        if ( ! is_null(self::$pdo) ) {
-            return self::$pdo;
-        }
-        else {
-            $dsn = sprintf('mysql:host=%s;dbname=%s',
-                self::$config['mysql_host'],
-                self::$config['mysql_database']);
-            self::$pdo = new PDO($dsn,
-                self::$config['mysql_user'],
-                self::$config['mysql_password']
-            );
-            self::$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-            return self::$pdo;
-        }
-    }
-}
 
 
 class WikkaModel {
@@ -89,8 +54,8 @@ MYSQL;
      * Constructor
      */
     public function __construct() {
-        $this->pdo = WikkaResources::connect_to_db();
-        $this->config = WikkaResources::$config;
+        $this->pdo = WikkaRegistry::connect_to_db();
+        $this->config = WikkaRegistry::$config;
     }
     
     /*
@@ -113,7 +78,7 @@ MYSQL;
         $vars = array();
         
         $replacement = array(
-            'prefix' => WikkaResources::$config['table_prefix'],
+            'prefix' => WikkaRegistry::get_config('table_prefix'),
             'engine' => WIKKA_MYSQL_ENGINE
         );
         
@@ -128,7 +93,7 @@ MYSQL;
     }
     
     static public function get_table() {
-        return WikkaResources::$config['table_prefix'] . static::$table;
+        return WikkaRegistry::get_config('table_prefix') . static::$table;
     }
     
     /*

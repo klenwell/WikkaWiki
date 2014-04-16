@@ -9,6 +9,7 @@
  * 
  */
 require_once('wikka/constants.php');
+require_once('wikka/registry.php');
 require_once('wikka/request.php');
 require_once('libs/Compatibility.lib.php');
 require_once('3rdparty/core/php-gettext/gettext.inc');
@@ -70,7 +71,7 @@ class ShowHandlerTest extends PHPUnit_Framework_TestCase {
     
     public function setUp() {
         $this->setUpMockServerEnvironment();
-        WikkaResources::init(self::$config);
+        WikkaRegistry::init(self::$config);
         
         $request = new WikkaRequest();
         $this->show_handler = new ShowHandler($request);

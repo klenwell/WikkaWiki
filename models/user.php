@@ -10,6 +10,7 @@
  * @copyright   Copyright 2014  Tom Atwell <klenwell@gmail.com>
  *
  */
+require_once('wikka/registry.php');
 require_once('models/base.php');
 
  
@@ -56,7 +57,7 @@ MYSQL;
         $sql_f = "SELECT * FROM %s WHERE name = ? LIMIT 1";
         $sql = sprintf($sql_f, parent::get_table());
         
-        $pdo = WikkaResources::connect_to_db();
+        $pdo = WikkaRegistry::connect_to_db();
         $query = $pdo->prepare($sql);
         $query->execute(array($name));
         $result = $query->fetch(PDO::FETCH_ASSOC);

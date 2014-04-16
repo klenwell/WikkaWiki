@@ -10,6 +10,7 @@
  * @copyright   Copyright 2014  Tom Atwell <klenwell@gmail.com>
  *
  */
+require_once('wikka/registry.php');
 require_once('models/base.php');
 
  
@@ -62,7 +63,7 @@ SQLF;
         
         $sql = sprintf($sql_f, parent::get_table(), $order_by);
         
-        $pdo = WikkaResources::connect_to_db();
+        $pdo = WikkaRegistry::connect_to_db();
         $query = $pdo->prepare($sql);
         $query->execute(array($tag));
         $rows = $query->fetchAll(PDO::FETCH_ASSOC);
@@ -85,7 +86,7 @@ SQLF;
         $descendants = array();
         
         $sql_f = 'SELECT * FROM %s WHERE parent = ?';
-        $pdo = WikkaResources::connect_to_db();
+        $pdo = WikkaRegistry::connect_to_db();
         $query = $pdo->prepare(sprintf($sql_f, parent::get_table()));
         $query->execute(array($id));
         $rows = $query->fetchAll(PDO::FETCH_ASSOC);
@@ -110,7 +111,7 @@ SQLF;
         
         # find parents first
         $sql_f = 'SELECT * FROM %s WHERE page_tag = ? AND parent IS NULL';
-        $pdo = WikkaResources::connect_to_db();
+        $pdo = WikkaRegistry::connect_to_db();
         $query = $pdo->prepare(sprintf($sql_f, parent::get_table()));
         $query->execute(array($tag));
         $parents = $query->fetchAll(PDO::FETCH_ASSOC);
@@ -134,7 +135,7 @@ SELECT COUNT(*) as count FROM %s
 SQLF;
         $sql = sprintf($sql_f, parent::get_table());
         
-        $pdo = WikkaResources::connect_to_db();
+        $pdo = WikkaRegistry::connect_to_db();
         $query = $pdo->prepare($sql);
         $query->execute(array($tag));
         $result = $query->fetch(PDO::FETCH_ASSOC);

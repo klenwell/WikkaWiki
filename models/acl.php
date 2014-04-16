@@ -10,6 +10,7 @@
  * @copyright   Copyright 2014  Tom Atwell <klenwell@gmail.com>
  *
  */
+require_once('wikka/registry.php');
 require_once('models/base.php');
 
  
@@ -35,7 +36,7 @@ MYSQL;
      * Static Methods
      */
     public static function load_defaults() {
-        $config = WikkaResources::$config;
+        $config = WikkaRegistry::$config;
         $default_acls = array(
             'read_acl' => $config['default_read_acl'],
             'write_acl' => $config['default_write_acl'],
@@ -53,7 +54,7 @@ MYSQL;
         $sql_f = "SELECT * FROM %s WHERE page_tag = ? LIMIT 1";
         $sql = sprintf($sql_f, parent::get_table());
         
-        $pdo = WikkaResources::connect_to_db();
+        $pdo = WikkaRegistry::connect_to_db();
         $query = $pdo->prepare($sql);
         $query->execute(array($tag));
         $row = $query->fetch(PDO::FETCH_ASSOC);

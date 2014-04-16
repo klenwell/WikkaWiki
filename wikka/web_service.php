@@ -13,11 +13,11 @@
  * @copyright   Copyright 2014  Tom Atwell <klenwell@gmail.com>
  *  
  */
+require_once('wikka/registry.php');
 require_once('wikka/request.php');
 require_once('wikka/response.php');
 require_once('wikka/templater.php');
 require_once('libs/Wikka.class.php');
-require_once('models/base.php');
 
 
 
@@ -46,7 +46,7 @@ class WikkaWebService {
         
         $this->verify_requirements();
         $this->config = $this->load_config($config_file_path);
-        WikkaResources::init($this->config);
+        WikkaRegistry::init($this->config);
     }
     
     /*

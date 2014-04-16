@@ -23,8 +23,9 @@
  * @copyright   Copyright 2014  Tom Atwell <klenwell@gmail.com>
  *
  */
-require_once('models/base.php');
+require_once('wikka/registry.php');
  
+
  
 class WikkaHandler {
     
@@ -60,7 +61,7 @@ HTML;
      */
     public function __construct($request) {
         $this->request = $request;
-        $this->config = WikkaResources::$config;
+        $this->config = WikkaRegistry::$config;
         
         if ( $this->debug ) {
             error_reporting(E_ALL);
