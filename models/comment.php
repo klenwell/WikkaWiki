@@ -40,7 +40,7 @@ MYSQL;
     /*
      * Public Static Methods
      */
-    public static function find_by_page_tag($tag, $order=NULL) {
+    public static function find_by_page_tag_as_array($tag, $order=NULL) {
         $sql_f = <<<SQLF
 SELECT * FROM %s
     WHERE page_tag = ?
@@ -77,9 +77,7 @@ SQLF;
         
         $comments = array();
         foreach ( $rows as $row ) {
-            $comment = new CommentModel();
-            $comment->fields = $row;
-            $comments[] = $comment;
+            $comments[] = $row;
         }
 
         return $comments;
@@ -90,7 +88,12 @@ SQLF;
         $adjacency_list = array();
         
         # find parents first
-        $sql_f = 'SELECT * FROM %s WHERE page_tag = ? AND parent IS NULL';
+        $sql_f = <<<SQLF
+SELECT * FROM %s
+    WHERE page_tag = ?
+    AND parent IS NULL
+    ORDER BY id ASC
+SQLF;
         $pdo = WikkaRegistry::connect_to_db();
         $query = $pdo->prepare(sprintf($sql_f, parent::get_table()));
         $query->execute(array($tag));
@@ -100,7 +103,7 @@ SQLF;
         foreach ( $parents as $parent ) {
             $parent['level'] = 0;
             $adjacency_list[] = $parent;
-            $children = self::find_descendants_by_parent_id($parent['id'], 1);
+            $children = self::find_descendants_by_parent_id_as_array($parent['id'], 1);
             $adjacency_list = array_merge($adjacency_list, $children);
         }
         
@@ -147,7 +150,7 @@ SQLF;
     /*
      * Private Static Methods
      */
-    private static function find_descendants_by_parent_id($id, $level=0) {
+    private static function find_descendants_by_parent_id_as_array($id, $level=0) {
         $descendants = array();
         
         $sql_f = 'SELECT * FROM %s WHERE parent = ?';
@@ -162,7 +165,7 @@ SQLF;
                 $child['level'] = $level;
                 $descendants[] = $child;
                 $descendants = array_merge($descendants,
-                    self::find_descendants_by_parent_id($child['id'], $level+1)
+                    self::find_descendants_by_parent_id_as_array($child['id'], $level+1)
                 );
             }
         }

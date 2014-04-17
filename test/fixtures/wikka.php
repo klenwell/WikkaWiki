@@ -2,6 +2,7 @@
 
 require_once('version.php');
 require_once('wikka/constants.php');
+require_once('wikka/functions.php');
 require_once('wikka/registry.php');
 
 
@@ -18,8 +19,9 @@ class WikkaFixture {
     static public function init_config() {
         include('wikka/default.config.php');
         include('test/test.config.php');
-        $config = array_merge($wakkaDefaultConfig, $wakkaConfig);
-        WikkaRegistry::init($config);
+        $wakkaConfig = array_merge($wakkaDefaultConfig, $wakkaConfig);
+        WikkaRegistry::init($wakkaConfig);
+        require_once('wikka/language_defaults.php');
     }
     
     static public function init_server_env() {

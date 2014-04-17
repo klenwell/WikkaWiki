@@ -33,7 +33,24 @@ class CommentModelTest extends PHPUnit_Framework_TestCase {
     /**
      * Tests
      */
-    public function testFindByPageTag() {
+    public function testFindByPageTagInThreadedOrder() {
+        $comments = CommentModel::find_by_page_tag_in_threaded_order('CommentBoard');
+        $this->assertEquals('Parent Comment #1', $comments[0]['comment']);
+        $this->assertEquals('Child #2 of Parent Comment #1',
+            $comments[2]['comment']);
+        $this->assertEquals('Grandchild #1 of Parent Comment #2',
+            $comments[5]['comment']);
+    }
+    
+    public function testFindByPageTagInAscendingOrder() {
+        $comments = CommentModel::find_by_page_tag_as_array('CommentBoard',
+            COMMENT_ORDER_DATE_ASC);
+        $this->assertEquals('Parent Comment #1', $comments[0]['comment']);
+        $this->assertEquals('Grandchild #1 of Parent Comment #2',
+            $comments[count($comments)-1]['comment']);
+    }
+    
+    public function testCountByPageTag() {
         $count = CommentModel::count_by_page_tag('CommentBoard');
         $this->assertEquals(6, $count);
     }

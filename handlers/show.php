@@ -193,7 +193,7 @@ HTML;
     private function load_comments() {
         $page_tag = $this->page->fields['tag'];
         $order = $this->get_requested_comment_display_mode();
-        return CommentModel::find_by_page_tag($page_tag, $order);
+        return CommentModel::find_by_page_tag_as_array($page_tag, $order);
     }
     
     private function get_requested_comment_display_mode() {
