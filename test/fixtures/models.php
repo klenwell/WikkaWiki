@@ -80,7 +80,7 @@ class CommentModelFixture extends WikkaModelFixture {
         WikkaModelFixture::init_database();
         $model = new CommentModel();
         WikkaModelFixture::init_table($model);
-        CommentModelFixture::init_fixture_data();
+        CommentModelFixture::init_comment_data();
         return $model;
     }
     
@@ -88,7 +88,7 @@ class CommentModelFixture extends WikkaModelFixture {
         WikkaModelFixture::tear_down();
     }
     
-    static public function init_fixture_data() {
+    static public function init_comment_data() {
         foreach ( self::$data['comments'] as $comment_data ) {
             self::save_comment_and_children($comment_data);
         }
