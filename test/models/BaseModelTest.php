@@ -85,7 +85,7 @@ class BaseModelTest extends PHPUnit_Framework_TestCase {
     }
     
     /**
-     * Testsrequire_once('wikka/registry.php');
+     * Tests
      */
     public function testSaveInstanceWithInvalidField() {
         $instance = WikkaModel::init(array(

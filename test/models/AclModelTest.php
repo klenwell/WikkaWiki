@@ -9,6 +9,8 @@
 require_once('models/acl.php');
 require_once('test/fixtures/wikka.php');
 require_once('test/fixtures/models.php');
+require_once('wikka/registry.php');
+
 
 
 class AclModelTest extends PHPUnit_Framework_TestCase {
@@ -29,6 +31,13 @@ class AclModelTest extends PHPUnit_Framework_TestCase {
     /**
      * Tests
      */
+    public function testFindByPageTagForUnsavedPage() {
+        $page_acl = AccessControlListModel::find_by_page_tag('SecretPageNotFound');
+        $this->assertEquals('SecretPageNotFound', $page_acl->field('page_tag'));
+        $this->assertEquals(WikkaRegistry::get_config('default_write_acl'),
+            $page_acl->field('write_acl'));
+    }
+    
     public function testFindByPageTag() {
         $page_acl = AccessControlListModel::find_by_page_tag('SecretPage');
         $this->assertEquals('SecretPage', $page_acl->field('page_tag'));

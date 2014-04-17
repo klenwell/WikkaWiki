@@ -1,4 +1,9 @@
 <?php
+require_once('wikka/registry.php');
+require_once('models/acl.php');
+require_once('models/comment.php');
+
+
 
 class WikkaModelFixture {
     static public function init_database() {
@@ -34,6 +39,81 @@ class WikkaModelFixture {
         $pdo->exec(sprintf('DROP DATABASE `%s`',
             WikkaRegistry::get_config('mysql_database')));
         WikkaRegistry::disconnect_from_db();
+    }
+}
+
+
+class CommentModelFixture extends WikkaModelFixture {
+    
+    static public $data = array(
+        'user_name' => 'WikkaCommentor',
+        'page_tag' => 'CommentBoard',
+        'comments' => array(
+            array(
+                'text' => 'Parent Comment #1',
+                'children' => array(
+                    array(
+                        'text' => 'Child #1 of Parent Comment #1',
+                    ),
+                    array(
+                        'text' => 'Child #2 of Parent Comment #1',
+                    )
+                )
+            ),
+            array(
+                'text' => 'Parent Comment #2',
+                'children' => array(
+                    array(
+                        'text' => 'Child #1 of Parent Comment #2',
+                        'children' => array(
+                            array(
+                                'text' => 'Grandchild #1 of Parent Comment #2',
+                            )
+                        )
+                    )
+                )
+            )
+        )
+    );
+
+    static public function init() {
+        WikkaModelFixture::init_database();
+        $model = new CommentModel();
+        WikkaModelFixture::init_table($model);
+        CommentModelFixture::init_fixture_data();
+        return $model;
+    }
+    
+    static public function tear_down() {
+        WikkaModelFixture::tear_down();
+    }
+    
+    static public function init_fixture_data() {
+        foreach ( self::$data['comments'] as $comment_data ) {
+            self::save_comment_and_children($comment_data);
+        }
+    }
+    
+    static private function save_comment_and_children($comment_data, $parent_id=null) {
+        $model = new CommentModel();
+        $model->fields = array(
+            'page_tag' => self::$data['page_tag'],
+            'user' => self::$data['user_name'],
+            'comment' => $comment_data['text']
+        );
+        
+        if ( ! is_null($parent_id) ) {
+            $model->fields['parent'] = $parent_id;
+        }
+        
+        $query = $model->save();
+        $parent_id = $model->pdo->lastInsertId('id');
+        
+        if ( isset($comment_data['children']) ) {
+            foreach ( $comment_data['children'] as $child_data ) {
+                self::save_comment_and_children($child_data, $parent_id);
+            }
+        }
     }
 }
 

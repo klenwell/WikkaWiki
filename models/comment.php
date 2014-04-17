@@ -22,13 +22,13 @@ class CommentModel extends WikkaModel {
     protected static $schema = <<<MYSQL
 CREATE TABLE {{prefix}}comments (
 	id int(10) unsigned NOT NULL auto_increment,
+	parent int(10) unsigned default NULL,
 	page_tag varchar(75) NOT NULL default '',
-	time datetime NOT NULL default '0000-00-00 00:00:00',
-	comment text NOT NULL,
 	user varchar(75) NOT NULL default '',
-	parent int(10) unsigned default NULL,. 
+	comment text NOT NULL,
 	status enum('deleted') default NULL,
 	deleted char(1) default NULL,
+	time datetime NOT NULL default '0000-00-00 00:00:00',
 	PRIMARY KEY  (id),
 	KEY idx_page_tag (page_tag),
 	KEY idx_time (time)
@@ -37,6 +37,9 @@ MYSQL;
     
     protected static $table = 'comments';
     
+    /*
+     * Public Static Methods
+     */
     public static function find_by_page_tag($tag, $order=NULL) {
         $sql_f = <<<SQLF
 SELECT * FROM %s
@@ -82,29 +85,6 @@ SQLF;
         return $comments;
     }
     
-    public static function find_descendants_by_parent_id($id, $level=0) {
-        $descendants = array();
-        
-        $sql_f = 'SELECT * FROM %s WHERE parent = ?';
-        $pdo = WikkaRegistry::connect_to_db();
-        $query = $pdo->prepare(sprintf($sql_f, parent::get_table()));
-        $query->execute(array($id));
-        $rows = $query->fetchAll(PDO::FETCH_ASSOC);
-        
-        if ( $rows ) {
-            foreach ( $rows as $row ) {
-                $child = $row;
-                $child['level'] = $level;
-                $descendants[] = $child;
-                $descendants = array_merge($descendants,
-                    self::find_descendants_by_parent_id($child['id'], $level+1)
-                );
-            }
-        }
-        
-        return $descendants;
-    }
-    
     public static function find_by_page_tag_in_threaded_order($tag) {
         # TODO: replace with single query version
         $adjacency_list = array();
@@ -148,4 +128,45 @@ SQLF;
         }
     }
     
+    /*
+     * Public Instance Methods
+     */
+    public function save() {
+        $sql_f = 'INSERT INTO %s (%s, time) VALUES (%s, NOW())';
+        $sql = sprintf($sql_f,
+            $this->get_table(),
+            implode(', ', array_keys($this->fields)),
+            implode(', ', array_fill(0, count($this->fields), '?'))
+        );
+        
+        $query = $this->pdo->prepare($sql);
+        $query->execute(array_values($this->fields));
+        return $query;
+    }
+    
+    /*
+     * Private Static Methods
+     */
+    private static function find_descendants_by_parent_id($id, $level=0) {
+        $descendants = array();
+        
+        $sql_f = 'SELECT * FROM %s WHERE parent = ?';
+        $pdo = WikkaRegistry::connect_to_db();
+        $query = $pdo->prepare(sprintf($sql_f, parent::get_table()));
+        $query->execute(array($id));
+        $rows = $query->fetchAll(PDO::FETCH_ASSOC);
+        
+        if ( $rows ) {
+            foreach ( $rows as $row ) {
+                $child = $row;
+                $child['level'] = $level;
+                $descendants[] = $child;
+                $descendants = array_merge($descendants,
+                    self::find_descendants_by_parent_id($child['id'], $level+1)
+                );
+            }
+        }
+        
+        return $descendants;
+    }
 }
