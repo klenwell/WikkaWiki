@@ -136,6 +136,12 @@ SQLF;
      */
     public function save() {
         $sql_f = 'INSERT INTO %s (%s, time) VALUES (%s, NOW())';
+        
+        # Use database time for time
+        if ( isset($this->fields['time']) ) {
+            unset($this->fields['time']);
+        }
+        
         $sql = sprintf($sql_f,
             $this->get_table(),
             implode(', ', array_keys($this->fields)),

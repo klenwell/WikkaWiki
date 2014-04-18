@@ -2,6 +2,7 @@
 require_once('wikka/registry.php');
 require_once('models/acl.php');
 require_once('models/comment.php');
+require_once('models/page.php');
 
 
 
@@ -39,6 +40,51 @@ class WikkaModelFixture {
         $pdo->exec(sprintf('DROP DATABASE `%s`',
             WikkaRegistry::get_config('mysql_database')));
         WikkaRegistry::disconnect_from_db();
+    }
+}
+
+
+class PageModelFixture extends WikkaModelFixture {
+    
+    static public $data = array(
+        array(
+            'tag' => 'WikkaPage',
+            'owner' => 'WikkaOwner',
+            'user' => 'WikkaOwner',
+            'title' => 'Wikka Page',
+            'body' => 'Whan that WikkaPage with his shoures soote...',
+            'note' => 'version 1'
+        ),
+        array(
+            'tag' => 'WikkaPage',
+            'owner' => 'WikkaOwner',
+            'user' => 'WikkaUser',
+            'title' => 'Wikka Page',
+            'body' => 'Whan that WikkaPage with his shoures soote (updated!)',
+            'note' => 'version 2'
+        ),
+        array(
+            'tag' => 'WikkaPage',
+            'owner' => 'WikkaOwner',
+            'user' => 'WikkaUser',
+            'title' => 'Wikka Page',
+            'body' => 'Whan that WikkaPage with his shoures sooty!',
+            'note' => 'version 3'
+        ),
+    );
+
+    static public function init() {
+        WikkaModelFixture::init_database();
+        $model = new PageModel();
+        
+        WikkaModelFixture::init_table($model);
+        WikkaModelFixture::init_fixture_data($model, self::$data);
+        
+        return $model;
+    }
+    
+    static public function tear_down() {
+        WikkaModelFixture::tear_down();
     }
 }
 

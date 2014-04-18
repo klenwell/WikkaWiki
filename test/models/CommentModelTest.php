@@ -17,9 +17,6 @@ class CommentModelTest extends PHPUnit_Framework_TestCase {
     /**
      * Test Fixtures
      */
-    /**
-     * Test Fixtures
-     */
     public function setUp() {
         WikkaFixture::init();
         $this->model = CommentModelFixture::init();
