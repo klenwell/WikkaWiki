@@ -31,24 +31,55 @@ class PageModelTest extends PHPUnit_Framework_TestCase {
      * Tests
      */
     public function testExists() {
+        $page = PageModel::find_by_tag('WikkaPage');
+        $this->assertTrue($page->exists());
+
+        $page = PageModel::find_by_tag('PageThatDoesNotExist');
+        $this->assertFalse($page->exists());
     }
 
     public function testIsLatestVersion() {
+        $page = PageModel::find_by_tag('WikkaPage');
+        $this->assertTrue($page->is_latest_version());
+
+        $page = PageModel::find_by_tag('PageThatDoesNotExist');
+        $this->assertFalse($page->is_latest_version());
     }
 
     public function testIsOwnedBy() {
+        $page = PageModel::find_by_tag('WikkaPage');
+
+        $owner = new stdClass;
+        $owner->fields = array('name' => 'WikkaOwner');
+        $this->assertTrue($page->is_owned_by($owner));
+
+        $user = new stdClass;
+        $user->fields = array('name' => 'WikkaUser');
+        $this->assertFalse($page->is_owned_by($user));
     }
 
     public function testLoadAcls() {
+        # Create ACLs for WikkaPage
+
+        # Verify WikkaPage ACLs
     }
 
     public function testPrettyPageTag() {
+        $page = PageModel::find_by_tag('WikkaPage');
+        $page->fields['tag'] = "A_Page_Tag_With_Underscores";
+        $this->assertEquals('A Page Tag With Underscores', $page->pretty_page_tag());
     }
 
     public function testTagIsValid() {
+        $page = PageModel::find_by_tag('WikkaPage');
+        $this->assertTrue($page->tag_is_valid());
+
+        $page->fields['tag'] = "%I'm bad?%";
+        $this->assertFalse($page->tag_is_valid());
     }
 
     public function testFindByTagAndTime() {
+        # How to test this?
     }
 
     public function testFindByTag() {
