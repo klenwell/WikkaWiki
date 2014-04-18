@@ -30,6 +30,11 @@ class PageModelTest extends PHPUnit_Framework_TestCase {
     /**
      * Tests
      */
+    public function testCountRevisions() {
+        $page = PageModel::find_by_tag('WikkaPage');
+        $this->assertEquals(3, $page->count_revisions());
+    }
+
     public function testExists() {
         $page = PageModel::find_by_tag('WikkaPage');
         $this->assertTrue($page->exists());

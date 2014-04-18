@@ -142,6 +142,17 @@ MYSQL;
         return $this->field('latest') == 'Y';
     }
 
+    public function count_revisions() {
+        $sql_f = "SELECT COUNT(*) as count FROM %s WHERE tag = ?";
+        $sql = sprintf($sql_f, parent::get_table());
+
+        $query = $this->pdo->prepare($sql);
+        $query->execute(array($this->fields['tag']));
+        $result = $query->fetch(PDO::FETCH_ASSOC);
+
+        return ( $result ) ? $result['count'] : 0;
+    }
+
     /*
      * Private Methods
      */
