@@ -52,9 +52,23 @@ class PageModelTest extends PHPUnit_Framework_TestCase {
     }
 
     public function testFindByTag() {
+        $page = PageModel::find_by_tag('WikkaPage');
+        $this->assertEquals('Y', $page->field('latest'));
+        $this->assertEquals('version 3', $page->field('note'));
     }
 
     public function testSave() {
+        $this->model->fields = array(
+            'tag' => 'WikkaPage',
+            'owner' => 'WikkaOwner',
+            'user' => 'WikkaUser',
+            'title' => 'Wikka Page (Updated)',
+            'body' => 'Meet the new boss. Same as the old boss',
+            'note' => 'version whatever'
+        );
+
+        $query = $this->model->save();
+        $this->assertEquals(1, $query->rowCount());
     }
 
     public function testInstantiates() {
