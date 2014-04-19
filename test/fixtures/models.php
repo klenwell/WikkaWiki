@@ -51,10 +51,12 @@ class UserModelFixture extends WikkaModelFixture {
         array(
             'name' => 'WikkaUser',
             'email' => 'wikka_user@wikkawiki.org',
+            'show_comments' => 'Y'
         ),
         array(
             'name' => 'WikkaAdmin',
             'email' => 'wikka_admin@wikkawiki.org',
+            'show_comments' => 'N'
         )
     );
 

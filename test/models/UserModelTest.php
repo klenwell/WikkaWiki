@@ -32,10 +32,14 @@ class UserModelTest extends PHPUnit_Framework_TestCase {
      * Tests
      */
     public function testWantsCommentsForPage() {
-        # Default (per table schema): N
         $page = PageModel::find_by_tag('WikkaPage');
+
         $wikka_user = UserModel::find_by_name('WikkaUser');
         $wants_comments = $wikka_user->wants_comments_for_page($page);
+        $this->assertEquals('Y', $wants_comments);
+
+        $wikka_admin = UserModel::find_by_name('WikkaAdmin');
+        $wants_comments = $wikka_admin->wants_comments_for_page($page);
         $this->assertEquals('N', $wants_comments);
     }
 
