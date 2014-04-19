@@ -78,7 +78,7 @@ MYSQL;
         return $user;
     }
 
-    public static function unregistered_visitor() {
+    private static function unregistered_visitor() {
         $ip = $_SERVER['REMOTE_ADDR'];
 
         $user = new UserModel();
@@ -126,19 +126,19 @@ MYSQL;
             # Apply rule
             if ( $rule == '*' ) {
                 $access = $allow;
-                return $negated ^ $access;
+                return (boolean) ($negated ^ $access);
             }
             elseif ( $rule == '+' ) {
                 $access = ( $this->is_logged_in() ) ? $allow : $deny;
-                return $negated ^ $access;
+                return (boolean) ($negated ^ $access);
             }
             elseif ( $user_name == strtolower($rule) ) {
                 $access = $allow;
-                return $negated ^ $access;
+                return (boolean) ($negated ^ $access);
             }
             elseif ( $this->belongs_to_group($rule) ) {
                 $access = $allow;
-                return $negated ^ $access;
+                return (boolean) ($negated ^ $access);
             }
             else {
                 # Invalid rule? Just ignore.
@@ -167,6 +167,9 @@ MYSQL;
     }
 
     public function belongs_to_group($page_tag) {
+        #
+        # For explanation, see http://www.wikkawiki.org/ACLsWithUserGroups
+        #
         $group_page = PageModel::find_by_tag($page_tag);
 
         if ( $group_page->exists() ) {
@@ -185,7 +188,7 @@ MYSQL;
     public function wants_comments_for_page($page) {
         $page_tag = $page->fields['tag'];
 
-        if ( $this->exists() ) {
+        if ( ! $this->exists() ) {
             return FALSE;
         }
         elseif ( isset($this->fields['show_comments'][$page_tag]) ) {

@@ -3,6 +3,7 @@ require_once('wikka/registry.php');
 require_once('models/acl.php');
 require_once('models/comment.php');
 require_once('models/page.php');
+require_once('models/user.php');
 
 
 
@@ -40,6 +41,28 @@ class WikkaModelFixture {
         $pdo->exec(sprintf('DROP DATABASE `%s`',
             WikkaRegistry::get_config('mysql_database')));
         WikkaRegistry::disconnect_from_db();
+    }
+}
+
+
+class UserModelFixture extends WikkaModelFixture {
+
+    static public $data = array(
+        array(
+            'name' => 'WikkaUser',
+            'email' => 'wikka_user@wikkawiki.org',
+        ),
+        array(
+            'name' => 'WikkaAdmin',
+            'email' => 'wikka_admin@wikkawiki.org',
+        )
+    );
+
+    static public function init() {
+        $model = new UserModel();
+        WikkaModelFixture::init_table($model);
+        WikkaModelFixture::init_fixture_data($model, self::$data);
+        return $model;
     }
 }
 
