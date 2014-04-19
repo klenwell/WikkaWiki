@@ -191,8 +191,8 @@ MYSQL;
         if ( ! $this->exists() ) {
             return FALSE;
         }
-        elseif ( isset($this->fields['show_comments'][$page_tag]) ) {
-            return $this->fields['show_comments'][$page_tag];
+        elseif ( isset($this->fields['show_comments']) ) {
+            return $this->fields['show_comments'];
         }
         elseif ( isset($this->fields['default_comment_display']) ) {
             return $this->fields['default_comment_display'];
