@@ -78,7 +78,16 @@ class PageModelTest extends PHPUnit_Framework_TestCase {
     }
 
     public function testFindByTagAndTime() {
-        # How to test this?
+        $sql_f = "SELECT * FROM %s WHERE tag = ? ORDER BY id ASC";
+        $sql = sprintf($sql_f, PageModel::get_table());
+        $query = $this->model->pdo->prepare($sql);
+        $query->execute(array('WikkaPage'));
+        $result = $query->fetch(PDO::FETCH_ASSOC);
+
+        $page = PageModel::find_by_tag_and_time('WikkaPage', $result['time']);
+
+        $this->assertTrue($page->exists());
+        $this->assertEquals($result['time'], $page->field('time'));
     }
 
     public function testFindByTag() {
