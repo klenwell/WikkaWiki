@@ -43,6 +43,8 @@ MYSQL;
 
     protected static $table = 'pages';
 
+    private $acls = array();
+
     /*
      * Static Methods
      */
@@ -63,6 +65,10 @@ MYSQL;
         else {
             $page->fields['tag'] = $tag;
         }
+
+        # Load page ACLs
+        $acl = AccessControlListModel::find_by_page_tag($tag);
+        $page->acls = $acl->fields;
 
         return $page;
     }
@@ -85,6 +91,7 @@ MYSQL;
             $page->fields['tag'] = $tag;
         }
 
+        $page->acls = AccessControlListModel::find_by_page_tag($tag);
         return $page;
     }
 
@@ -120,10 +127,6 @@ MYSQL;
         return $this->fields['owner'] == $user->fields['name'];
     }
 
-    public function load_acls() {
-        return AccessControlListModel::find_by_page_tag($this->fields['tag']);
-    }
-
     public function exists() {
         return isset($this->fields['id']);
     }
@@ -140,6 +143,15 @@ MYSQL;
 
     public function is_latest_version() {
         return $this->field('latest') == 'Y';
+    }
+
+    public function acl($key) {
+        if ( isset($this->acls[$key]) ) {
+            return $this->acls[$key];
+        }
+        else {
+            return null;
+        }
     }
 
     public function count_revisions() {

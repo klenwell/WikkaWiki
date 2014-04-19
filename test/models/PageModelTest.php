@@ -20,11 +20,11 @@ class PageModelTest extends PHPUnit_Framework_TestCase {
     public function setUp() {
         WikkaFixture::init();
         $this->model = PageModelFixture::init();
+        AclModelFixture::init();
     }
 
     public function tearDown() {
         WikkaFixture::tear_down();
-        PageModelFixture::tear_down();
     }
 
     /**
@@ -63,12 +63,6 @@ class PageModelTest extends PHPUnit_Framework_TestCase {
         $this->assertFalse($page->is_owned_by($user));
     }
 
-    public function testLoadAcls() {
-        # Create ACLs for WikkaPage
-
-        # Verify WikkaPage ACLs
-    }
-
     public function testPrettyPageTag() {
         $page = PageModel::find_by_tag('WikkaPage');
         $page->fields['tag'] = "A_Page_Tag_With_Underscores";
@@ -91,6 +85,10 @@ class PageModelTest extends PHPUnit_Framework_TestCase {
         $page = PageModel::find_by_tag('WikkaPage');
         $this->assertEquals('Y', $page->field('latest'));
         $this->assertEquals('version 3', $page->field('note'));
+        $this->assertEquals(WikkaRegistry::get_config('default_read_acl'),
+            $page->acl('read_acl'));
+        $this->assertEquals(WikkaRegistry::get_config('default_write_acl'),
+            $page->acl('write_acl'));
     }
 
     public function testSave() {

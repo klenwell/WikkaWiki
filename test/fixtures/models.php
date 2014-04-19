@@ -9,7 +9,7 @@ require_once('models/page.php');
 class WikkaModelFixture {
     static public function init_database() {
         $config = WikkaRegistry::$config;
-        
+
         # Create db connection
         $host = sprintf('mysql:host=%s', $config['mysql_host']);
         $pdo = new PDO($host, $config['mysql_user'], $config['mysql_password']);
@@ -19,22 +19,22 @@ class WikkaModelFixture {
         $pdo->exec(sprintf('DROP DATABASE IF EXISTS `%s`', $config['mysql_database']));
         $pdo->exec(sprintf('CREATE DATABASE `%s`', $config['mysql_database']));
         $pdo->query(sprintf('USE %s', $config['mysql_database']));
-        
+
         return WikkaRegistry::connect_to_db();
     }
-    
+
     static public function init_table($model) {
         $class = get_class($model);
         $model->pdo->exec($class::get_schema());
     }
-    
+
     static public function init_fixture_data($model, $data) {
         foreach ( $data as $record ) {
             $model->fields = $record;
             $model->save();
         }
     }
-    
+
     static public function tear_down() {
         $pdo = WikkaRegistry::connect_to_db();
         $pdo->exec(sprintf('DROP DATABASE `%s`',
@@ -45,7 +45,7 @@ class WikkaModelFixture {
 
 
 class PageModelFixture extends WikkaModelFixture {
-    
+
     static public $data = array(
         array(
             'tag' => 'WikkaPage',
@@ -74,23 +74,16 @@ class PageModelFixture extends WikkaModelFixture {
     );
 
     static public function init() {
-        WikkaModelFixture::init_database();
         $model = new PageModel();
-        
         WikkaModelFixture::init_table($model);
         WikkaModelFixture::init_fixture_data($model, self::$data);
-        
         return $model;
-    }
-    
-    static public function tear_down() {
-        WikkaModelFixture::tear_down();
     }
 }
 
 
 class CommentModelFixture extends WikkaModelFixture {
-    
+
     static public $data = array(
         'user_name' => 'WikkaCommentor',
         'page_tag' => 'CommentBoard',
@@ -123,23 +116,18 @@ class CommentModelFixture extends WikkaModelFixture {
     );
 
     static public function init() {
-        WikkaModelFixture::init_database();
         $model = new CommentModel();
         WikkaModelFixture::init_table($model);
         CommentModelFixture::init_comment_data();
         return $model;
     }
-    
-    static public function tear_down() {
-        WikkaModelFixture::tear_down();
-    }
-    
+
     static public function init_comment_data() {
         foreach ( self::$data['comments'] as $comment_data ) {
             self::save_comment_and_children($comment_data);
         }
     }
-    
+
     static private function save_comment_and_children($comment_data, $parent_id=null) {
         $model = new CommentModel();
         $model->fields = array(
@@ -147,14 +135,14 @@ class CommentModelFixture extends WikkaModelFixture {
             'user' => self::$data['user_name'],
             'comment' => $comment_data['text']
         );
-        
+
         if ( ! is_null($parent_id) ) {
             $model->fields['parent'] = $parent_id;
         }
-        
+
         $query = $model->save();
         $parent_id = $model->pdo->lastInsertId('id');
-        
+
         if ( isset($comment_data['children']) ) {
             foreach ( $comment_data['children'] as $child_data ) {
                 self::save_comment_and_children($child_data, $parent_id);
@@ -165,7 +153,7 @@ class CommentModelFixture extends WikkaModelFixture {
 
 
 class AclModelFixture extends WikkaModelFixture {
-    
+
     static public $data = array(
         array(
             'page_tag' => 'SecretPage',
@@ -177,16 +165,9 @@ class AclModelFixture extends WikkaModelFixture {
     );
 
     static public function init() {
-        WikkaModelFixture::init_database();
         $model = new AccessControlListModel();
-        
         WikkaModelFixture::init_table($model);
         WikkaModelFixture::init_fixture_data($model, self::$data);
-        
         return $model;
-    }
-    
-    static public function tear_down() {
-        WikkaModelFixture::tear_down();
     }
 }

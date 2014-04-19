@@ -7,15 +7,16 @@ require_once('wikka/registry.php');
 
 
 class WikkaFixture {
-    
+
     /*
      * API
      */
     static public function init() {
         self::init_config();
         self::init_server_env();
+        WikkaModelFixture::init_database();
     }
-    
+
     static public function init_config() {
         include('wikka/default.config.php');
         include('test/test.config.php');
@@ -23,7 +24,7 @@ class WikkaFixture {
         WikkaRegistry::init($wakkaConfig);
         require_once('wikka/language_defaults.php');
     }
-    
+
     static public function init_server_env() {
         $_SERVER = array(
             'SERVER_NAME'   => 'localhost',
@@ -36,12 +37,13 @@ class WikkaFixture {
         );
         return $_SERVER;
     }
-    
+
     static public function tear_down() {
         $_SERVER = array();
         self::tear_down_session();
+        WikkaModelFixture::tear_down();
     }
-    
+
     /*
      * Private Methods
      */

@@ -13,7 +13,7 @@
 require_once('wikka/registry.php');
 require_once('models/base.php');
 
- 
+
 
 class UserModel extends WikkaModel {
     /*
@@ -38,9 +38,9 @@ CREATE TABLE {{prefix}}users (
 	KEY idx_signuptime (signuptime)
 ) CHARACTER SET utf8 COLLATE utf8_unicode_ci ENGINE={{engine}}
 MYSQL;
-    
+
     protected static $table = 'users';
-    
+
     /*
      * Static Methods
      */
@@ -52,18 +52,18 @@ MYSQL;
             return self::unregistered_visitor();
         }
     }
-    
+
     public static function find_by_name($name) {
         $sql_f = "SELECT * FROM %s WHERE name = ? LIMIT 1";
         $sql = sprintf($sql_f, parent::get_table());
-        
+
         $pdo = WikkaRegistry::connect_to_db();
         $query = $pdo->prepare($sql);
         $query->execute(array($name));
         $result = $query->fetch(PDO::FETCH_ASSOC);
-        
+
         $user = new UserModel();
-        
+
         if ( $result ) {
             $user->fields = $result;
             $user->fields['exists'] = TRUE;
@@ -74,23 +74,23 @@ MYSQL;
                 'exists' => FALSE
             );
         }
-        
+
         return $user;
     }
-    
+
     public static function unregistered_visitor() {
         $ip = $_SERVER['REMOTE_ADDR'];
-        
+
         $user = new UserModel();
         $user->fields = array(
             'name' => ($ip) ? $ip : microtime(),
             'doubleclickedit' => FALSE,
             'exists' => FALSE
         );
-        
+
         return $user;
     }
-    
+
     /*
      * Public Instance Methods
      */
@@ -99,23 +99,22 @@ MYSQL;
         $deny = 0;
         $acl_key = sprintf('%s_acl', $action);
         $user_name = strtolower($this->fields['name']);
-        
+
         if ( $this->is_admin() || $page->is_owned_by($this) ) {
             return TRUE;
         }
-        
-        $page_acls = $page->load_acls();
-        $action_acl = $page_acls->fields[$acl_key];
-        
+
+        $action_acl =$page->acl($acl_key);
+
         # ACLs are line-separated
         $acl_list = explode("\n", $action_acl);
-        
+
         # Go line-by-line until you hit a matching rule
         foreach ($acl_list as $acl) {
             $acl = trim($acl);
             $negated = (int) (substr($acl, 0, 1) == '!');
             $acl = ( $negated ) ? trim(substr($acl, 1)) : $acl;
-            
+
             # Skip empty lines and comments
             if ( (! $acl) || ($acl[0] == '#') ) {
                 continue;
@@ -123,7 +122,7 @@ MYSQL;
             else {
                 $rule = $acl[0];
             }
-            
+
             # Apply rule
             if ( $rule == '*' ) {
                 $access = $allow;
@@ -146,30 +145,30 @@ MYSQL;
                 continue;
             }
         }
-        
+
         return FALSE;
     }
-    
+
     public function is_admin() {
         $admin_csv = $this->config['admin_users'];
         $admins = explode(',', $admin_csv);
-        
+
         foreach ($admins as $admin) {
             if ( $this->fields['name'] == trim($admin) ) {
                 return TRUE;
             }
         }
-        
+
         return FALSE;
     }
-    
+
     public function is_logged_in() {
         return $this->exists();
     }
-    
+
     public function belongs_to_group($page_tag) {
         $group_page = PageModel::find_by_tag($page_tag);
-        
+
         if ( $group_page->exists() ) {
             $needle = sprintf('+%s+', $this->field('name'));
             return strpos($group_page->field('body'), $needle) !== FALSE;
@@ -178,14 +177,14 @@ MYSQL;
             return FALSE;
         }
     }
-    
+
     public function exists() {
         return $this->fields['exists'];
     }
-    
+
     public function wants_comments_for_page($page) {
         $page_tag = $page->fields['tag'];
-        
+
         if ( $this->exists() ) {
             return FALSE;
         }

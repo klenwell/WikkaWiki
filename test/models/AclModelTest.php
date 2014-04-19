@@ -14,7 +14,7 @@ require_once('wikka/registry.php');
 
 
 class AclModelTest extends PHPUnit_Framework_TestCase {
- 
+
     /**
      * Test Fixtures
      */
@@ -22,12 +22,11 @@ class AclModelTest extends PHPUnit_Framework_TestCase {
         WikkaFixture::init();
         $this->model = AclModelFixture::init();
     }
-    
+
     public function tearDown() {
         WikkaFixture::tear_down();
-        AclModelFixture::tear_down();
     }
-    
+
     /**
      * Tests
      */
@@ -37,13 +36,13 @@ class AclModelTest extends PHPUnit_Framework_TestCase {
         $this->assertEquals(WikkaRegistry::get_config('default_write_acl'),
             $page_acl->field('write_acl'));
     }
-    
+
     public function testFindByPageTag() {
         $page_acl = AccessControlListModel::find_by_page_tag('SecretPage');
         $this->assertEquals('SecretPage', $page_acl->field('page_tag'));
         $this->assertEquals('!NSA', $page_acl->field('read_acl'));
     }
-    
+
     public function testLoadDefaults() {
         $defaults = AccessControlListModel::load_defaults();
         $this->assertEquals('*', $defaults['read_acl']);
@@ -51,7 +50,7 @@ class AclModelTest extends PHPUnit_Framework_TestCase {
         $this->assertEquals('*', $defaults['comment_read_acl']);
         $this->assertEquals('+', $defaults['comment_post_acl']);
     }
-    
+
     public function testSaveRecord() {
         $this->model->fields = array(
             'page_tag' => 'LockedPage',
@@ -60,11 +59,11 @@ class AclModelTest extends PHPUnit_Framework_TestCase {
             'comment_read_acl' => '!*',
             'comment_post_acl' => '!*',
         );
-        
+
         $query = $this->model->save();
         $this->assertEquals(1, $query->rowCount());
     }
-    
+
     public function testInstantiates() {
         $this->assertInstanceOf('AccessControlListModel', $this->model);
     }

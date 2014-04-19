@@ -13,7 +13,7 @@ require_once('wikka/registry.php');
 
 
 class CommentModelTest extends PHPUnit_Framework_TestCase {
- 
+
     /**
      * Test Fixtures
      */
@@ -21,12 +21,11 @@ class CommentModelTest extends PHPUnit_Framework_TestCase {
         WikkaFixture::init();
         $this->model = CommentModelFixture::init();
     }
-    
+
     public function tearDown() {
         WikkaFixture::tear_down();
-        CommentModelFixture::tear_down();
     }
-    
+
     /**
      * Tests
      */
@@ -38,7 +37,7 @@ class CommentModelTest extends PHPUnit_Framework_TestCase {
         $this->assertEquals('Grandchild #1 of Parent Comment #2',
             $comments[5]['comment']);
     }
-    
+
     public function testFindByPageTagInAscendingOrder() {
         $comments = CommentModel::find_by_page_tag_as_array('CommentBoard',
             COMMENT_ORDER_DATE_ASC);
@@ -46,23 +45,23 @@ class CommentModelTest extends PHPUnit_Framework_TestCase {
         $this->assertEquals('Grandchild #1 of Parent Comment #2',
             $comments[count($comments)-1]['comment']);
     }
-    
+
     public function testCountByPageTag() {
         $count = CommentModel::count_by_page_tag('CommentBoard');
         $this->assertEquals(6, $count);
     }
-    
+
     public function testSaveRecord() {
         $this->model->fields = array(
             'page_tag' => 'WikkaHoneyPot',
             'user' => 'MechanicalTurk1483',
             'comment' => "Eat at Joe's"
         );
-        
+
         $query = $this->model->save();
         $this->assertEquals(1, $query->rowCount());
     }
-    
+
     public function testInstantiates() {
         $this->assertInstanceOf('CommentModel', $this->model);
     }
