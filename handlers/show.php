@@ -6,9 +6,9 @@
  *
  * This is the default page handler used by Wikka when no other handler is specified.
  * It is used by the Wakka class to produce HTML output.
- * 
+ *
  * Depending on user privileges, it returns the page body or an error message. It also
- * includes footer comments and a form to post comments, depending on ACL and general 
+ * includes footer comments and a form to post comments, depending on ACL and general
  * config settings.
  *
  * USAGE
@@ -34,13 +34,13 @@ require_once('libs/Wikka.class.php');
 
 
 class ShowHandler extends WikkaHandler {
-    
+
     /*
      * Properties
      */
     # For Content-type header
     public $content_type = 'text/html; charset=utf-8';
-    
+
     # Template
     public $template = <<<HTML
 <div id="content"%s>
@@ -61,7 +61,7 @@ HTML;
     protected $revision_info = '';
     protected $page_content = '';
     protected $comment_block = '';
-    
+
     # Comment display modes (str => int)
     private $comment_display_modes = array(
         'none' => COMMENT_NO_DISPLAY,
@@ -69,7 +69,7 @@ HTML;
         'date_desc' => COMMENT_ORDER_DATE_DESC,
         'threaded' => COMMENT_ORDER_THREADED,
     );
-    
+
     /*
      * Constructor
      */
@@ -78,18 +78,18 @@ HTML;
         $this->page = $this->load_page($request);
         $this->user = UserModel::load();
     }
-    
+
     private function load_page($request) {
         $page = null;
         $revision_requested = $request->get_get_var('time', FALSE);
-        
+
         if ( $revision_requested ) {
             $page = PageModel::find_by_tag_and_time(
                 $request->route['page'],
                 $revision_requested
-            );    
+            );
         }
-        
+
         if ( $page ) {
             return $page;
         }
@@ -97,7 +97,7 @@ HTML;
             return PageModel::find_by_tag($request->route['page']);
         }
     }
-    
+
     /*
      * Main Handler Method
      */
@@ -105,37 +105,37 @@ HTML;
         if ( ! $this->request_is_valid() ) {
             return $this->show_error();
         }
-        
+
         if ( $this->double_click_is_active() ) {
             $this->double_click_edit = sprintf(' ondblclick="document.location=\'%s\'"',
                 $this->href($this->page->fields['tag'], 'edit', array('id' => $this->page))
             );
         }
-        
+
         if ( ! $this->page->is_latest_version() ) {
             $this->revision_info = $this->format_revision_info();
         }
-        
+
         if ( $this->raw_page_requested() ) {
             $this->page_content = $this->format_raw_page_content();
         }
         else {
             $this->page_content = $this->format_page_content();
         }
-        
+
         if ( $this->show_comments() ) {
             $comments = $this->load_comments();
             $this->comment_block = $this->format_comments($comments);
         }
-        
+
         $content = $this->format_content();
-        
+
         $response = new WikkaResponse($content);
         $response->status = 200;
         $response->set_header('Content-Type', $this->content_type);
         return $response;
     }
-    
+
     /*
      * Validation Methods
      */
@@ -147,12 +147,12 @@ HTML;
                 WIKKA_INVALID_CHARS);
             return false;
         }
-        
+
         if ( ! $this->page->exists() ) {
             $create_link = sprintf('<a href="%s">%s</a>',
                 $this->href($this->page->fields['tag']),
                 T_("create"));
-            
+
             $this->error = sprintf("<p>%s</p>\n",
                 sprintf(
                     T_("This page doesn't exist yet. Maybe you want to %s it?"),
@@ -161,59 +161,59 @@ HTML;
             );
             return false;
         }
-        
+
         if ( ! $this->user->can('read', $this->page) ) {
             $this->error = T_("You are not allowed to read this page.");
             return false;
         }
-        
+
         return true;
     }
-    
+
     /*
      * Status Methods
      */
     private function double_click_is_active() {
-        return ($this->user->fields['doubleclickedit'] == 'Y') &&
+        return ($this->user->field('doubleclickedit') == 'Y') &&
             $this->user->can('write', $this->page);
     }
-     
+
     private function raw_page_requested() {
         return $this->request->get_get_var('raw', FALSE);
     }
-    
+
     /*
      * Comment Methods
      */
     private function show_comments() {
-        return ($this->config['hide_comments'] != 1) &&
+        return (WikkaRegistry::get_config('hide_comments') != 1) &&
             $this->user->can('comment_read', $this->page);
     }
-    
+
     private function load_comments() {
         $page_tag = $this->page->fields['tag'];
         $order = $this->get_requested_comment_display_mode();
         return CommentModel::find_by_page_tag_as_array($page_tag, $order);
     }
-    
+
     private function get_requested_comment_display_mode() {
         $display_mode = null;
         $display_modes = array_values($this->comment_display_modes);
-        
+
         # Params
         $page_tag = $this->page->fields['tag'];
         $wants_comments = $this->user->wants_comments_for_page($this->page);
-        
+
         # Init display mode
         if ( isset($_SESSION['show_comments'][$page_tag]) ) {
             $display_mode = $_SESSION['show_comments'][$page_tag];
         }
-        
+
         if ( !(isset($_SESSION['show_comments'][$page_tag])) &&
             $wants_comments !== FALSE ) {
             $display_mode = $wants_comments;
         }
-        
+
         # GET value holds precedence
         if ( isset($_GET['show_comments']) ) {
             $requested_mode = $this->request->get_get_var('show_comments');
@@ -221,26 +221,23 @@ HTML;
                 $display_mode = $requested_mode;
             }
         }
-        
+
         $display_mode = (int) $display_mode;
         $_SESSION['show_comments'][$page_tag] = $display_mode;
         return $display_mode;
     }
-    
+
     private function get_preferred_comment_display_mode() {
         $display_mode = null;
-        
-        # Params
-        $configured_display = $this->config['default_comment_display'];
-        
+
         # Determine preference
         if ( isset($this->user->fields['default_comment_display']) ) {
             $display_mode = $this->user->fields['default_comment_display'];
         }
-        elseif ( !(is_null($configured_display)) ) {
-            $display_mode = $configured_display;
+        elseif ( !(is_null(WikkaRegistry::get_config('default_comment_display'))) ) {
+            $display_mode = WikkaRegistry::get_config('default_comment_display');
         }
-        
+
         if ( isset($this->comment_display_modes[$display_mode]) ) {
             return $this->comment_display_modes[$display_mode];
         }
@@ -248,12 +245,12 @@ HTML;
             return COMMENT_ORDER_THREADED;
         }
     }
-    
+
     private function collapse_comments() {
         $display_mode = $this->get_requested_comment_display_mode();
         return $display_mode == COMMENT_NO_DISPLAY;
     }
-    
+
     private function show_delete_button_for_comment($comment) {
         /*
          * Conditions for which delete button is displayed:
@@ -265,7 +262,7 @@ HTML;
         $is_page_owner = $this->page->is_owned_by($this->user);
         $current_user = $this->user->field('name');
         $is_comment_owner = ($current_user == $comment['user']);
-        
+
         if ( $is_logged_in && $is_page_owner ) {
             return true;
         }
@@ -279,28 +276,28 @@ HTML;
             return false;
         }
     }
-    
+
     /*
      * Helper Methods
      */
     private function href($page_name, $handler='', $params=array()) {
         $in_rewrite_mode = (bool) $this->config['rewrite_mode'];
         $page_name = preg_replace('/\s+/', '_', $page_name);
-        
+
         if ( $in_rewrite_mode ) {
             $wikka_url = $this->request->wikka_base_url;
         }
         else {
             $wikka_url = $this->request->wikka_base_url . WIKKA_URL_EXTENSION;
         }
-        
+
         if ( $handler ) {
             $route = sprintf('%s/%s', $page_name, $handler);
         }
         else {
             $route = $page_name;
         }
-        
+
         if ( $params ) {
             $hitch = ( $in_rewrite_mode ) ? '?' : '&';
             $query_string = $hitch . http_build_query($params);
@@ -308,17 +305,17 @@ HTML;
         else {
             $query_string = '';
         }
-        
+
         return sprintf('%s%s%s', $wikka_url, $route, $query_string);
     }
-    
+
     private function build_link($href, $label=NULL, $attr_dict=array()) {
         $format = '<a href="%s"%s>%s</a>';
-        
+
         if ( is_null($label) ) {
             $label = $href;
         }
-        
+
         if ( $attr_dict ) {
             $attr_list = array();
             foreach ( $attr_dict as $attr => $value ) {
@@ -330,27 +327,27 @@ HTML;
         else {
             $attrs = '';
         }
-        
+
         return sprintf($format, $href, $attrs, $label);
     }
-    
+
     private function wiki_link($page_tag, $handler=NULL, $label=NULL, $track=TRUE,
         $assume_page_exists=TRUE) {
-        
+
         $href = '';
         $label = ( ! $label ) ? $page_tag : $label;
         $attr_dict = array();
-        
+
         $page_tag = htmlspecialchars($page_tag);
         $handler = htmlspecialchars($handler);
         $label = htmlspecialchars($label);
-        
+
         $is_fully_qualified_url = preg_match(RE_FULLY_QUALIFIED_URL, $page_tag);
         $is_email_address = preg_match(RE_EMAIL_ADDRESS, $page_tag);
-        
+
         if ( $is_fully_qualified_url ) {
             $href = $page_tag;
-            
+
             $re_pattern = sprintf('/%s/', preg_quote($_SERVER['SERVER_NAME']));
             if (! preg_match($re_pattern, $page_tag)) {
                 $attr_dict['class'] = 'ext';
@@ -362,12 +359,12 @@ HTML;
         }
         else {
             $page = PageModel::find_by_tag($page_tag);
-            
+
             if (isset($_SESSION['linktracking']) && $_SESSION['linktracking']
                 && $track) {
                 $_SESSION['linktable'][] = $page_tag;
             }
-            
+
             if ( (! $assume_page_exists) && (! $page->exists()) ) {
                 $href = $this->href($page_tag, 'edit');
                 $attr_dict['class'] = 'missingpage';
@@ -377,23 +374,23 @@ HTML;
                 $href = $this->href($page_tag, $handler);
             }
         }
-        
+
         return $this->build_link($href, $label, $attr_dict);
     }
-    
+
     private function format_user($user_name, $as_link=TRUE) {
         $format = '<span class="%s">%s</span>';
-        
+
         if ( ! $user_name ) {
             return 'anonymous';
         }
-        
+
         $user = UserModel::find_by_name($user_name);
-        
+
         if ( $user->exists() ) {
             $class = 'user';
             $user_page = PageModel::find_by_tag($user_name);
-            
+
             if ( $user_page->exists() && $as_link ) {
                 $label = $user_name;
                 $href = $this->href($user_name);
@@ -409,57 +406,57 @@ HTML;
 
         return sprintf($format, $class, $user_name);
     }
-    
+
     private function open_form($page_tag, $handler='', $method='post', $options=null) {
         /*
          * Does not support file uploads.
          */
         $attr_dict = array();
         $hidden_fields = array();
-        
+
         # Optional args
         $id = ( isset($options['id']) ) ? $options['id'] : '';
         $class = ( isset($options['class']) ) ? $options['class'] : '';
         $anchor = ( isset($options['anchor']) ) ? $options['anchor'] : '';
-        
+
         $page = PageModel::find_by_tag($page_tag);
         if ( ! $page->exists() ) {
             $page = $this->page;
         }
         $page_tag = $page->field('tag');
-        
+
         # Set action attr
         $attr_dict['action'] = $this->href($page_tag, $handler);
         $attr_dict['method'] = strtolower($method);
         $attr_dict['id'] = $id;
-        
+
         # Add anchor
         if ( $anchor ) {
             $attr_dict['action'] = sprintf('%s#%s', $attr_dict['action'], $anchor);
         }
-        
+
         # If rewrite mode off, must add hidden field with page tag
-        if ( ! $this->config['rewrite_mode'] ) {
+        if ( ! WikkaRegistry::get_config('rewrite_mode') ) {
             $fs = ( $handler ) ? '/' : '';
             $hidden_fields['wakka'] = $page_tag . $fs . $handler;
         }
-        
+
         # If id blank, generate an ID
         if ( ! $attr_dict['id'] ) {
             $md5 = md5($handler.$page_tag.$method.$class);
             $id = substr($md5, 0, ID_LENGTH);
             $attr_dict['id'] = generate_wikka_form_id('form', $id);
         }
-        
+
         if ( $class ) {
             $attr_dict['class'] = $class;
         }
-        
+
         # If POST form, add hidden field for CSRF token
         if ( $attr_dict['method'] == 'post' ) {
             $hidden_fields['CSRFToken'] = $_SESSION['CSRFToken'];
         }
-        
+
         # Build attrs
         $attr_list = array();
         foreach ( $attr_dict as $attr => $value ) {
@@ -467,7 +464,7 @@ HTML;
                 str_replace('"', '\"', $value));
         }
         $attrs = sprintf(' %s', implode(' ', $attr_list));
-        
+
         # Build hidden fieldset
         if ( $hidden_fields ) {
             $format = '<input type="hidden" name="%s" value="%s" />';
@@ -482,35 +479,35 @@ HTML;
         else {
             $hidden_fieldset = '';
         }
-        
+
         return sprintf("<form%s>%s", $attrs, $hidden_fieldset);
     }
-    
+
     private function close_form() {
         return "</form>\n";
     }
-    
+
     private function render_using_formatter($text, $formatter='wakka', $options='') {
         if ( ! preg_match(RE_VALID_FORMATTER_NAME, $formatter) ) {
             throw new WikkaFormatterError(T_(
                 'Formatter name contains invalid characters'));
         }
-        
+
         $formatter = strtolower($formatter);
         $formatter_fname = sprintf('%s.php', $formatter);
         $formatter_path = sprintf('formatters%s%s', DIRECTORY_SEPARATOR,
             $formatter_fname);
-        
+
         if ( ! file_exists($formatter_path) ) {
             throw new WikkaFormatterError(sprintf(T_(
                 'Formatter "%s" not found'), $formatter_path));
         }
-        
+
         /*
          * TODO: remove this when Formatter refactored
          */
         $wikka = WikkaBlob::autoload($this->config, $this->request->route['page']);
-        
+
         ob_start();
         include($formatter_path);
         $output = ob_get_contents();
@@ -518,7 +515,7 @@ HTML;
 
         return $output;
     }
-    
+
     public function GetHandler() {
         /*
          * Required by formatter in render_using_formatter
@@ -526,7 +523,7 @@ HTML;
          */
         return $this->request->route['handler'];
     }
-    
+
     /*
      * Format Methods
      */
@@ -537,7 +534,7 @@ HTML;
             $this->page_content,
             $this->comment_block);
     }
-    
+
     private function format_revision_info() {
         # Format vars
         $format = <<<HTML
@@ -555,18 +552,18 @@ HTML;
         $revision_message = '';
         $show_formatting_form = '';
         $edit_revision_form = '';
-        
+
         # Params
         $page_data = $this->page->fields;
         $wants_raw_page = $this->raw_page_requested();
-        
+
         # Set revision header
         $revision_link = sprintf('<a href="%s">[%s]</a>',
             $this->href($page_data['tag'], 'show', array('time' => $page_data['time'])),
             $page_data['id']
         );
         $revision_header = sprintf(T_('Revision %s'), $revision_link);
-        
+
         # Set revision message
         $page_link = sprintf('<a href="%s">%s</a>',
             $this->href($page_data['tag']),
@@ -578,14 +575,14 @@ HTML;
             $this->format_user($page_data['user']),
             $this->wiki_link($page_data['tag'], 'revisions', $page_data['time'])
         );
-        
+
         # Show formatting form
         $formatting_form_f = <<<XHTML
             %s
                 <input type="hidden" name="time" value="%s" />
                 <input type="hidden" name="raw" value="%s" />
                 <input type="submit" value="%s" />
-            %s    
+            %s
 XHTML;
         if ( $page_data ) {
             $show_formatting_form = sprintf($formatting_form_f,
@@ -596,7 +593,7 @@ XHTML;
                 $this->close_form()
             );
         }
-        
+
         # Edit revision form
         $revision_form_f = <<<XHTML
             %s
@@ -614,7 +611,7 @@ XHTML;
                 $this->close_form()
             );
         }
-        
+
         return sprintf($format,
             $revision_header,
             $revision_message,
@@ -622,7 +619,7 @@ XHTML;
             $edit_revision_form
         );
     }
-    
+
     private function format_raw_page_content() {
         $format = <<<XHTML
             <div class="wikisource">
@@ -636,12 +633,12 @@ XHTML;
             ))
         );
     }
-    
+
     private function format_page_content() {
         return $this->render_using_formatter($this->page->fields['body'],
             'wakka', 'page');
     }
-    
+
     /*
      * Comment Format Methods
      */
@@ -655,7 +652,7 @@ XHTML;
             <!--closing comments block-->
 XHTML;
         $comment_header = $this->format_comment_header();
-        
+
         if ( $this->collapse_comments() ) {
             $comment_list = '';
         }
@@ -665,10 +662,10 @@ XHTML;
         else {
             $comment_list = $this->format_comment_list($comments);
         }
-        
+
         return sprintf($format, $comment_header, $comment_list);
     }
-    
+
     private function format_threaded_comment_list($comments) {
         $format = <<<XHTML
                 <div class="commentscontainer">
@@ -676,33 +673,33 @@ XHTML;
                 </div>
 XHTML;
         $comment_list = '';
-        
+
         $html = array();
         $previous = array('level' => -1);
-        
+
         # Nests comments. Assume comments are ordered in COMMENT_ORDER_THREADED mode.
         foreach( $comments as $comment ) {
             $comment['level'] = isset($comment['level']) ? $comment['level'] : 0;
             $html[] = $this->close_parent_comments($comment, $previous);
-            
+
             if ( $comment['status'] == 'deleted' ) {
                 $html[] = $this->format_deleted_comment($comment, true);
             }
             else {
                 $html[] = $this->format_threaded_comment($comment);
             }
-            
+
             $previous = $comment;
         }
-        
+
         # Close final comments
         $comment = array('level' => 0);
         $html[] = $this->close_parent_comments($comment, $previous);
-        
+
         $comment_list = implode($html);
         return sprintf($format, $comment_list);
     }
-    
+
     private function format_comment_list($comments) {
         $format = <<<XHTML
                 <div class="commentscontainer">
@@ -710,7 +707,7 @@ XHTML;
                 </div>
 XHTML;
         $comment_list = '';
-        
+
         $formatted_comments = array();
         foreach( $comments as $comment ) {
             if ( $comment['status'] == 'deleted' ) {
@@ -721,10 +718,10 @@ XHTML;
             }
         }
         $comment_list = implode('', $formatted_comments);
-        
+
         return sprintf($format, $comment_list);
     }
-    
+
     private function format_comment_header() {
         $format = <<<XHTML
                 <div id="commentheader">
@@ -740,7 +737,7 @@ XHTML;
             $comment_count = CommentModel::count_by_page_tag($this->page->field('tag'));
             $display_mode = $this->get_preferred_comment_display_mode();
             $header_title = $this->format_comment_count($comment_count);
-            
+
             if ( $comment_count < 1 ) {
                 if ( $this->user->can('comment_post', $this->page) ) {
                     $comment_form = $this->format_comment_form();
@@ -762,7 +759,7 @@ XHTML;
                 $this->href($this->page->field('tag'), 'show', $params),
                 T_("Hide comments")
             );
-            
+
             if ( $this->user->can('comment_post', $this->page) ) {
                 $comment_form = $this->format_comment_form();
             }
@@ -770,7 +767,7 @@ XHTML;
 
         return sprintf($format, $header_title, $display_link, $comment_form);
     }
-    
+
     private function format_threaded_comment($comment) {
         # Notice it leaves the div unclosed
         $format = <<<XHTML
@@ -790,7 +787,7 @@ XHTML;
         $comment_author = $this->format_user($comment['user']);
         $comment_byline = T_("Comment by ") . $comment_author;
         $comment_ts = sprintf("%s", $comment['time']);
-        
+
         if ( $this->user->can('comment_post', $this->page) ) {
             $comment_action = $this->format_comment_action($comment);
         }
@@ -805,9 +802,9 @@ XHTML;
             $comment_ts,
             $comment['comment'],
             $comment_action
-        ); 
+        );
     }
-    
+
     private function format_comment($comment) {
         $html = $this->format_threaded_comment($comment);
         return sprintf("%s%s</div>\n",
@@ -815,23 +812,23 @@ XHTML;
             str_repeat(' ', 20)
         );
     }
-    
+
     private function close_parent_comments($comment, $previous) {
         # If depth is greater, don't close yet
         if ( $comment['level'] > $previous['level'] ) {
             return '';
         }
-        
+
         $diff = $previous['level'] - $comment['level'];
-        
+
         $end_divs = array();
         foreach( range(0,$diff) as $n ) {
             $end_divs[] = '</div>';
         }
-        
+
         return implode("\n", $end_divs);
     }
-    
+
     private function format_comment_count($comment_count) {
         if ( $comment_count < 1 ) {
             return T_("There are no comments on this page.");
@@ -843,7 +840,7 @@ XHTML;
             return sprintf(T_("There are %d comments on this page."), $comment_count);
         }
     }
-    
+
     private function format_comment_form() {
         $format = <<<XHTML
                     %s
@@ -854,10 +851,10 @@ XHTML;
             'post', array('anchor' => 'comments'));
         $submit_value = T_("New Comment");
         $close_form_tag = $this->close_form();
-        
+
         return sprintf($format, $open_form_tag, $submit_value, $close_form_tag);
     }
-    
+
     private function format_deleted_comment($comment, $is_threaded=false) {
         $format = <<<XHTML
                     <div class="%s">
@@ -869,13 +866,13 @@ XHTML;
         $comment_class = '';
         $comment_body = T_("[Comment deleted]");
         $end_div = ($is_threaded) ? '' : '</div>';
-        
+
         $comment_level = (isset($comment['level'])) ? $comment['level'] : 0;
         $comment_class = sprintf('comment-layout-%d', (($comment_level + 1) % 2) + 1);
-        
+
         return sprintf($format, $comment_class, $comment_body, $end_div);
     }
-    
+
     private function format_comment_action($comment) {
         $format = <<<XHTML
                         <div class="commentaction">
@@ -893,14 +890,14 @@ XHTML;
         $submit_button_label = T_("Reply");
         $delete_button = '';
         $close_form_tag = $this->close_form();
-        
+
         if ( $this->show_delete_button_for_comment($comment) ) {
             $delete_button = sprintf(
                 '<input type="submit" name="submit" value="%s" />',
                 T_("Delete")
             );
         }
-        
+
         return sprintf($format,
             $open_form_tag,
             $comment_id,

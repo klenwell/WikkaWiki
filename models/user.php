@@ -104,7 +104,7 @@ MYSQL;
             return TRUE;
         }
 
-        $action_acl =$page->acl($acl_key);
+        $action_acl = $page->acl($acl_key);
 
         # ACLs are line-separated
         $acl_list = explode("\n", $action_acl);

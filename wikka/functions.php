@@ -1,7 +1,7 @@
 <?php
 /**
  * main/functions.php
- * 
+ *
  * Module of main wikka.php script
  *
  * Globally useful functions. This should be loaded at the beginning of the
@@ -15,8 +15,8 @@ function define_constant_if_not_defined($name, $value) {
 
 function generate_wikka_form_id($group, $id='') {
     /*
-     * This is lifted directly from Wakka::makeId. TODO: excise asap (see
-     * https://github.com/klenwell/WikkaWiki/issues/19)
+     * This is lifted directly from Wakka::makeId.
+     * TODO: remove asap (see https://github.com/klenwell/WikkaWiki/issues/19)
      */
     // initializations
     static $aSeq = array();                                        # group sequences
