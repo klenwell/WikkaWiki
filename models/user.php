@@ -45,7 +45,7 @@ MYSQL;
      * Static Methods
      */
      public static function load() {
-        if ( isset($_SESSION['user']) ) {
+        if ( isset($_SESSION['user']) && $_SESSION['user'] ) {
             return self::find_by_name($_SESSION['user']['name']);
         }
         else {

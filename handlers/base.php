@@ -95,9 +95,13 @@ HTML;
      * Format Methods
      */
     protected function show_error() {
-        $this->page_content = sprintf('<div class="handler-error">%s</div>',
-            $this->error);
-        return $this->format_content();
+        $format = '<div class="alert alert-danger handler-error">%s</div>';
+        $this->page_content = sprintf($format, $this->error);
+
+        $response = new WikkaResponse($this->format_content());
+        $response->status = 200;
+        $response->set_header('Content-Type', $this->content_type);
+        return $response;
     }
 
     protected function format_content() {
