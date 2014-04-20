@@ -71,18 +71,17 @@ HTML;
     );
 
     /*
-     * Constructor
-     */
-    public function __construct($request) {
-        parent::__construct($request);
-        $this->page = $this->load_page($request);
-        $this->user = UserModel::load();
-    }
-
-    /*
      * Main Handler Method
      */
     public function handle() {
+        if ( ! $this->request->route['page'] ) {
+            $this->request->route['page'] = WikkaRegistry::get_config(
+                'root_page', 'HomePage');
+        }
+
+        $this->page = $this->load_page($this->request);
+        $this->user = UserModel::load();
+
         if ( ! $this->request_is_valid() ) {
             return $this->show_error();
         }
