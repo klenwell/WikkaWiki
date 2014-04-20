@@ -8,6 +8,7 @@
  */
 require_once('version.php');
 require_once('wikka/constants.php');
+require_once('wikka/registry.php');
 require_once('models/session.php');
 
 
@@ -21,7 +22,7 @@ class SessionModelTest extends PHPUnit_Framework_TestCase {
         $this->setUpMockServerEnvironment();
         $this->pdo = $this->setUpDatabase();
         
-        WikkaResources::init($this->config);
+        WikkaRegistry::init($this->config);
         $this->model = new SessionModel($this->config);
         $this->model->pdo->exec(SessionModel::get_schema());
     }

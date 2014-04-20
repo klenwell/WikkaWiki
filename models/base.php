@@ -22,43 +22,8 @@
  * @copyright   Copyright 2014  Tom Atwell <klenwell@gmail.com>
  *
  */
+require_once('wikka/registry.php');
 
-#
-# WikkaResources
-# Singleton registry pattern
-# TODO: move into its own file
-# 
-class WikkaResources {
-    
-    public static $config = null;
-    private static $pdo = null;
-    
-    static public function init($config) {
-        self::$config = $config;
-    }
-    
-    static public function connect_to_db() {
-        if ( is_null(self::$config) ) {
-            throw new Exception(
-                'Config not set: have you called WikkaResources::init?');
-        }
-        
-        if ( ! is_null(self::$pdo) ) {
-            return self::$pdo;
-        }
-        else {
-            $dsn = sprintf('mysql:host=%s;dbname=%s',
-                self::$config['mysql_host'],
-                self::$config['mysql_database']);
-            self::$pdo = new PDO($dsn,
-                self::$config['mysql_user'],
-                self::$config['mysql_password']
-            );
-            self::$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-            return self::$pdo;
-        }
-    }
-}
 
 
 class WikkaModel {
@@ -89,7 +54,8 @@ MYSQL;
      * Constructor
      */
     public function __construct() {
-        $this->pdo = WikkaResources::connect_to_db();
+        $this->pdo = WikkaRegistry::connect_to_db();
+        $this->config = WikkaRegistry::$config;
     }
     
     /*
@@ -112,7 +78,7 @@ MYSQL;
         $vars = array();
         
         $replacement = array(
-            'prefix' => WikkaResources::$config['table_prefix'],
+            'prefix' => WikkaRegistry::get_config('table_prefix'),
             'engine' => WIKKA_MYSQL_ENGINE
         );
         
@@ -126,9 +92,22 @@ MYSQL;
         return $schema;
     }
     
+    static public function get_table() {
+        return WikkaRegistry::get_config('table_prefix') . static::$table;
+    }
+    
     /*
      * Public Methods
      */
+    public function field($name, $default=NULL) {
+        if ( isset($this->fields[$name]) ) {
+            return $this->fields[$name];
+        }
+        else {
+            return $default;
+        }
+    }
+    
     public function save() {
         $sql_f = 'INSERT INTO %s (%s) VALUES (%s)';
         $sql = sprintf($sql_f,
@@ -143,16 +122,12 @@ MYSQL;
     }
     
     public function find_by_column_value($column, $value) {
-        $sql = sprintf('SELECT * FROM %s WHERE %s = ?', $this->get_table(), $column);
+        $sql = sprintf('SELECT * FROM %s WHERE %s = ?', self::get_table(), $column);
         $query = $this->pdo->prepare($sql);
         return $query->execute(array($value));
     }
     
     public function find_by_id($id) {
         return $this->find_by_column_value('id', $id);
-    }
-                         
-    public function get_table() {
-        return WikkaResources::$config['table_prefix'] . self::$table;
     }
 }

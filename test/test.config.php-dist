@@ -14,7 +14,7 @@
  *
  * Make sure your database name doesn't conflict with the name of any databases
  * you wish to keep.
- * 
+ *
  */
 $wakkaConfig = array(
 
@@ -24,13 +24,17 @@ $wakkaConfig = array(
     'mysql_password'            => '<DB_USER_PASS>',
     'mysql_database'            => 'wikkawiki_test_tmp',
     'table_prefix'              => '',
-    
+
+    # admins
+    'admin_users'               => 'WikkaAdmin',
+    'admin_email'               => 'wikka_admin@wikkawiki.org',
+
     # wikka settings
     'wakka_name'                => 'WakkaWikiTesting',
     'wakka_version'             => WAKKA_VERSION,
     'enable_user_host_lookup'   => false,
     'theme'                     => 'bootstrap',
-    
+
     # paths
     'wikka_formatter_path'      => 'formatters',
 );

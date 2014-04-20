@@ -9,12 +9,15 @@
  * 
  */
 require_once('wikka/constants.php');
+require_once('wikka/registry.php');
+require_once('wikka/request.php');
 require_once('libs/Compatibility.lib.php');
 require_once('3rdparty/core/php-gettext/gettext.inc');
 require_once('lang/en/en.inc.php');
 require_once('libs/Wakka.class.php');
 require_once('version.php');
 require_once('handlers/show.php');
+require_once('models/base.php');
 
 
 class ShowHandlerTest extends PHPUnit_Framework_TestCase {
@@ -27,8 +30,7 @@ class ShowHandlerTest extends PHPUnit_Framework_TestCase {
      * Test Fixtures
      */
     public static function setUpBeforeClass() {
-        require('test/test.config.php');
-        self::$config = $wakkaConfig;
+        self::$config = self::setUpConfig();
         
         # Must set $config for setup/database.php
         $config = self::$config;
@@ -52,6 +54,13 @@ class ShowHandlerTest extends PHPUnit_Framework_TestCase {
             self::$pdo->exec($query);
         }
     }
+    
+    private static function setUpConfig() {
+        include('wikka/default.config.php');
+        include('test/test.config.php');
+        return array_merge($wakkaDefaultConfig, $wakkaConfig);
+    }
+    
  
     public static function tearDownAfterClass() {       
         # Cleanup database
@@ -61,21 +70,15 @@ class ShowHandlerTest extends PHPUnit_Framework_TestCase {
     }
     
     public function setUp() {
-        $this->wikka = new Wakka(self::$config);
-        $this->wikka->handler = 'show';
-        $this->show_handler = new ShowHandler($this->wikka);
+        $this->setUpMockServerEnvironment();
+        WikkaRegistry::init(self::$config);
+        
+        $request = new WikkaRequest();
+        $this->show_handler = new ShowHandler($request);
         
         $this->save_users();
         $this->save_pages();
         $this->save_comments();
-        
-        # Need to make $wakka global for formatter
-        global $wakka;
-        $wakka = $this->wikka;
-        
-        # GetUserName requires this
-        $_SERVER['REMOTE_ADDR'] = ( isset($_SERVER['REMOTE_ADDR']) ) ?
-            $_SERVER['REMOTE_ADDR'] : '127.0.0.1';
     }
     
     public function tearDown() {
@@ -88,20 +91,35 @@ class ShowHandlerTest extends PHPUnit_Framework_TestCase {
         };
     }
     
+    private function setUpMockServerEnvironment() {
+        $_SERVER = array(
+            'SERVER_NAME'   => 'localhost',
+            'SERVER_PORT'   => '80',
+            'QUERY_STRING'  => 'wakka=HomePage',
+            'REQUEST_URI'   => '/WikkaWiki/wikka.php?wakka=HomePage',
+            'SCRIPT_NAME'   => '/WikkaWiki/wikka.php',
+            'REMOTE_ADDR'   => '127.0.0.1'
+        );
+        
+        $_GET = array(
+            'wakka'         => 'TestPage1'
+        );
+    }
+    
     private function save_users() {
         # User parameters
         $users = array(
             # name, status 
             array('admin', 'active')
         );
-        $prefix = $this->wikka->GetConfigValue('table_prefix');
+        $prefix = self::$config['table_prefix'];
         $sql_f = 'INSERT INTO %susers SET name="%s", email="%s", status="%s"';
         
         # Save pages
         foreach ($users as $user) {
             list($name, $status) = each($user);
             $email = sprintf('%s@test.wikkawiki.org', $name);
-            $this->wikka->query(sprintf($sql_f, $prefix,
+            self::$pdo->query(sprintf($sql_f, $prefix,
                 $name, $email, $status));
         }
     }
@@ -110,12 +128,12 @@ class ShowHandlerTest extends PHPUnit_Framework_TestCase {
         # Page parameters
         $page_tags = array('TestPage1', 'TestPage2', 'TestPage3');
         $page_body = "A test in WakkaClassTest";
-        $prefix = $this->wikka->GetConfigValue('table_prefix');
+        $prefix = self::$config['table_prefix'];
         $sql_f = 'INSERT INTO %spages SET tag="%s", body="%s", latest="Y", time=NOW()';
         
         # Save pages
         foreach ($page_tags as $page_tag) {
-            $this->wikka->query(sprintf($sql_f, $prefix, $page_tag, $page_body));
+            self::$pdo->query(sprintf($sql_f, $prefix, $page_tag, $page_body));
         }
     }
     
@@ -123,13 +141,13 @@ class ShowHandlerTest extends PHPUnit_Framework_TestCase {
         # Page parameters
         $page_tag = 'TestPage1';
         $comment_f = "Comment #%d";
-        $prefix = $this->wikka->GetConfigValue('table_prefix');
+        $prefix = self::$config['table_prefix'];
         $sql_f = 'INSERT INTO %scomments SET page_tag="%s", comment="%s"';
         
         # Save pages
         for($num=1; $num<=10; $num++) {
             $comment = sprintf($comment_f, $num);
-            $this->wikka->query(sprintf($sql_f, $prefix, $page_tag, $comment));
+            self::$pdo->query(sprintf($sql_f, $prefix, $page_tag, $comment));
         }
     }
     
@@ -145,19 +163,20 @@ class ShowHandlerTest extends PHPUnit_Framework_TestCase {
         # Params
         $page_tag = 'PageNotFound';
         $expects = 'This page doesn\'t exist yet. Maybe you want to ' .
-            '<a href="/edit">create</a> it?';
+            '<a href="http://localhost/WikkaWiki/wikka.php?wakka=PageNotFound">' .
+            'create</a> it?';
+            
+        # Prepare Handler
+        $_GET['wakka'] = $page_tag;
+        $request = new WikkaRequest();
+        $show_handler = new ShowHandler($request);
         
-        # Set page and ACLs
-        $this->wikka->SetPage($this->wikka->LoadPage(
-            $page_tag, $this->wikka->GetSafeVar('time', 'get')));
-        $this->wikka->ACLs = $this->wikka->LoadAllACLs($this->wikka->GetPageTag());
-        $this->wikka->ACLs['read_acl'] = '*';
-        
-        # Test handle
-        $content = $this->show_handler->handle();
+        # Handle
+        $content = $show_handler->handle();
         
         # Test results
-        $this->assertFalse($this->wikka->existsPage($page_tag));
+        $page = PageModel::find_by_tag($page_tag);
+        $this->assertFalse($page->exists());
         $this->assertContains($expects, $content);
     }
     
@@ -176,21 +195,23 @@ class ShowHandlerTest extends PHPUnit_Framework_TestCase {
     public function testValidRequest() {
         # Params
         $page_tag = 'TestPage1';
-        $expects = 'A test in <a class="missingpage" href="WakkaClassTest/edit" ' .
+        $expects = 'A test in <a class="missingpage" ' .
+            'href="http://localhost/WikkaWiki/wikka.php?wakka=WakkaClassTest/edit" ' .
             'title="Create this page">WakkaClassTest</a>';
+            
+        # Prepare Handler
+        $_GET['wakka'] = $page_tag;
+        $request = new WikkaRequest();
+        $request->define_constants();
+        $show_handler = new ShowHandler($request);
         
-        # Set page and ACLs
-        $this->wikka->SetPage($this->wikka->LoadPage(
-            $page_tag, $this->wikka->GetSafeVar('time', 'get')));
-        $this->wikka->ACLs = $this->wikka->LoadAllACLs($this->wikka->GetPageTag());
-        $this->wikka->ACLs['read_acl'] = '*';
-        
-        # Test handle
-        $response = $this->show_handler->handle();
+        # Handle
+        $response = $show_handler->handle();
         
         # Test results
+        $page = PageModel::find_by_tag($page_tag);
         $this->assertInstanceOf('WikkaResponse', $response);
-        $this->assertTrue($this->wikka->existsPage($page_tag));
+        $this->assertTrue($page->exists());
         $this->assertContains($expects, $response->body);
     }
     

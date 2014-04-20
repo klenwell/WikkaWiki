@@ -10,6 +10,7 @@
  * @copyright   Copyright 2014  Tom Atwell <klenwell@gmail.com>
  *
  */
+require_once('wikka/registry.php');
 require_once('models/base.php');
 
  
@@ -30,5 +31,44 @@ CREATE TABLE {{prefix}}acls (
 MYSQL;
     
     protected static $table = 'acls';
+    
+    /*
+     * Static Methods
+     */
+    public static function load_defaults() {
+        $config = WikkaRegistry::$config;
+        $default_acls = array(
+            'read_acl' => $config['default_read_acl'],
+            'write_acl' => $config['default_write_acl'],
+            'comment_read_acl' => $config['default_comment_read_acl'],
+            'comment_post_acl' => $config['default_comment_post_acl']
+        );
+        return $default_acls;
+    }
+    
+    public static function find_by_page_tag($tag) {
+        /*
+         * Returns ACL for given page tag. If ACL not found, returns defaults
+         * from config file.
+         */
+        $sql_f = "SELECT * FROM %s WHERE page_tag = ? LIMIT 1";
+        $sql = sprintf($sql_f, parent::get_table());
+        
+        $pdo = WikkaRegistry::connect_to_db();
+        $query = $pdo->prepare($sql);
+        $query->execute(array($tag));
+        $row = $query->fetch(PDO::FETCH_ASSOC);
+        
+        if ( ! $row ) {
+            $row = array('page_tag' => $tag);
+        }
+        
+        $defaults = AccessControlListModel::load_defaults();
+        $row = array_merge($defaults, $row);
+        
+        $acl = new AccessControlListModel();
+        $acl->fields = $row;
+        return $acl;
+    }
     
 }

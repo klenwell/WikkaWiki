@@ -8,6 +8,7 @@
  */
 require_once('version.php');
 require_once('wikka/constants.php');
+require_once('wikka/registry.php');
 require_once('models/link.php');
 
 
@@ -21,7 +22,7 @@ class LinkModelTest extends PHPUnit_Framework_TestCase {
         $this->setUpMockServerEnvironment();
         $this->pdo = $this->setUpDatabase();
         
-        WikkaResources::init($this->config);
+        WikkaRegistry::init($this->config);
         $this->model = new LinkModel($this->config);
         $this->model->pdo->exec(LinkModel::get_schema());
     }

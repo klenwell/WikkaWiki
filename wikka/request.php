@@ -13,14 +13,18 @@
  * REFERENCES
  *
  */
+require_once('wikka/functions.php');
 
  
  
 class WikkaRequest {
     
+    const DEFAULT_HANDLER = 'show';
+    
     /*
      * Properties
      */
+    public $route = array();
     public $domain = '';
     public $scheme = '';
     public $port = '';
@@ -49,6 +53,9 @@ class WikkaRequest {
         $this->rewrite_on = $this->extract_rewrite_mode($this->wikka_path);
         $this->wikka_path = $this->extract_wikka_request_path($this->rewrite_on);
         $this->wikka_query_string = ( $this->rewrite_on ) ? '' : '?wakka=';
+        
+        # Set route
+        $this->route = $this->set_route();
         
         # Build composite urls for constants
         $this->wikka_base_domain_url = $this->build_base_domain_url();
@@ -105,6 +112,42 @@ class WikkaRequest {
     /*
      * Private Methods
      */
+    private function set_route() {
+        $page = null;
+        $handler = null;
+        
+        # Get wakka param (strip first slash)
+        $wakka_param = $this->get_param('wakka', '');
+        $wakka_param = preg_replace("/^\//", "", $wakka_param);
+        
+        # Extract pagename and handler from URL
+        $matches = array();
+        if ( preg_match("#^(.+?)/(.*)$#", $wakka_param, $matches) ) {
+            list(, $page, $handler) = $matches;
+        }
+        elseif ( preg_match("#^(.*)$#", $wakka_param, $matches) ) {
+            list(, $page) = $matches;
+        }
+        
+        # Fix lowercase mod_rewrite bug: URL rewriting makes pagename lowercase. #135
+        if ( (isset($_SERVER['REQUEST_URI'])) && (strtolower($page) == $page) ) {
+            $pattern = preg_quote($page, '/');
+            $decoded_uri = urldecode($_SERVER['REQUEST_URI']);
+            $match_url = array();
+            
+            if ( preg_match("/($pattern)/i", $decoded_uri, $match_url) ) {
+                $page = $match_url[1];
+            }
+        }
+        
+        # If not hanlder set default
+        if ( is_null($handler) ) {
+            $handler = self::DEFAULT_HANDLER;
+        }
+        
+        return array('page' => $page, 'handler' => $handler);
+    }
+    
     private function extract_params() {
         # Wakka::GetSafeVar used to sanitize GET vars. This is not
         # recommended as a general solution. For proper usage, see:

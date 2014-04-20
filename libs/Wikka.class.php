@@ -220,15 +220,6 @@ SQLDOC;
         );
     }
     
-    public function load_handler_class($handler_name) {
-        $handler_path = $this->build_handler_class_path($handler_name);
-        $HandlerClass = sprintf('%sHandler', ucwords($handler_name));
-        
-        require_once($handler_path);
-        $handler = new $HandlerClass($this);
-        return $handler;
-    }
-    
     public function format_error($content) {
         #
         # TODO(klenwell): Replace with a template or view
@@ -407,16 +398,8 @@ XHTML;
     
     public function Handler($handler_name) {
         $handler_name = $this->normalize_handler_name($handler_name);
-        
         $this->validate_handler($handler_name);
-        
-        if ( $this->handler_class_exists($handler_name) ) {
-            $handler = $this->load_handler_class($handler_name);
-            return $handler->handle();
-        }
-        else {
-            return $this->run_legacy_handler($handler_name);
-        }
+        return $this->run_legacy_handler($handler_name);
     }
     
     public function Query($query, $dblink='') {
@@ -536,5 +519,11 @@ HTML5;
             implode("\n", $plugin_options)
         );
         echo $output;
+    }
+    
+    function ReadInterWikiConfig() {
+        # Interwiki config file has been removed. No indication that file
+        # was being maintained.
+        $this->interWiki = array();
     }
 }

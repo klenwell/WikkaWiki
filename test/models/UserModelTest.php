@@ -6,85 +6,128 @@
  * > phpunit --stderr test/models/UserModelTest
  *
  */
-require_once('version.php');
-require_once('wikka/constants.php');
 require_once('models/user.php');
+require_once('test/fixtures/wikka.php');
+require_once('test/fixtures/models.php');
+require_once('wikka/registry.php');
 
 
 class UserModelTest extends PHPUnit_Framework_TestCase {
- 
+
     /**
      * Test Fixtures
      */
     public function setUp() {
-        $this->config = $this->setUpConfig();
-        $this->setUpMockServerEnvironment();
-        $this->pdo = $this->setUpDatabase();
-        
-        WikkaResources::init($this->config);
-        $this->model = new UserModel($this->config);
-        $this->model->pdo->exec(UserModel::get_schema());
+        WikkaFixture::init();
+        $this->model = UserModelFixture::init();
+        PageModelFixture::init();
+        AclModelFixture::init();
     }
-    
-    public function tearDown() {
-        $_SERVER = array();
-        $this->tearDownDatabase();
-        $this->tearDownSession();
-        $this->config = array();
-        $this->model = null;
-    }
-    
-    private function setUpConfig() {
-        include('wikka/default.config.php');
-        include('test/test.config.php');
-        return array_merge($wakkaDefaultConfig, $wakkaConfig);
-    }
-    
-    private function setUpMockServerEnvironment() {
-        $_SERVER = array(
-            'SERVER_NAME'   => 'localhost',
-            'SERVER_PORT'   => '80',
-            'QUERY_STRING'  => 'wakka=HomePage',
-            'REQUEST_URI'   => '/WikkaWiki/wikka.php?wakka=HomePage',
-            'SCRIPT_NAME'   => '/WikkaWiki/wikka.php',
-            'PHP_SELF'      => '/WikkaWiki/wikka.php',
-            'REMOTE_ADDR'   => '127.0.0.1'
-        );
-    }
-    
-    private function setUpDatabase() {
-        # Create db connection
-        $host = sprintf('mysql:host=%s', $this->config['mysql_host']);
-        $pdo = new PDO($host, $this->config['mysql_user'],
-            $this->config['mysql_password']);
-        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-        # Create database
-        $pdo->exec(sprintf('DROP DATABASE IF EXISTS `%s`',
-            $this->config['mysql_database']));
-        $pdo->exec(sprintf('CREATE DATABASE `%s`',
-            $this->config['mysql_database']));
-        $pdo->query(sprintf('USE %s', $this->config['mysql_database']));
-        
-        return $pdo;
+    public function tearDown() {
+        WikkaFixture::tear_down();
     }
-    
-    private function tearDownDatabase() {
-        $this->pdo->exec(sprintf('DROP DATABASE `%s`',
-            $this->config['mysql_database']));
-        $this->pdo = NULL;
-    }
-    
-    private function tearDownSession() {
-        if ( session_id() ) {
-            session_destroy();
-            $_SESSION = array();
-        }
-    }
-    
+
     /**
      * Tests
-     */    
+     */
+    public function testWantsCommentsForPage() {
+        $page = PageModel::find_by_tag('WikkaPage');
+
+        $wikka_user = UserModel::find_by_name('WikkaUser');
+        $wants_comments = $wikka_user->wants_comments_for_page($page);
+        $this->assertEquals('Y', $wants_comments);
+
+        $wikka_admin = UserModel::find_by_name('WikkaAdmin');
+        $wants_comments = $wikka_admin->wants_comments_for_page($page);
+        $this->assertEquals('N', $wants_comments);
+    }
+
+    public function testBelongsToGroup() {
+        $group_page = PageModel::init(array(
+            'tag' => 'WikkaGroup',
+            'owner' => 'WikkaAdmin',
+            'user' => 'WikkaAdmin',
+            'title' => 'Wikka Group Page',
+            'body' => '+WikkaAdmin++WikkaUser+'
+        ));
+        $group_page->save();
+
+        $anonymous_user = UserModel::find_by_name('UnregisteredWikkaUser');
+        $wikka_user = UserModel::find_by_name('WikkaUser');
+        $wikka_admin = UserModel::find_by_name('WikkaAdmin');
+
+        $this->assertFalse($anonymous_user->belongs_to_group('WikkaGroup'));
+        $this->assertTrue($wikka_user->belongs_to_group('WikkaGroup'));
+        $this->assertTrue($wikka_admin->belongs_to_group('WikkaGroup'));
+    }
+
+    public function testCan() {
+        # Load page
+        $page = PageModel::find_by_tag('WikkaPage');
+        $this->assertTrue($page->exists());
+
+        # Anonymous User
+        $anonymous_user = UserModel::find_by_name('UnregisteredWikkaUser');
+        $this->assertTrue($anonymous_user->can('read', $page));
+        $this->assertFalse($anonymous_user->can('write', $page));
+        $this->assertFalse($anonymous_user->can('write_comment', $page));
+
+        # Wikka User
+        $wikka_user = UserModel::find_by_name('WikkaUser');
+        $this->assertTrue($wikka_user->can('read', $page));
+        $this->assertTrue($wikka_user->can('write', $page));
+        $this->assertFalse($wikka_user->can('write_comment', $page));
+
+        # Wikka Admin
+        $wikka_admin = UserModel::find_by_name('WikkaAdmin');
+        $this->assertTrue($wikka_admin->can('read', $page));
+        $this->assertTrue($wikka_admin->can('write', $page));
+        $this->assertTrue($wikka_admin->can('write_comment', $page));
+    }
+
+    public function testExists() {
+        $wikka_user = UserModel::find_by_name('WikkaUser');
+        $this->assertTrue($wikka_user->exists());
+
+        $anonymous_user = UserModel::find_by_name('UnregisteredWikkaUser');
+        $this->assertFalse($anonymous_user->exists());
+    }
+
+    public function testIsLoggedIn() {
+        $wikka_user = UserModel::find_by_name('WikkaUser');
+        $this->assertTrue($wikka_user->is_logged_in());
+
+        $anonymous_user = UserModel::find_by_name('UnregisteredWikkaUser');
+        $this->assertFalse($anonymous_user->is_logged_in());
+    }
+
+    public function testIsAdmin() {
+        $wikka_admin = UserModel::find_by_name('WikkaAdmin');
+        $this->assertTrue($wikka_admin->is_admin());
+
+        $wikka_user = UserModel::find_by_name('WikkaUser');
+        $this->assertFalse($wikka_user->is_admin());
+    }
+
+    public function testFindByName() {
+        $wikka_user = UserModel::find_by_name('WikkaUser');
+        $this->assertTrue($wikka_user->exists());
+        $this->assertEquals('WikkaUser', $wikka_user->field('name'));
+    }
+
+    public function testLoad() {
+        $_SESSION['user'] = array('name' => 'WikkaUser');
+        $wikka_user = UserModel::load();
+        $this->assertTrue($wikka_user->exists());
+        $this->assertEquals('WikkaUser', $wikka_user->field('name'));
+    }
+
+    public function testLoadUnregisteredVisitor() {
+        $wikka_user = UserModel::load();
+        $this->assertFalse($wikka_user->exists());
+    }
+
     public function testInstantiates() {
         $this->assertInstanceOf('UserModel', $this->model);
     }

@@ -8,6 +8,7 @@
  */
 require_once('version.php');
 require_once('wikka/constants.php');
+require_once('wikka/registry.php');
 require_once('models/base.php');
 require_once('models/page.php');
 
@@ -22,7 +23,7 @@ class BaseModelTest extends PHPUnit_Framework_TestCase {
         $this->setUpMockServerEnvironment();
         $this->pdo = $this->setUpDatabase();
         
-        WikkaResources::init($this->config);
+        WikkaRegistry::init($this->config);
         $this->model = new WikkaModel($this->config);
         $this->model->pdo->exec(WikkaModel::get_schema());
     }

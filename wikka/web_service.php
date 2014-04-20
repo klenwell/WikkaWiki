@@ -13,6 +13,7 @@
  * @copyright   Copyright 2014  Tom Atwell <klenwell@gmail.com>
  *  
  */
+require_once('wikka/registry.php');
 require_once('wikka/request.php');
 require_once('wikka/response.php');
 require_once('wikka/templater.php');
@@ -45,6 +46,7 @@ class WikkaWebService {
         
         $this->verify_requirements();
         $this->config = $this->load_config($config_file_path);
+        WikkaRegistry::init($this->config);
     }
     
     /*
@@ -121,19 +123,62 @@ class WikkaWebService {
         return $token;
     }
     
-    public function process_request() {
-        $route = $this->route_request();
+    public function dispatch() {
+        if ( $this->is_new_style_handler_request($this->request->route['handler']) ) {
+            $response = $this->dispatch_to_handler();
+        }
+        else {
+            $response = $this->dispatch_to_legacy_handler();
+        }
+        
+        # Set common headers
+        $response->set_header('Cache-Control', 'no-cache');
+        $response->set_header('ETag', md5($response->body));
+        $response->set_header('Content-Length', strlen($response->body));
+        
+        return $response;
+    }
+    
+    private function is_new_style_handler_request($handler_name) {
+        $handler_fname = sprintf('%s.php', $handler_name);
+        $handler_path = sprintf('handlers/%s', $handler_fname);
+        $HandlerClass = sprintf('%sHandler', ucwords($handler_name));
+        
+        if ( ! file_exists($handler_path) ) {
+            return FALSE;
+        }
+        else {
+            require_once($handler_path);
+            return class_exists($HandlerClass, false);
+        }
+    }
+    
+    private function dispatch_to_handler() {
+        $route = $this->request->route;
+        $handler_fname = sprintf('%s.php', $route['handler']);
+        $handler_path = sprintf('handlers/%s', $handler_fname);
+        $HandlerClass = sprintf('%sHandler', ucwords($route['handler']));
+        
+        require_once($handler_path);
+        $handler = new $HandlerClass($this->request);
+        $handler_response = $handler->handle();
+    
+        $wikka = WikkaBlob::autoload($this->config, $route['page'], $route['handler']);
+        $templater = new WikkaTemplater($wikka);
+        $templater->set('content', $handler_response->body);
+        $handler_response->body = $templater->output();
+        
+        return $handler_response;
+    }
+    
+    private function dispatch_to_legacy_handler() {
+        $route = $this->request->route;
         $handler_response = $this->run_wikka_handler($route['page'], $route['handler']);
         
         $wikka = WikkaBlob::autoload($this->config, $route['page'], $route['handler']);
         $templater = new WikkaTemplater($wikka);
         $templater->set('content', $handler_response->body);
         $handler_response->body = $templater->output();
-        
-        # Set common headers
-        $handler_response->set_header('Cache-Control', 'no-cache');
-        $handler_response->set_header('ETag', md5($handler_response->body));
-        $handler_response->set_header('Content-Length', strlen($handler_response->body));
         
         return $handler_response;
     }
@@ -147,7 +192,7 @@ class WikkaWebService {
         # have another error occur and end up displaying an ugly (and potentially
         # insecure) error message.
         #
-        $route = $this->route_request();
+        $route = $this->request->route;
         
         $wikka = WikkaBlob::autoload($this->config, $route['page'], $route['handler']);
         
@@ -210,6 +255,10 @@ class WikkaWebService {
             if ( preg_match("/($pattern)/i", $decoded_uri, $match_url) ) {
                 $page = $match_url[1];
             }
+        }
+        
+        if ( is_null($handler) ) {
+            $handler = 'show';
         }
         
         return array('page' => $page, 'handler' => $handler);

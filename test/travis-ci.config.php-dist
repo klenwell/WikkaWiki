@@ -7,7 +7,7 @@
  * > cp test/travis-ci.config.php-dist test/test.config.php
  *
  * For more information, see: http://docs.travis-ci.com/user/database-setup/#MySQL
- * 
+ *
  */
 $wakkaConfig = array(
 
@@ -17,15 +17,19 @@ $wakkaConfig = array(
     'mysql_password'            => '',
     'mysql_database'            => 'myapp_test',
     'table_prefix'              => '',
-    
+
+    # admins
+    'admin_users'               => 'WikkaAdmin',
+    'admin_email'               => 'wikka_admin@wikkawiki.org',
+
     # wikka settings
     'wakka_name'                => 'WakkaWikiTesting',
     'wakka_version'             => WAKKA_VERSION,
     'enable_user_host_lookup'   => false,
     'theme'                     => 'bootstrap',
-    
+
     # paths
-    'wikka_formatter_path'      => 'formatters',   
+    'wikka_formatter_path'      => 'formatters',
 );
 
 # For multisite tests
