@@ -16,24 +16,26 @@
  *
  */
 require_once('handlers/base.php');
+require_once('wikka/registry.php');
 require_once('wikka/request.php');
 require_once('wikka/response.php');
+require_once('models/user.php');
 require_once('libs/install/installer.php');
 require_once('libs/install/migrator.php');
 
 
 class InstallHandler extends WikkaHandler {
-    
+
     /*
      * Properties
      */
     # For Content-type header
     public $content_type = 'text/html; charset=utf-8';
-    
+
     # Webservice resources
     public $request = null;
     public $config = null;
-    
+
     # States
     private $states = array('intro',
                             'downgrade_warning',
@@ -43,12 +45,12 @@ class InstallHandler extends WikkaHandler {
                             'install',
                             'upgrade',
                             'save_config_file',
-                            'conclusion'); 
+                            'conclusion');
     private $state = 'intro';
-    
+
     # Form errors
     private $form_errors = array();
-    
+
     # Template
     # http://getbootstrap.com/getting-started/#template
     # http://getbootstrap.com/examples/sticky-footer-navbar/
@@ -62,7 +64,7 @@ class InstallHandler extends WikkaHandler {
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    
+
     <title>Wikka Installation</title>
     <meta name="keywords" content="Wikka Wiki" />
     <meta name="description" content="WikkaWiki Install" />
@@ -70,7 +72,7 @@ class InstallHandler extends WikkaHandler {
       href="templates/bootstrap/images/favicon.ico" />
     <link rel="shortcut icon" type="image/x-icon"
       href="templates/bootstrap/images/favicon.ico" />
-    
+
     <!-- Bootstrap -->
     <link rel="stylesheet"
       href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" />
@@ -84,7 +86,7 @@ class InstallHandler extends WikkaHandler {
       <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
     <![endif]-->
   </head>
-  
+
   <body>
     <div class="container">
       <div class="page-header">
@@ -117,34 +119,40 @@ HTML;
     protected $footer = '<!-- footer not set -->';
 
     /*
+     * Constructor
+     */
+    public function __construct($request) {
+        parent::__construct($request);
+        $this->page = $this->load_page($request);
+        $this->user = UserModel::load();
+    }
+
+    /*
      * Main Handler Method
      */
-    public function handle($webservice) {
-        $this->request = $webservice->request;
-        $this->config = $webservice->config;
-        
+    public function handle() {
         # Load config from session
         $_SESSION['install'] = (isset($_SESSION['install'])) ?
             $_SESSION['install'] : array();
-            
+
         if ( ! empty($_SESSION['install']['config']) ) {
             $this->config = $_SESSION['install']['config'];
         }
         else {
             $_SESSION['install']['config'] = $this->config;
         }
-        
+
         # Simple state machine
         $requested_stage = $this->request->get_post_var('next-stage', 'intro');
         $content = $this->change_state($requested_stage);
-        
+
         # Return response
         $response = new WikkaResponse($content);
         $response->status = 200;
         $response->set_header('Content-Type', $this->content_type);
         return $response;
     }
-    
+
     /*
      * Public Methods
      */
@@ -156,9 +164,9 @@ HTML;
       </form>
 XHTML;
 
-        return sprintf($form_f, $this->wikka->FormOpen(), $class, $label, $stage);
+        return sprintf($form_f, $this->open_form(''), $class, $label, $stage);
     }
-        
+
     /*
      * State Methods
      * Each state method should set $this->header, $this->stage_content,
@@ -172,10 +180,10 @@ XHTML;
         else {
             throw new Exception(sprintf("Invalid install state: %s", $new_state));
         }
-        
+
         return $this->$method();
     }
-    
+
     private function set_state($state) {
         #
         # Returns method name for state
@@ -184,44 +192,44 @@ XHTML;
         $this->state = $state;
         return sprintf('state_%s', $this->state);
     }
-    
+
     private function state_intro() {
         if ( $this->is_downgrade() ) {
             return $this->change_state('downgrade_warning');
         }
-      
+
         # Set template variables
         $this->header = $this->format_header();
         $this->stage_content = $this->format_intro();
         $this->footer = $this->format_footer();
-        
+
         # Return output
         $content = $this->format_content();
         return $content;
     }
-    
+
     private function state_downgrade_warning() {
         # Set template variables
         $this->header = $this->format_header();
         $this->stage_content = $this->format_downgrade_warning();
         $this->footer = $this->format_footer();
-        
+
         # Return output
         $content = $this->format_content();
         return $content;
     }
-    
+
     private function state_database_form() {
         # Skip stage during upgrade
         if ( $this->is_upgrade() ) {
             return $this->change_state('wiki_settings_form');
         }
-        
+
         $form_submitted = ($this->request->get_post_var('form-submitted') == 'database');
         if ( $form_submitted ) {
             $form_values = $this->request->get_post_var('config', array());
             $this->config = array_merge($this->config, $form_values);
-            
+
             if ( $this->validate_database_values() ) {
                 # Update Session data
                 $_SESSION['install']['config'] = $this->config;
@@ -230,17 +238,17 @@ XHTML;
                 return $this->change_state('wiki_settings_form');
             };
         }
-      
+
         # Set template variables
         $this->header = $this->format_header();
         $this->stage_content = $this->format_database_form();
         $this->footer = $this->format_footer();
-        
+
         # Return output
         $content = $this->format_content();
         return $content;
     }
-    
+
     private function state_wiki_settings_form() {
         # Process form request
         $form_submitted = (
@@ -248,7 +256,7 @@ XHTML;
         if ( $form_submitted ) {
             $form_values = $this->request->get_post_var('config', array());
             $this->config = array_merge($this->config, $form_values);
-            
+
             if ( $this->validate_wiki_settings_values() ) {
                 # Update Session data
                 $_SESSION['install']['config'] = $this->config;
@@ -267,12 +275,12 @@ XHTML;
         $this->header = $this->format_header();
         $this->stage_content = $this->format_wiki_settings_form();
         $this->footer = $this->format_footer();
-        
+
         # Return output
         $content = $this->format_content();
         return $content;
     }
-    
+
     private function state_admin_form() {
         # Process form request
         $form_submitted = (
@@ -280,7 +288,7 @@ XHTML;
         if ( $form_submitted ) {
             $form_values = $this->request->get_post_var('config', array());
             $this->config = array_merge($this->config, $form_values);
-            
+
             if ( $this->validate_admin_values() ) {
                 # Update Session data
                 $_SESSION['install']['config'] = $this->config;
@@ -289,50 +297,50 @@ XHTML;
                 return $this->change_state('install');
             };
         }
-      
+
         # Set template variables
         $this->header = $this->format_header();
         $this->stage_content = $this->format_admin_form();
         $this->footer = $this->format_footer();
-        
+
         # Return output
         $content = $this->format_content();
         return $content;
     }
-    
+
     private function state_install() {
         $installer = new WikkaInstaller($_SESSION['install']['config']);
         $installer->install_wiki();
-        
+
         # Set template variables
         $this->header = $this->format_header();
         $this->stage_content = $this->format_installer_report($installer);
         $this->footer = $this->format_footer();
-        
+
         # Return output
         $content = $this->format_content();
         return $content;
     }
-    
+
     private function state_upgrade() {
         $old_version = $this->config['wakka_version'];
         $new_version = WAKKA_VERSION;
-      
+
         $migrator = new WikkaMigrator(WIKKA_MIGRATIONS_FILE_PATH);
         $migrator->report_section_header(
             sprintf('Start migration from version %s to %s', $old_version, $new_version));
         $migrator->run_migrations($old_version, $new_version);
-        
+
         # Set template variables
         $this->header = $this->format_header();
         $this->stage_content = $this->format_installer_report($migrator);
         $this->footer = $this->format_footer();
-        
+
         # Return output
         $content = $this->format_content();
         return $content;
     }
-    
+
     private function state_save_config_file() {
         # Attempt to write config file
         try {
@@ -343,11 +351,11 @@ XHTML;
         catch (ConfigFileWriteError $e) {
             $this->stage_content = $this->format_write_config_error($e);
         }
-        
+
         # Set template variables
         $this->header = $this->format_header();
         $this->footer = $this->format_footer();
-        
+
         # Return output
         $content = $this->format_content();
         return $content;
@@ -355,17 +363,17 @@ XHTML;
 
     private function state_conclusion() {
         $_SESSION['install']['config'] = NULL;
-        
+
         # Set template variables
         $this->header = $this->format_header();
         $this->stage_content = $this->format_conclusion();
         $this->footer = $this->format_footer();
-        
+
         # Return output
         $content = $this->format_content();
         return $content;
     }
-    
+
     /*
      * Validators
      */
@@ -373,23 +381,23 @@ XHTML;
         if ( empty($this->config['mysql_host']) ) {
             $this->form_errors['mysql_host'] = 'Please input a valid MySQL host';
         }
-        
+
         if ( empty($this->config['mysql_database']) ) {
             $this->form_errors['mysql_database'] = 'Please input a valid database';
         }
-        
+
         if ( empty($this->config['mysql_user']) ) {
             $this->form_errors['mysql_user'] = 'Please input a valid MySQL username';
         }
-        
+
         if ( empty($this->config['mysql_password']) ) {
             $this->form_errors['mysql_password'] = 'Please input a valid MySQL password';
         }
-        
+
         if ( $this->form_errors ) {
             return FALSE;
         }
-        
+
         # Test connection
         try {
             $host = $this->config['mysql_host'];
@@ -409,20 +417,20 @@ XHTML;
             return FALSE;
         }
     }
-    
+
     private function validate_wiki_settings_values() {
         if ( empty($this->config['wakka_name']) ) {
             $this->form_errors['wakka_name'] = "Please fill in a title " .
               "for your wiki. For example: <em>My Wikka website</em>";
         }
-        
+
         if ( empty($this->config['root_page']) ||
              ! preg_match('/^[A-Za-z0-9]{3,}$/', $this->config['root_page'])) {
             $this->form_errors['root_page'] = "Please fill in a valid name " .
               "for your wiki's homepage. For example: <em>start</em> or " .
               "<em>HomePage</em>";
         }
-        
+
         if ( $this->form_errors ) {
             return FALSE;
         }
@@ -430,7 +438,7 @@ XHTML;
           return TRUE;
         }
     }
-    
+
     private function validate_admin_values() {
         $admin_user = $this->get_form_value('admin_users');
         if ( empty($admin_user) ) {
@@ -441,7 +449,7 @@ XHTML;
                 "as a WikiName. For example: <em>JohnSmith</em> or " .
                 "<em>AbC</em> or <em>Ted22</em>";
         }
-        
+
         $pass1 = $this->get_form_value('password');
         $pass2 = $this->get_form_value('password2');
         if ( ! $pass1 ) {
@@ -450,14 +458,14 @@ XHTML;
         elseif ( strlen($pass1) < 5 ) {
             $this->form_errors['password'] = "Please fill in a password.";
         }
-        
+
         if ( ! $pass2 ) {
             $this->form_errors['password2'] = "Please fill in a password.";
         }
         elseif ( strcmp($pass1, $pass2) != 0 ) {
             $this->form_errors['password2'] = "Passwords don't match.";
         }
-        
+
         $admin_email = $this->get_form_value('admin_email');
         if ( empty($admin_email) ) {
             $this->form_errors['admin_email'] = "Please fill in your email address.";
@@ -466,7 +474,7 @@ XHTML;
             $admin_email) ) {
             $this->form_errors['admin_email'] = "Please fill in a valid email address.";
         }
-        
+
         if ( $this->form_errors ) {
             return FALSE;
         }
@@ -474,23 +482,23 @@ XHTML;
           return TRUE;
         }
     }
-    
+
     /*
      * Private Methods
      */
     private function is_downgrade() {
-        return (bool) $this->wikka->GetConfigValue('wakka_version') && (
-            $this->wikka->GetConfigValue('wakka_version') > WAKKA_VERSION);
+        return (bool) WikkaRegistry::get_config('wakka_version') && (
+            WikkaRegistry::get_config('wakka_version') > WAKKA_VERSION);
     }
-    
+
     private function is_upgrade() {
-        return (bool) $this->wikka->GetConfigValue('wakka_version');
+        return (bool) WikkaRegistry::get_config('wakka_version');
     }
-    
+
     private function is_fresh_install() {
         return !($this->is_upgrade());
     }
-    
+
     private function get_config_value($key, $default='') {
         if ( isset($this->config[$key]) ) {
             return $this->config[$key];
@@ -499,10 +507,10 @@ XHTML;
             return $default;
         }
     }
-    
+
     private function get_form_value($key, $default='') {
         $form_values = $this->request->get_post_var('config', array());
-        
+
         if ( isset($form_values[$key]) ) {
             return $form_values[$key];
         }
@@ -510,18 +518,18 @@ XHTML;
             return $default;
         }
     }
-    
+
     private function get_theme_options() {
         #
         # Return an array of theme options pulled from templates dir. Array
         # will consist of label => value pairs.
         #
         $options = array();
-        
+
         # Use configured path
         $theme_dir = 'templates';
         $dp = opendir($theme_dir);
-        
+
         # Build options list
         while ( $f = readdir($dp) ) {
             if ( $f[0] == '.' ) {
@@ -532,17 +540,17 @@ XHTML;
                 $options[$label] = $f;
             }
         }
-        
+
         return $options;
     }
-    
+
     private function get_language_options() {
         #
         # Return an array of language options pulled from lang dir. Array
         # will consist of label => value pairs.
         #
         $options = array();
-        
+
         $lang_map = array(
             'en' => 'English',
             'de' => 'Deutsch',
@@ -551,17 +559,17 @@ XHTML;
             'pl' => 'Polski',
             'vn' => 'Tiếng Việt'
         );
-        
+
         # Use configured path
         $lang_dir = 'lang';
         $dp = opendir($lang_dir);
-        
+
         # Build options list
         $path_f = 'lang%s%s%s%s.inc.php';
         while ( $f = readdir($dp) ) {
             $path = sprintf($path_f, DIRECTORY_SEPARATOR, $f,
                 DIRECTORY_SEPARATOR, $f);
-            
+
             if ( $f[0] == '.' ) {
                 continue;
             }
@@ -570,10 +578,10 @@ XHTML;
                 $options[$label] = $f;
             }
         }
-        
+
         return $options;
     }
-     
+
     /*
      * Format Methods
      */
@@ -584,7 +592,7 @@ XHTML;
             $this->footer
         );
     }
-    
+
     protected function format_header() {
         $header_f = <<<XHTML
         <h1>WikkaWiki <span class="type">%s</span></h1>
@@ -594,13 +602,13 @@ XHTML;
         return sprintf($header_f, $type);
 
     }
-    
+
     protected function format_footer() {
         return <<<XHTML
         <p class="text-muted">WikkaWiki</p>
 XHTML;
     }
-    
+
     protected function format_downgrade_warning() {
         $intro_f = <<<XHTML
     <div class="intro">
@@ -609,24 +617,24 @@ XHTML;
         <p>
           The Wikka code you have installed is reporting itself as version
           <code>%s</code>. Your configuration is reporting that you had version
-          <code>%s</code> previously running. Please verify that you have 
+          <code>%s</code> previously running. Please verify that you have
           downloaded and installed the correct version of WikkaWiki.
         </p>
-        
+
         <p>
           If you want to <strong>downgrade</strong> your code, it is recommended
           you back up your current database and WikkaWiki directory, and then
           install the new older version from scratch by removing your
           <code>%s</code> file.
         </p>
-        
+
         <p>
           You can circumvent this message and attempt to restore your site to
           its normal operation by editing the config file, <code>%s</code>,
-          and manually changing the <code>wakka_version</code> setting to 
-          <code>%s</code>. 
+          and manually changing the <code>wakka_version</code> setting to
+          <code>%s</code>.
         </p>
-        
+
         <p>
           For additional information, see the <a href="%s"
           target="_blank">documentation</a>.
@@ -637,14 +645,14 @@ XHTML;
 
         return sprintf($intro_f,
             WAKKA_VERSION,
-            $this->wikka->GetConfigValue('wakka_version'),
+            WikkaRegistry::get_config('wakka_version'),
             WIKKA_CONFIG_PATH,
             WIKKA_CONFIG_PATH,
             WAKKA_VERSION,
             WIKKA_INSTALL_DOCS_URL
         );
     }
-    
+
     protected function format_intro() {
         $intro_f = <<<XHTML
     <div class="intro">
@@ -652,7 +660,7 @@ XHTML;
         %s
         %s
       </div>
-      
+
       <div class="panel panel-info">
         <div class="panel-heading">
           <h4 class="panel-title">Permissions Note</h4>
@@ -682,14 +690,14 @@ XHTML;
         if ( $this->is_upgrade() ) {
             $preamble_f = <<<XHTML
         <p>
-          Your current version of Wikka is <code>%s</code>. You are 
-          about to <strong>upgrade</strong> to Wikka version <code>%s</code>. To 
+          Your current version of Wikka is <code>%s</code>. You are
+          about to <strong>upgrade</strong> to Wikka version <code>%s</code>. To
           start the upgrade, please hit the
           <span class="label label-primary">start</span> button.
         </p>
 XHTML;
             $preamble = sprintf($preamble_f,
-                $this->wikka->GetConfigValue('wakka_version'),
+                WikkaRegistry::get_config('wakka_version'),
                 WAKKA_VERSION
             );
             $type = 'upgrade';
@@ -698,7 +706,7 @@ XHTML;
         else {
             $preamble_f = <<<XHTML
         <p>
-          Since there is no existing Wikka configuration file, this probably is a 
+          Since there is no existing Wikka configuration file, this probably is a
           fresh Wikka install. You are about to install Wikka <code>%s</code>.
           Installing Wikka will take only a few minutes. To start the installation,
           please hit the <span class="label label-primary">start</span> button.
@@ -717,7 +725,7 @@ XHTML;
             WIKKA_CONFIG_PATH, WIKKA_CONFIG_PATH,
             $type, WIKKA_INSTALL_DOCS_URL);
     }
-    
+
     protected function format_database_form() {
         $form_f = <<<XHTML
     <div class="form">
@@ -763,30 +771,30 @@ XHTML;
             '"localhost" (i.e., the same machine your Wikka site is on).';
         $db_host_group = $this->build_input_form_group('mysql_host',
             'MySQL Host', $this->get_config_value('mysql_host'), $db_host_help);
-        
+
         $db_name_help = 'The MySQL database Wikka should use. This database ' .
             '<strong class="text-danger">needs to exist already</strong> ' .
             'before you continue!';
         $db_name_group = $this->build_input_form_group('mysql_database',
             'MySQL Database', $this->get_config_value('mysql_database'), $db_name_help);
-        
+
         $db_user_group = $this->build_input_form_group('mysql_user',
             'MySQL User Name', $this->get_config_value('mysql_user'));
-        
+
         $db_pass_help = 'Name and password of the MySQL user used to connect ' .
             'to your database.';
         $db_pass_group = $this->build_input_form_group('mysql_password',
             'MySQL Password', $this->get_config_value('mysql_password'),
             $db_pass_help, 'password');
-        
+
         $db_prefix_help = 'Prefix of all tables used by Wikka. This allows you ' .
             'to run multiple Wikka installations using the same MySQL database ' .
             'by configuring them to use different table prefixes.';
         $db_prefix_group = $this->build_input_form_group('table_prefix',
             'Table Prefix', $this->get_config_value('table_prefix'), $db_prefix_help);
-        
+
         return sprintf($form_f,
-            $this->wikka->FormOpen(),
+            $this->open_form(''),
             $form_alert,
             $db_host_group,
             $db_name_group,
@@ -795,7 +803,7 @@ XHTML;
             $db_prefix_group
         );
     }
-    
+
     protected function format_wiki_settings_form() {
         $form_f = <<<XHTML
     <div class="form">
@@ -833,14 +841,14 @@ XHTML;
         else {
             $form_alert = '';
         }
-        
+
         # Build form groups
         $wakka_name_help = 'The name of your wiki, as it will be displayed ' .
             'in the title.';
         $wakka_name_group = $this->build_input_form_group('wakka_name',
             "Your Wiki's Name", $this->get_config_value('wakka_name'),
             $wakka_name_help);
-        
+
         $root_page_help = 'Your wiki\'s home page. It should not contain ' .
             'any space or special character and be at least 3 characters ' .
             'long. It is typically formatted as a <abbr title="A WikiName ' .
@@ -848,21 +856,21 @@ XHTML;
             'e.g. HomePage">WikiName</abbr>.';
         $root_page_group = $this->build_input_form_group('root_page',
             'Home Page', $this->get_config_value('root_page'), $root_page_help);
-        
+
         $wiki_suffix_help = 'Suffix used for cookies and part of the session ' .
             'name. This allows you to run multiple Wikka installations on the ' .
             'same server by configuring them to use different wiki prefixes.';
         $wiki_suffix_group = $this->build_input_form_group('wiki_suffix',
             "Your Wiki Suffix", $this->get_config_value('wiki_suffix'),
             $wiki_suffix_help);
-        
+
         $meta_help = 'Optional keywords/description to insert into the HTML meta headers.';
         $meta_keywords_group = $this->build_input_form_group('meta_keywords',
             'Meta Keywords', $this->get_config_value('meta_keywords'));
         $meta_desc_group = $this->build_input_form_group('meta_description',
             'Meta Description', $this->get_config_value('meta_description'),
             $meta_help);
-        
+
         $theme_help = "Choose the <em>look and feel</em> of your wiki " .
             "(you'll be able to change this later).";
         $theme_group = $this->build_select_group('theme',
@@ -871,16 +879,16 @@ XHTML;
         $lang_group = $this->build_select_group('default_lang',
             'Language Pack', $this->get_language_options(),
             $this->get_config_value('default_lang'), $theme_help);
-        
+
         if ( $this->is_upgrade() ) {
             $version_group = $this->build_version_group();
         }
         else {
            $version_group = '';
         }
-        
+
         return sprintf($form_f,
-            $this->wikka->FormOpen(),
+            $this->open_form(''),
             $form_alert,
             $wakka_name_group,
             $root_page_group,
@@ -892,7 +900,7 @@ XHTML;
             $version_group
         );
     }
-    
+
     protected function format_admin_form() {
         $form_f = <<<XHTML
     <div class="form">
@@ -927,7 +935,7 @@ XHTML;
         else {
             $form_alert = '';
         }
-        
+
         # Build form groups
         $admin_name_help = 'This is the username of the person running this ' .
             'wiki. Later you\'ll be able to add other admins. The admin ' .
@@ -937,7 +945,7 @@ XHTML;
         $admin_name_group = $this->build_input_form_group('admin_users',
             "Admin Name", $this->get_config_value('admin_users'),
             $admin_name_help);
-        
+
         $pass_help = "Choose a password for the wiki administrator (5+ chars)";
         $pass1 = $this->get_form_value('password');
         $pass2 = $this->get_form_value('password2');
@@ -945,14 +953,14 @@ XHTML;
             $pass1, '', 'password');
         $pass2_group = $this->build_input_form_group('password2',
             "Confirm Password", $pass2, $pass_help, 'password');
-        
+
         $admin_email_help = "Administrator's email address.";
         $admin_email_group = $this->build_input_form_group('admin_email',
             "Email", $this->get_config_value('admin_email'),
             $admin_email_help);
-        
+
         return sprintf($form_f,
-            $this->wikka->FormOpen(),
+            $this->open_form(''),
             $form_alert,
             $admin_name_group,
             $pass1_group,
@@ -961,14 +969,14 @@ XHTML;
             $this->build_version_group()
         );
     }
-    
+
     protected function format_installer_report($installer) {
         $report_f = <<<XHTML
     <div class="installer-report">
       <div class="container">
         %s
       </div>
-      
+
       %s
       <div class="form-group buttons">
         %s
@@ -1003,7 +1011,7 @@ XHTML;
             If you believe the issues are negligible, hit the
             <span class="label label-primary">Continue</span> button.
             Otherwise, you can press the <span class="label label-warning">
-            Try Again</span> button to resubmit your information and try again. 
+            Try Again</span> button to resubmit your information and try again.
           </p>
         </div>
       </div>
@@ -1022,7 +1030,7 @@ XHTML;
             $this->next_stage_button('save_config_file')
         );
     }
-    
+
     protected function format_write_config_error($e) {
         $format = <<<XHTML
     <div class="installer-error row">
@@ -1030,12 +1038,12 @@ XHTML;
         <span class="glyphicon glyphicon-exclamation-sign"></span>
         Configuration issue
       </h4>
-      
+
       <div class="problem">
         <h3>Problem</h3>
         <h4>%s</h4>
       </div>
-      
+
       <div class="solution">
         <h3>Solution</h3>
         %s
@@ -1045,7 +1053,7 @@ XHTML;
 
         return sprintf($format, $e->getMessage(), $e->render_solution($this));
     }
-    
+
     protected function format_conclusion() {
         $conclusion_f = <<<XHTML
     <div class="conclusion">
@@ -1053,11 +1061,11 @@ XHTML;
         <span class="glyphicon glyphicon-ok"></span>
         Congratulations! Your installation is complete.
       </h4>
-      
+
       <h4 class="next">
         To return to you wikka site, click this link: <a href="%s">Home Page</a>
       </h4>
-      
+
       <div class="panel panel-warning">
         <div class="panel-heading">
           <h4 class="panel-title">Permissions Reminder</h4>
@@ -1074,7 +1082,7 @@ XHTML;
 
         return sprintf($conclusion_f, WIKKA_BASE_URL);
     }
-    
+
     /*
      * Format Helpers
      */
@@ -1088,7 +1096,7 @@ XHTML;
                 name="%s" value="%s" />
               %s
             </div>
-          </div>   
+          </div>
 XHTML;
 
         # Check for errors
@@ -1099,7 +1107,7 @@ XHTML;
         else {
             $error_class = '';
         }
-        
+
         # Helper Text
         if ( $help_text ) {
             $help_div_f = <<<XDIV
@@ -1112,13 +1120,13 @@ XDIV;
         else {
             $help_div = '';
         }
-        
+
         $name = sprintf('config[%s]', $id);
-        
+
         return sprintf($html_f, $id, $error_class, $id, $label, $id, $type, $name,
             $value, $help_div);
     }
-    
+
     private function build_checkbox_form_group($id, $label, $value,
         $is_checked=FALSE, $help_text='') {
         $html_f = <<<XHTML
@@ -1129,7 +1137,7 @@ XDIV;
                 name="%s" value="%s"%s />
               %s
             </div>
-          </div>   
+          </div>
 XHTML;
 
         # Check for errors
@@ -1140,7 +1148,7 @@ XHTML;
         else {
             $error_class = '';
         }
-        
+
         # Helper Text
         if ( $help_text ) {
             $help_div_f = <<<XDIV
@@ -1153,16 +1161,16 @@ XDIV;
         else {
             $help_div = '';
         }
-        
+
         # Checked Attr
         $check_attr = ($is_checked) ? ' checked="checked"' : '';
-        
+
         $name = sprintf('config[%s]', $id);
-        
+
         return sprintf($html_f, $id, $error_class, $id, $label, $id, $name,
             $value, $check_attr, $help_div);
     }
-    
+
     private function build_select_group($id, $label, $options, $value='',
         $help_text='') {
         $html_f = <<<XHTML
@@ -1174,7 +1182,7 @@ XDIV;
               </select>
               %s
             </div>
-          </div>   
+          </div>
 XHTML;
 
         # Check for errors
@@ -1198,7 +1206,7 @@ XDIV;
         else {
             $help_div = '';
         }
-        
+
         # Build option list
         $option_tags = array();
         $option_f = '<option value="%s"%s>%s</option>';
@@ -1206,13 +1214,13 @@ XDIV;
           $selected = ($opt_value == $value) ? ' selected' : '';
           $option_tags[] = sprintf($option_f, $opt_value, $selected, $opt_label);
         }
-        
+
         $name = sprintf('config[%s]', $id);
-        
+
         return sprintf($html_f, $id, $error_class, $id, $label, $id, $name,
             implode('', $option_tags), $help_div);
     }
-    
+
     private function build_version_group() {
         $group_f = <<<XHTML
           <div class="panel panel-info">
@@ -1232,7 +1240,7 @@ XDIV;
                 As a result, your IP address and/or domain name may be recorded
                 in our referrer logs.
               </p>
-              
+
               <p>
                 %s
               </p>
@@ -1241,11 +1249,11 @@ XDIV;
 XHTML;
 
         $config_value = $this->get_config_value('enable_version_check', NULL);
-        $value_missing = ($config_value == NULL); 
+        $value_missing = ($config_value == NULL);
         $is_checked = ( $value_missing || $config_value == '1' );
         $version_group = $this->build_checkbox_form_group('enable_version_check',
             "Enable Check", '1', $is_checked);
-        
+
         return sprintf($group_f, $version_group);
     }
 }

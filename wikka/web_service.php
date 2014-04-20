@@ -11,7 +11,7 @@
  * @license     http://www.gnu.org/copyleft/gpl.html GNU General Public License
  * @author      {@link https://github.com/klenwell/WikkaWiki Tom Atwell}
  * @copyright   Copyright 2014  Tom Atwell <klenwell@gmail.com>
- *  
+ *
  */
 require_once('wikka/registry.php');
 require_once('wikka/request.php');
@@ -22,7 +22,7 @@ require_once('libs/Wikka.class.php');
 
 
 class WikkaWebService {
-    
+
     /*
      * Properties
      */
@@ -36,19 +36,19 @@ class WikkaWebService {
         if ( ! $config_file_path ) {
            $config_file_path = WIKKA_CONFIG_PATH;
         }
-        
+
         if ( version_compare(phpversion(),'5.3','<') ) {
             error_reporting(E_ALL);
         }
         else {
             error_reporting(WIKKA_ERROR_LEVEL);
         }
-        
+
         $this->verify_requirements();
         $this->config = $this->load_config($config_file_path);
         WikkaRegistry::init($this->config);
     }
-    
+
     /*
      * Public Methods
      */
@@ -61,7 +61,7 @@ class WikkaWebService {
         # Returns boolean $magic_quotes_are_enabled. Magic quotes should be
         # disabled in any case by the time this function returns.
         $magic_quotes_were_enabled = get_magic_quotes_gpc();
-        
+
         if ( $magic_quotes_were_enabled ) {
             $process = array(&$_GET, &$_POST, &$_COOKIE, &$_REQUEST);
             while (list($key, $val) = each($process)) {
@@ -77,24 +77,24 @@ class WikkaWebService {
             }
             unset($process);
         }
-        
+
         return (bool) $magic_quotes_were_enabled;
     }
-    
+
     public function prepare_request() {
         $request = new WikkaRequest();
         $request->define_constants();
         $this->request = $request;
         return $request;
     }
-    
+
     public function start_session() {
         session_set_cookie_params(0, WIKKA_COOKIE_PATH);
         session_name(md5(BASIC_COOKIE_NAME . $this->config['wiki_suffix']));
         session_start();
         return null;
     }
-    
+
     public function authenticate_if_locked() {
         # A simple locking mechanism WikkaWiki has long used to restrict access,
         # especially for doing upgrades.
@@ -102,27 +102,27 @@ class WikkaWebService {
         if ( ! $this->site_is_locked() ) {
             return null;
         }
-        
+
         if ( ! $this->is_authenticated_to_unlock_site() ) {
             $auth_f = 'WWW-Authenticate: Basic realm="%s Install/Upgrade Interface"';
             $auth_header = sprintf($auth_f, $this->config["wakka_name"]);
-		
+
             header($auth_header);
             header("HTTP/1.0 401 Unauthorized");
             throw new BasicAuthenticationError(T_(
                 "This site is currently being upgraded. Please try again later."
             ));
         }
-        
+
         return null;
     }
-    
+
     public function enforce_csrf_token() {
         $token = $this->set_csrf_token_if_not_set();
         $this->authenticate_csrf_token();
         return $token;
     }
-    
+
     public function dispatch() {
         if ( $this->is_new_style_handler_request($this->request->route['handler']) ) {
             $response = $this->dispatch_to_handler();
@@ -130,20 +130,20 @@ class WikkaWebService {
         else {
             $response = $this->dispatch_to_legacy_handler();
         }
-        
+
         # Set common headers
         $response->set_header('Cache-Control', 'no-cache');
         $response->set_header('ETag', md5($response->body));
         $response->set_header('Content-Length', strlen($response->body));
-        
+
         return $response;
     }
-    
+
     private function is_new_style_handler_request($handler_name) {
         $handler_fname = sprintf('%s.php', $handler_name);
         $handler_path = sprintf('handlers/%s', $handler_fname);
         $HandlerClass = sprintf('%sHandler', ucwords($handler_name));
-        
+
         if ( ! file_exists($handler_path) ) {
             return FALSE;
         }
@@ -152,37 +152,37 @@ class WikkaWebService {
             return class_exists($HandlerClass, false);
         }
     }
-    
+
     private function dispatch_to_handler() {
         $route = $this->request->route;
         $handler_fname = sprintf('%s.php', $route['handler']);
         $handler_path = sprintf('handlers/%s', $handler_fname);
         $HandlerClass = sprintf('%sHandler', ucwords($route['handler']));
-        
+
         require_once($handler_path);
         $handler = new $HandlerClass($this->request);
         $handler_response = $handler->handle();
-    
+
         $wikka = WikkaBlob::autoload($this->config, $route['page'], $route['handler']);
         $templater = new WikkaTemplater($wikka);
         $templater->set('content', $handler_response->body);
         $handler_response->body = $templater->output();
-        
+
         return $handler_response;
     }
-    
+
     private function dispatch_to_legacy_handler() {
         $route = $this->request->route;
         $handler_response = $this->run_wikka_handler($route['page'], $route['handler']);
-        
+
         $wikka = WikkaBlob::autoload($this->config, $route['page'], $route['handler']);
         $templater = new WikkaTemplater($wikka);
         $templater->set('content', $handler_response->body);
         $handler_response->body = $templater->output();
-        
+
         return $handler_response;
     }
-    
+
     public function process_error($error) {
         #
         # Process error and display within the regular page template. Hopefully
@@ -193,9 +193,9 @@ class WikkaWebService {
         # insecure) error message.
         #
         $route = $this->request->route;
-        
+
         $wikka = WikkaBlob::autoload($this->config, $route['page'], $route['handler']);
-        
+
         if ( $error instanceof WikkaAccessError ) {
             $content = sprintf($error->template,
                 $wikka->format_error($error->getMessage()));
@@ -210,30 +210,27 @@ class WikkaWebService {
         $response->set_header('Cache-Control', 'no-cache');
         $response->set_header('ETag', md5($response->body));
         $response->set_header('Content-Length', strlen($response->body));
-        
+
         return $response;
     }
-    
-    public function process_installer() {
-        $wikka = new WikkaBlob($this->config);
-        $wikka->connect_to_db();
-    
-        $install_handler = $wikka->load_handler_class('install');
-        $response = $install_handler->handle($this);
-        
+
+    public function dispatch_to_installer() {
+        require_once('handlers/install.php');
+        $install_handler = new InstallHandler($this->request);
+        $response = $install_handler->handle();
         return $response;
     }
-    
+
     public function route_request() {
         # Return associative array with page/handler values. This could be a
         # private function, but I'd prefer to unit test it.
         $page = null;
         $handler = null;
-        
+
         # Get wakka param (strip first slash)
         $wakka_param = $this->request->get_param('wakka', '');
         $wakka_param = preg_replace("/^\//", "", $wakka_param);
-        
+
         # Extract pagename and handler from URL
         # Note this splits at the FIRST / so $handler may contain one or more
         # slashes; This is not allowed, and ultimately handled in the Handler()
@@ -245,25 +242,25 @@ class WikkaWebService {
         elseif ( preg_match("#^(.*)$#", $wakka_param, $matches) ) {
             list(, $page) = $matches;
         }
-        
+
         # Fix lowercase mod_rewrite bug: URL rewriting makes pagename lowercase. #135
         if ( (isset($_SERVER['REQUEST_URI'])) && (strtolower($page) == $page) ) {
             $pattern = preg_quote($page, '/');
             $decoded_uri = urldecode($_SERVER['REQUEST_URI']);
             $match_url = array();
-            
+
             if ( preg_match("/($pattern)/i", $decoded_uri, $match_url) ) {
                 $page = $match_url[1];
             }
         }
-        
+
         if ( is_null($handler) ) {
             $handler = 'show';
         }
-        
+
         return array('page' => $page, 'handler' => $handler);
     }
-    
+
     public function interrupt_if_install_required() {
         if ( $this->config['wakka_version'] !== WAKKA_VERSION ) {
             if ( ! $this->config['wakka_version'] ) {
@@ -273,14 +270,14 @@ class WikkaWebService {
                 $m = sprintf("Upgrade required: version %s to %s",
                     $this->config['wakka_version'], WAKKA_VERSION);
             }
-            
+
             throw new WikkaInstallInterrupt($m);
         }
         else {
             return null;
         }
     }
-    
+
     /*
      * Private Methods
      */
@@ -290,7 +287,7 @@ class WikkaWebService {
         $handler_response = $wikka->Run($page_name, $handler_name);
         return $handler_response;
     }
-    
+
     private function set_csrf_token_if_not_set() {
         # return token
         if ( ! isset($_SESSION['CSRFToken']) ) {
@@ -298,11 +295,11 @@ class WikkaWebService {
         }
         return $_SESSION['CSRFToken'];
     }
-    
+
     private function authenticate_csrf_token() {
         $posted_token = $this->request->get_post_var('CSRFToken');
         $session_token = $_SESSION['CSRFToken'];
-        
+
         if ( $_POST ) {
             if ( ! $posted_token ) {
                 throw new WikkaCsrfError('Authentication failed: NoCSRFToken');
@@ -311,73 +308,73 @@ class WikkaWebService {
                 throw new WikkaCsrfError('Authentication failed: CSRFToken mismatch');
             }
         }
-        
+
         return true;
     }
-    
+
     private function verify_requirements() {
         if ( ! function_exists('version_compare') ||
             version_compare(phpversion(),MINIMUM_PHP_VERSION,'<') ) {
             $message = sprintf(ERROR_WRONG_PHP_VERSION, MINIMUM_PHP_VERSION);
             throw new WikkaWebServiceError($message);
         }
-        
+
         if ( ! function_exists('mysql_connect') ) {
             throw new WikkaWebServiceError(ERROR_MYSQL_SUPPORT_MISSING);
         }
     }
-    
+
     private function load_config($config_file_path) {
         # Load default settings
         require(WIKKA_DEFAULT_CONFIG_PATH);
-        
+
         # If config file is missing, return default settings to trigger install
         if ( ! file_exists($config_file_path) ) {
             return $wakkaDefaultConfig;
         }
-        
+
         # Load config settings
         include($config_file_path);
-        
+
         # If $wakkaConfig not set, return default settings to trigger install
         if ( ! isset($wakkaConfig) ) {
             return $wakkaDefaultConfig;
         }
-        
+
         # Overwrite defaults with config file settings
         $wakkaConfig = array_merge($wakkaDefaultConfig, $wakkaConfig);
-        
+
         # Load language defaults
         require_once('wikka/language_defaults.php');
-        
+
         # Load multi-config
         if ( file_exists(WIKKA_MULTI_CONFIG_PATH) ) {
             require_once(WIKKA_MULTI_CONFIG_PATH);
         }
-        
+
         return $wakkaConfig;
     }
-    
+
     private function connect_to_db() {
         $host = $this->config['mysql_host'];
         $name = $this->config['mysql_database'];
         $user = $this->config['mysql_user'];
         $pass = $this->config['mysql_password'];
         $dsn = sprintf('mysql:host=%s;dbname=%s', $host, $name);
-        
+
         $pdo = new PDO($dsn, $user, $pass);
         return $pdo;
     }
-    
+
     private function site_is_locked() {
         return file_exists('locked');
     }
-    
+
     private function is_authenticated_to_unlock_site() {
         # read password from lockfile
         $lines = file_get_contents("locked");
         $lockpw = trim($lines);
-        
+
         return isset($_SERVER["PHP_AUTH_USER"]) && (
             ($_SERVER["PHP_AUTH_USER"] == "admin") &&
             ($_SERVER["PHP_AUTH_PW"] == $lockpw)

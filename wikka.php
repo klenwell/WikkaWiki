@@ -48,7 +48,7 @@ try {
     $response = $webservice->dispatch();
 }
 catch (WikkaInstallInterrupt $e) {
-    $response = $webservice->process_installer();
+    $response = $webservice->dispatch_to_installer();
 }
 catch (Exception $e) {
     $response = $webservice->process_error($e);
