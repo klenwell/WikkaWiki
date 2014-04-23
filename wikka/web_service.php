@@ -50,6 +50,90 @@ class WikkaWebService {
     }
 
     /*
+     * Dispatch Methods
+     */
+    public function dispatch() {
+        if ( $this->is_new_style_handler_request($this->request->route['handler']) ) {
+            $response = $this->dispatch_to_handler();
+        }
+        else {
+            $response = $this->dispatch_to_legacy_handler();
+        }
+
+        # Set common headers
+        $response->set_header('Cache-Control', 'no-cache');
+        $response->set_header('ETag', md5($response->body));
+        $response->set_header('Content-Length', strlen($response->body));
+
+        return $response;
+    }
+
+    private function dispatch_to_handler() {
+        $route = $this->request->route;
+        $handler_fname = sprintf('%s.php', $route['handler']);
+        $handler_path = sprintf('handlers/%s', $handler_fname);
+        $HandlerClass = sprintf('%sHandler', ucwords($route['handler']));
+
+        require_once($handler_path);
+        $handler = new $HandlerClass($this->request);
+        $handler_response = $handler->handle();
+
+        $wikka = WikkaBlob::autoload($this->config, $route['page'], $route['handler']);
+        $templater = new WikkaTemplater($wikka);
+        $templater->set('content', $handler_response->body);
+        $handler_response->body = $templater->output();
+
+        return $handler_response;
+    }
+
+    private function dispatch_to_legacy_handler() {
+        $route = $this->request->route;
+        $handler_response = $this->run_wikka_handler($route['page'], $route['handler']);
+
+        $wikka = WikkaBlob::autoload($this->config, $route['page'], $route['handler']);
+        $templater = new WikkaTemplater($wikka);
+        $templater->set('content', $handler_response->body);
+        $handler_response->body = $templater->output();
+
+        return $handler_response;
+    }
+
+    public function dispatch_error($error) {
+        #
+        # TODO: make the templating more foolproof. Seems too easy currently to
+        # have another error occur and end up displaying an ugly (and potentially
+        # insecure) error message.
+        #
+        $route = $this->request->route;
+
+        $wikka = WikkaBlob::autoload($this->config, $route['page'], $route['handler']);
+
+        if ( $error instanceof WikkaAccessError ) {
+            $content = sprintf($error->template,
+                $wikka->format_error($error->getMessage()));
+            $response = new WikkaResponse($content, 401);
+        }
+        else {
+            $templater = new WikkaTemplater($wikka);
+            $templater->set('content', $templater->format_error($error->getMessage()));
+            $response = new WikkaResponse($templater->output(), 500);
+        }
+
+        $response->set_header('Cache-Control', 'no-cache');
+        $response->set_header('ETag', md5($response->body));
+        $response->set_header('Content-Length', strlen($response->body));
+
+        return $response;
+    }
+
+    public function dispatch_to_installer() {
+        require_once('handlers/install.php');
+        $install_handler = new InstallHandler($this->request);
+        $response = $install_handler->handle();
+        return $response;
+    }
+
+    /*
      * Public Methods
      */
     public function disable_magic_quotes_if_enabled() {
@@ -123,22 +207,6 @@ class WikkaWebService {
         return $token;
     }
 
-    public function dispatch() {
-        if ( $this->is_new_style_handler_request($this->request->route['handler']) ) {
-            $response = $this->dispatch_to_handler();
-        }
-        else {
-            $response = $this->dispatch_to_legacy_handler();
-        }
-
-        # Set common headers
-        $response->set_header('Cache-Control', 'no-cache');
-        $response->set_header('ETag', md5($response->body));
-        $response->set_header('Content-Length', strlen($response->body));
-
-        return $response;
-    }
-
     private function is_new_style_handler_request($handler_name) {
         $handler_fname = sprintf('%s.php', $handler_name);
         $handler_path = sprintf('handlers/%s', $handler_fname);
@@ -151,74 +219,6 @@ class WikkaWebService {
             require_once($handler_path);
             return class_exists($HandlerClass, false);
         }
-    }
-
-    private function dispatch_to_handler() {
-        $route = $this->request->route;
-        $handler_fname = sprintf('%s.php', $route['handler']);
-        $handler_path = sprintf('handlers/%s', $handler_fname);
-        $HandlerClass = sprintf('%sHandler', ucwords($route['handler']));
-
-        require_once($handler_path);
-        $handler = new $HandlerClass($this->request);
-        $handler_response = $handler->handle();
-
-        $wikka = WikkaBlob::autoload($this->config, $route['page'], $route['handler']);
-        $templater = new WikkaTemplater($wikka);
-        $templater->set('content', $handler_response->body);
-        $handler_response->body = $templater->output();
-
-        return $handler_response;
-    }
-
-    private function dispatch_to_legacy_handler() {
-        $route = $this->request->route;
-        $handler_response = $this->run_wikka_handler($route['page'], $route['handler']);
-
-        $wikka = WikkaBlob::autoload($this->config, $route['page'], $route['handler']);
-        $templater = new WikkaTemplater($wikka);
-        $templater->set('content', $handler_response->body);
-        $handler_response->body = $templater->output();
-
-        return $handler_response;
-    }
-
-    public function process_error($error) {
-        #
-        # Process error and display within the regular page template. Hopefully
-        # no other errors will occur at this point.
-        #
-        # TODO: make the templating more foolproof. Seems too easy currently to
-        # have another error occur and end up displaying an ugly (and potentially
-        # insecure) error message.
-        #
-        $route = $this->request->route;
-
-        $wikka = WikkaBlob::autoload($this->config, $route['page'], $route['handler']);
-
-        if ( $error instanceof WikkaAccessError ) {
-            $content = sprintf($error->template,
-                $wikka->format_error($error->getMessage()));
-            $response = new WikkaResponse($content, 401);
-        }
-        else {
-            $templater = new WikkaTemplater($wikka);
-            $templater->set('content', $wikka->format_error($error->getMessage()));
-            $response = new WikkaResponse($templater->output(), 500);
-        }
-
-        $response->set_header('Cache-Control', 'no-cache');
-        $response->set_header('ETag', md5($response->body));
-        $response->set_header('Content-Length', strlen($response->body));
-
-        return $response;
-    }
-
-    public function dispatch_to_installer() {
-        require_once('handlers/install.php');
-        $install_handler = new InstallHandler($this->request);
-        $response = $install_handler->handle();
-        return $response;
     }
 
     public function route_request() {
