@@ -391,13 +391,6 @@ case "1.1.6.7":
 	update_default_page('FormattingRules', $dblink, $config, $lang_defaults_path, $lang_defaults_fallback_path, $upgrade_note);
 case "1.2":
 	print("<strong>1.2 to 1.3.1 changes:</strong><br />\n");
-	test(sprintf(ADDING_CONFIG_ENTRY, 'enable_user_host_lookup' ), 1);
-	$config['enable_user_host_lookup'] = '1';
-	update_default_page(array(
-		'SysInfo', 
-		'TableMarkup', 
-		'TableMarkupReference', 
-		'WikkaConfig'), $dblink, $config, $lang_defaults_path, $lang_defaults_fallback_path, $upgrade_note);
 	// Dropping obsolete "handler" field from pages table, refs #452
 	test('Removing handler field from the pages table...',
 	@mysql_query("ALTER TABLE ".$config["table_prefix"]."pages DROP handler", $dblink), __('Already done? OK!'), 0);
@@ -528,7 +521,11 @@ case "1.3.2":
 	print("<strong>1.3.2 to 1.3.3 changes:</strong><br />\n");
 	test("Adding/updating title field to users page ...",  
 	@mysql_query("alter table `".$config["table_prefix"]."pages` ADD `title` varchar(75) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT '' AFTER `tag`", $dblink), __("Already done? OK!"), 0); // refs #529
-case "1.4":
+case "1.3.6":
+	print("<strong>1.3.5 to 1.3.6 changes:</strong><br />\n");
+	test("Changing \"default\" theme references to \"classic\" theme ...",  
+	@mysql_query("UPDATE `".$config["table_prefix"]."users` SET theme='classic' WHERE theme='default'", $dblink), __("Already done? OK!"), 0);
+case "trunk":
 }
 
 // #600: Force reloading of stylesheet.

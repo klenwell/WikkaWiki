@@ -1,71 +1,47 @@
 /*
 -----------------------------------------------
-Wikka Light Stylesheet (screen)
+Wikka Default Stylesheet (screen)
 ----------------------------------------------- */
-
-/* global styling */
-
-p, td, li, input, select, textarea {
-	font-family:  Georgia, "DejaVu Serif", "Trebuchet MS", Times, serif; 
-	line-height: 20px;
-	font-size: 13px;
-}
-
-form, h1, h2, h3, h4, h5 {
-	margin: 0px;
-	padding: 0px;
-}
 
 /* page layout */
 
-body{
-	color:#333;
-	background-color: #EEE;
-	margin-top: 40pt;
-	margin-left: 80pt;
-	margin-right: 80pt;	
-	margin-bottom: 40pt;
-	font: normal 10pt/16pt Georgia, "DejaVu Serif", "Trebuchet MS", Times, serif; 
-	text-align: left;
-	color: #444;
-	background: #FFF url(../images/bkg.gif) fixed top;
-	border: none 0; 
+body {
+	font-family: "Lucida Grande", "Lucida Sans Unicode", "DejaVu Sans", Verdana, sans-serif;
+	font-size: 13px;
+	line-height: 20px;
+	color: #000000;
+	background-color: #F8F8F8;
+	margin: 0;
+/*	text-align: justify; */			/* comment out this line if you really need justified text */
 }
 
 #page {
-	margin: 0 auto;
-	width: 850px;
 }
 
 #header {
 	position: relative; /* needed for the correct positioning of system messages */
-	padding: 10px;
-	padding-top: 0px;
-}
-
-#header h2 {
-	text-align: left;
-	font: normal 14pt Arial, "DejaVu Sans", Helvetica, sans-serif; 
+	padding: 10px 10px 0 10px;
 }
 
 #content {
-	border: 1px solid #BBB;
-	text-align: left;
-	background-color: #FFF; 
-	padding: 30px 30px 30px 30px;
 	clear: both;
+	color: #000;
+	background-color: white;
+	padding: 15px;
+	border: 1px solid #CCC;
 }
 
 #footer {
-	float:left;	
-/*	background-color: #DDD; */
-	width: auto;
+	background-color: #EAEAEA;
+	border-bottom: 1px solid #CCC;
 	padding: 0 10px;
+	height: 25px;
 }
 
 #smallprint {
-	font-family: Arial, Helvetica, sans-serif; 
-	font-size: 0.7em;
+	clear: both;
+	float: right;
+	font-size: 0.8em;
 	color: #777;
 	padding-right: 0.5%;
 	text-align: right;
@@ -75,41 +51,49 @@ body{
 
 /* wrapper for the whole comments block, contains the header and the actual comments */
 #comments {
-	margin-top: 20px;	
-	padding: 10px;
-	color: #333;	
-	background-color: #D0E0F0;
-	border: 1px solid #ABC;
+	margin: 0px;
+	background-color: #DDD;
+	padding-bottom: 10px;
+	border-bottom: 1px solid #CCC;
 }
 
-#comments a {
-	color: #666;	
-	text-decoration: none;
+#comments form {
+	display: inline;
 }
 
-#commentsheader {
+div#comments form input[type=submit] {
+	font-size: 80%;
+	padding: 1px 2px;
+}
+
+#commentheader {
 	clear: both;
-	border-top: 1px solid #CCC;
+	background-color: #DDD;
+	padding: 2px 10px;
+	border-left: 1px solid #CCC;
+	border-right: 1px solid #CCC;
+	border-top: none;
 }
 
 /* wrapper for the comment lists */
 .commentscontainer {
 }
 
+#commentlist {}
+
 /* alternate color for single comments */
-/* set contents of next 2 selectors the same if not alternation desired */
 .comment-layout-1 {
-	background-color: #D0E0F0;
+	background-color: #DDDDDD;
 	padding: 5px;
-	border: 1px solid #ABC;
-	margin: 5px;
+	border: 1px solid #CCCCCC;
+	margin: 10px;
 }
 
 .comment-layout-2 {
-	background-color: #C0D0E0;
+	background-color: #EEEEEE;
 	padding: 5px;
-	border: 1px solid #ABC;
-	margin: 5px;
+	border: 1px solid #CCCCCC;
+	margin: 10px;
 }
 
 .commentbody {
@@ -119,49 +103,50 @@ body{
 }
 
 .commentform {
-}
-
-#commentform textarea {
-	height: 80px;
-}
-
-textarea#commentbox {
-	height: 80px;
+	background-color: #EEE;
+	padding: 10px;
 }
 
 .commentinfo {
-	color: #999999;
+	color: #999;
 	font-size: 80%;
 	font-family: "Lucida Console", Monaco, monospace;
 }
 
 .commentdeleted {
-	color: #AAAAAA;
+	color: #AAA;
 }
 
 .commentauthor {
 	font-size: 1.2em;
 	line-height: 20px;
-	color: #000000;
+	color: #000;
 	margin: 5px 5px 0 0;
 }
 
 .commentparent {
 	font-size: 1em;
 	line-height: 20px;
-	color: #555555;
-	margin: 5px 5px 5px 5px;
+	margin: 5px;
 }
 
 /* links */
 
 a {
-	color: #20557B;
+	color: #339;
+	text-decoration: none;
+}
+
+a:visited {
 	text-decoration: none;
 }
 
 a:hover {
 	color: #933;
+}
+
+a:active {
+	text-decoration: none;
 }
 
 a.ext {
@@ -172,110 +157,58 @@ a.ext:hover {
 	color: #933;
 }
 
-#header a, #footer a {
-	color: #20557B;
-	font-family: Arial, Helvetica, sans-serif; 	
+/* link icons */
+
+#content a.ext {
+	background: url('../images/ext_simple.gif') left bottom no-repeat;
+	padding-left: .8em;
 }
 
-
-#header h2 a {
-	font: normal 14pt Arial, "DejaVu Sans", Helvetica, sans-serif; 
-	color: #AAA;
+#content a.mailto {
+	background: url('../images/mail.gif') left bottom no-repeat;
+	padding-left: .9em;
 }
 
-#header h2 a:hover {
-	color: #666;
-	background-color: transparent;
+#content a.interwiki {
+	background: url('../images/ext.gif') left bottom no-repeat;
+	padding-left: 1em;
 }
 
-#header h2 a#homepage_link {
-	color: #666;
+a.user, a.user:hover {
+	background: url('../images/user.gif') left bottom no-repeat;
+	padding-left: 1em;
+}
+#header a:hover {
+	color: #933;
+	background: transparent;
+	border-bottom: 0px;
 }
 
-#header h2 a#homepage_link:hover {
-	color: #333;
+a#homepage_link {
+	color: #000;
 }
 
-#content a:link, #content a:visited {
-	font-family: inherit;
-	margin: 1pt;
-	font-size: inherit;
-	padding: 1pt;
-	height: auto;
-	line-height: inherit;
-	width: auto;
-	color: #20557B;
+#content a {
 	text-decoration: none;
-/*	background-color: #FFF; */
 }
 
-#content a:hover, #content a:active {
-	font-family: inherit;
-	margin: 1pt;
-	font-size: inherit;
-	padding: 1pt;
-	height: auto;
-	line-height: inherit;
-	width: auto;
-	color: #CC6600;
-	font-weight: inherit;
+#content a:hover {
+	color: #933;
+	text-decoration: underline;
 }
 
-#content a.datetime {
-	color: #666;
-	font-size: 80%;
-	font-family: "Lucida Console", Monaco, monospace;
-}
-
-#content a.keys, #content a.keys:hover {
-	color: #666;
-	background-color: #DDD;
-	font: normal 95% Verdana, sans-serif;
+#content a.keys:hover {
 	text-decoration: none;
+	color: #333;	
 }
 
 #content a.heading {
-	line-height: inherit;
-	color: #666;
-	padding: 0;
-	margin: 0;
+	color: #000;
 }
 
 #content a.heading:hover {
-	color: #666;
+	color: #000;
 	text-decoration: none;
-	background-color: transparent;
-}
-
-/* link tails */
-
-/* user links and spans */
-.user, .user:hover {
-	background: url(../images/user.gif) left bottom no-repeat;
-	padding-left: .9em;
-}
-
-#content a.user, #content a.user:hover {
-	background: url(../images/user.gif) left bottom no-repeat;
-	padding-left: .9em;
-}
-
-/* external links */
-#content a.ext, #content a.ext:hover {
-	background: url(../images/ext_simple.gif) right center no-repeat;
-	padding-right: .8em;
-}
-
-/* interwiki links */
-#content a.interwiki, #content a.interwiki:hover {
-	background: url(../images/ext.gif) right center no-repeat;
-	padding-right: .9em;
-}
-
-/* mailto links */
-#content a.mailto, #content a.mailto:hover {
-	background: url(../images/mail.gif) right center no-repeat;
-	padding-right: 1em;
 }
 
 /* lists */
@@ -287,20 +220,16 @@ ul, ol {
 	padding-bottom: 0px;
 }
 
-li {
-	margin: .5em;
+ul.thread {
+	list-style-type: none;
+	border-left: 2px #666 solid;
+	padding-left: 10px;
+	margin: 5px 0px;
 }
 
-ul.thread {
-        list-style-type: none;
-        border-left: 2px #666 solid;
-        padding-left: 10px;
-        margin: 5px 0px;  
-}
-        
 ul.thread li {
-        color: #333;
-        font-size: 11px;
+	color: #333;
+	font-size: 11px;
 }
 
 /* images */
@@ -340,22 +269,22 @@ img.icon {
 
 .floatl {
 	float: left;
-	font-size: 90%;
-	line-height: 1.5em;
-	padding: 5px;
-	width: 48%;
-	margin-right: 3%;
-	border: 1px dotted #CCC;
+	text-align: left;
+	width: 46%;
+	margin-right: 15px;
+	padding: 4px;
+	background: #EEE;
+	border: 1px solid #CCC; 		
 }
 
 .floatr {
-	float: right; 
-	font-size: 90%; 
-	line-height: 1.5em; 
-	padding: 5px;
-	width: 48%;
-	margin-left: 3%;
-	border: 1px dotted #CCC;
+	float: right;
+	text-align: left;
+	width: 46%;
+	margin-left: 15px;
+	padding: 4px;
+	background: #EEE;
+	border: 1px solid #CCC; 		
 }
 
 /* simply left-float element */
@@ -372,53 +301,45 @@ img.icon {
 
 /* text formatting */
 
-#content h1 {
-	font: normal 18pt/20pt  Arial, "DejaVu Sans", Helvetica, Verdana, sans-serif;
-	margin: 0pt;
-	color: #666;
-	padding-bottom: 10px;
-	border: none 0;
-	border-bottom: 1px dotted #DDD; 
-}
-
-#content h2 {
-	font: normal 16pt/18pt  Arial, "DejaVu Sans", Helvetica, Verdana, sans-serif;
-	margin: 0pt;
-	color: #666;
-	padding-bottom: 10px;
-	border-bottom: 1px dotted #DDD; 
-}
-
-#content h3 {
-	font: normal 14pt/16pt Arial, "DejaVu Sans", Helvetica, Verdana, sans-serif;
-	margin: 0pt;
-	color: #666;
-	padding-bottom: 8px;
-}
-
-#content h4 {
-	font: normal 12pt/14pt Arial, "DejaVu Sans", Helvetica, Verdana, sans-serif;
-	margin: 0pt;
-	color: #666;
-	padding-bottom: 6px;
+h1, h2, h3, h4, h5 {
+	font-family: Georgia, "DejaVu Serif", Times, serif;
+	font-weight: normal;
+	margin: 0px;
+	padding: 0px;
 }
 
 #content h5 {
-	font: small-caps 10pt/16pt Arial, "DejaVu Sans", Helvetica, Verdana, sans-serif;
-	margin: 0pt;
-	color: #666;
-	letter-spacing: 0.1em;
+	margin-bottom: 4pt;
+	font-size: 12pt;
 }
 
-#content h6 {
-	font: bold 10pt/12pt Arial, "DejaVu Sans", Helvetica, Verdana, sans-serif;
-	color: #666;
+#content h4 {
+	margin-bottom: 5pt;
+	font-size: 14pt;
+}
+
+#content h3 {
+	font-size: 16pt;
+	margin-bottom: 6pt;
+}
+
+#content h2 {
+	font-size: 18pt;
+	margin-bottom: 8pt;
+}
+
+#content h1 {
+	font-size: 20pt;
+	margin-bottom: 10pt;
+}
+
+#header h2 {
+	font-size: 18pt;
+	padding: .3em 0; 
 }
 
 tt {
-	font-size: 11px;
-	color: #999;
-	background-color: #EEE; 
+	color: #666;
 }
 
 .hidden {
@@ -427,7 +348,7 @@ tt {
 
 .wikisource {
 	font-family: monospace;
-	font-size: .9em;
+	font-size: 1.1em;
 	color: #666;
 	background-color: #F9F9F9;
 	border: 1px solid #CCC;
@@ -446,11 +367,7 @@ tt {
 }
 
 .notes {
-	font: normal 8pt Verdana, sans-serif;
-	margin: 1pt;
-	padding: 1pt;
-	color: #666666;
-	font-weight: normal;	
+	color: #880;
 }
 
 .help {
@@ -485,25 +402,20 @@ tt {
 acronym {
 	border-bottom: 1px dotted #333;
 	cursor: help;
-	color: #333;
 }
 
 abbr {
 	border-bottom: 1px dotted #333;
 	cursor: help;
-	color: #333;
 }
 
 blockquote {
-	width: 500px;
-	margin-bottom: 0px;
+	font-size: 90%;
 }
 
 hr {
-	border: none 0;
-	border-top: 1px dotted #DDD; 
-	margin: 8px auto;
-	height: 1px;
+	border: 0;
+	border-top: 1px solid #EEE;
 }
 
 .disabled {
@@ -519,7 +431,7 @@ hr {
 	border-right: 1px solid #AAC;
 	border-left: 1px solid #AAC;
 	border-bottom: none;
-	font-family: Arial, Verdana, "DejaVu Sans", Helvetica, sans-serif;
+	font-family: Verdana, Arial, sans-serif;
 	font-size: 100%;
 	padding: 0 3px;
 	margin: 5px auto 0 auto;
@@ -549,6 +461,11 @@ hr {
 
 /* form elements */
 
+form {
+	margin: 0px;
+	padding: 0px;
+}
+
 fieldset {
 	margin-top: 10px;
 	margin-bottom: 10px;
@@ -573,15 +490,121 @@ select:focus {
 	background-color: #E6E6FF;
 }
 
-textarea {
-	margin-right: 0;
-	width: 98%;
-	height: 500px;
-	border: 1px solid #CCC;
+/* Usersettings action */
+
+fieldset#account {
+	display: block;
+	min-width: 600px;
+	padding: 10px;
+	background-color: #F6F6F6;
+	text-align: left;
 }
 
-textarea:hover {
-	background-color: #F3F3F3;
+fieldset#account span#account_info {
+	display: block;
+	width: 230px;
+	float: left;
+	margin-bottom: 10px;
+	text-align: right;
+	padding-right: 10px;
+}
+
+fieldset#account input#logout {
+	float: left;
+	margin-left: 0;
+}
+
+fieldset.usersettings {
+	display: block;
+	min-width: 600px;
+	padding: 10px;
+}
+
+fieldset.usersettings fieldset {
+	clear: left;
+	display: block;
+	width: 236px;
+	float: left;
+	margin: 0 0 10px 240px;
+}
+
+fieldset.usersettings fieldset legend {
+	margin: 0;
+}
+
+fieldset.usersettings fieldset input{
+	display: block;
+	float: left;
+	padding: 0;
+	margin: 0;
+}
+
+fieldset.usersettings fieldset label {
+	vertical-align: top;
+	margin: 0 0 0 10px;
+	display: inline;
+	text-align: left;
+	width: auto;
+	float:left;
+}
+
+fieldset.usersettings em {
+	clear: left;
+	float: left;
+	display: block;
+	margin: 0 0 0 240px;
+}
+
+fieldset.usersettings em.usersettings_info {
+	clear: left;
+	float: left;
+	text-align: center;
+	display: block;
+	width: 246px;
+	margin: 0 0 5px 240px;
+	font-style: normal;
+	font-size: 85%;
+	color: #666;
+	border: 1px solid #CCC;
+	background-color: #F0F0F0;
+	padding: 2px;
+}
+
+fieldset.usersettings label {
+	display: block;
+	width: 230px;
+	float: left;
+	margin-bottom: 10px;
+	text-align: right;
+	padding-right: 10px;
+}
+
+fieldset.usersettings select#update_option {
+	display: block;
+	width: 230px;
+	float: left;
+	margin: 0px 10px 10px 0px;
+}
+
+fieldset.usersettings input[type=text], fieldset.usersettings input[type=password] {
+	display: block;
+	width: 250px;
+	float: left;
+	margin-bottom: 10px;
+	border:1px solid #CCC;
+}
+
+fieldset.usersettings input[type=submit] {
+	float: left;
+	margin-left: 250px;
+}
+
+fieldset.usersettings br {
+	clear: left;
+}
+
+textarea {
+	border: 1px solid #CCC;	
 }
 
 textarea:focus {
@@ -607,7 +630,7 @@ input[type=hidden] {
 input[type=submit], input[type=button] {
 	color: #666;
 	background-color: #EEE;
-	font: normal 90% Arial, Helvetica, Verdana, sans-serif;
+	font: normal 95% Verdana, sans-serif;
 	text-align: center;
 	border-top: 1px solid #FFF;
 	border-left: 1px solid #FFF;
@@ -646,7 +669,6 @@ textarea#body{
 	border: 1px solid #CCA;
 	padding: 0px;
 	margin: 0px;
-	width: 80px;
 }
 
 input.grabcode {
@@ -663,16 +685,18 @@ input.highlight {
 
 /* system information */
 
-.missingpage {
-	color: #993357;
-	text-decoration: none;
-	background-color: transparent;
-	border: none;
+.datetime {
+	color: #666;
+	font-size: 80%;
+	font-family: "Lucida Console", Monaco, monospace;
 }
 
-.missingpage:after {
-	content: "+";
-	color: #CCC;
+.missingpage {
+	/* background: #ccffff; */
+	text-decoration: none;
+	border-bottom-width: 1px;
+	border-bottom-color: #933;
+	border-bottom-style: dashed;
 }
 
 /* inline system messages */
@@ -694,7 +718,7 @@ em.success {
 
 div.success {
 	position: fixed;
-	top: 2em;
+	top: 6em;
 	right: 1.5em;
 	max-width: 40%;
 	border: 2px solid #3A3;
@@ -739,8 +763,8 @@ div.success {
 	margin: auto;
 	z-index:20;
 	position:fixed;
-	top: 80px;
-	left: 10px;
+	top: 70px;
+	right: 10px;
 	color: red;
 	font-size: xx-large;
 	font-weight: bold;
@@ -758,16 +782,12 @@ del {
 	text-decoration: none;
 }
 
-ins tt, del tt {
-	background-color: inherit;
-}
-
 .pagetitle, .pagenote {color: #888;}
 
 .smaller {font-size: smaller;}
 
 #smallprint a {
-	color: #666;
+	color: #987;
 }
 
 /* sort order information in sortable lists and tables*/
@@ -844,9 +864,6 @@ table.data td.number {
 }
 
 table.data td.datetime {
-	color: #666;
-	font-size: 80%;
-	font-family: "Lucida Console", Monaco, monospace;
 	text-align: right;
 	white-space: nowrap;
 }
@@ -1095,118 +1112,6 @@ ul.recentchanges li {
 table.usersettings {
 }
 
-fieldset#account {
-	display: block;
-	min-width: 600px;
-	padding: 10px;
-	background-color: #F6F6F6;
-	text-align: left;
-}
-
-fieldset#account span#account_info {
-	display: block;
-	width: 230px;
-	float: left;
-	margin-bottom: 10px;
-	text-align: right;
-	padding-right: 10px;
-}
-
-fieldset#account input#logout {
-	float: left;
-	margin-left: 0;
-}
-
-fieldset.usersettings {
-	display: block;
-	min-width: 600px;
-	padding: 10px;
-}
-
-fieldset.usersettings fieldset {
-	clear: left;
-	display: block;
-	width: 236px;
-	float: left;
-	margin: 0 0 10px 240px;
-}
-
-fieldset.usersettings fieldset legend {
-	margin: 0;
-}
-
-fieldset.usersettings fieldset input{
-	display: block;
-	float: left;
-	padding: 0;
-	margin: 0;
-}
-
-fieldset.usersettings fieldset label {
-	vertical-align: top;
-	margin: 0 0 0 10px;
-	display: inline;
-	text-align: left;
-	width: auto;
-	float:left;
-}
-
-fieldset.usersettings em {
-	clear: left;
-	float: left;
-	display: block;
-	margin: 0 0 0 240px;
-}
-
-fieldset.usersettings em.usersettings_info {
-	clear: left;
-	float: left;
-	text-align: center;
-	display: block;
-	width: 246px;
-	margin: 0 0 5px 240px;
-	font-style: normal;
-	font-size: 85%;
-	color: #666;
-	border: 1px solid #CCC;
-	background-color: #F0F0F0;
-	padding: 2px;
-}
-
-fieldset.usersettings label {
-	display: block;
-	width: 230px;
-	float: left;
-	margin-bottom: 10px;
-	text-align: right;
-	padding-right: 10px;
-}
-
-fieldset.usersettings select#update_option {
-	display: block;
-	width: 230px;
-	float: left;
-	margin: 0px 10px 10px 0px;
-}
-
-fieldset.usersettings input[type=text], fieldset.usersettings input[type=password] {
-	display: block;
-	width: 250px;
-	float: left;
-	margin-bottom: 10px;
-	border:1px solid #CCC;
-}
-
-fieldset.usersettings input[type=submit] {
-	float: left;
-	margin-left: 250px;
-}
-
-fieldset.usersettings br {
-	clear: left;
-}
-
-
 /* Wikkaconfig action */
 table.wikkaconfig {
 	width: 70%;
@@ -1233,13 +1138,6 @@ table.wikkaconfig tbody td {
 
 /* Acls handler */
 table.acls {
-}
-
-textarea.acls {
-	margin-right: 0;
-	width: 98%;
-	height: 80px;
-	border: 1px solid #CCC;
 }
 
 /* 3rdparty-code related styling */
@@ -1295,66 +1193,55 @@ textarea.acls {
 
 /* menus */
 
+
+ul#main_menu {
+	margin-top: 10px;
+	text-align: left;
+	list-style-type: none;
+	padding: 0px;
+}
+
+ul#main_menu li {
+	float: left;
+	width: auto;
+	text-align: left; 
+	padding: 2pt;
+}
+
+ul#main_menu li+li:before {
+	content: " :: ";
+}
+
+ul#options_menu {
+	padding: 5px 10px;
+	text-align: left;
+	list-style-type: none;
+	padding: 0px;
+}
+
+ul#options_menu li {
+    float: left;
+    width: auto;
+    text-align: left; 
+    padding: 2pt;
+    margin-right: 15px;
+}
+
 ul.menu li form {
     display: inline;
 }
 
-ul.menu li form input {
-	font-family: Arial, "DejaVu Sans", Helvetica, Verdana, sans-serif;
-	font-size: 1em;
-	line-height: 1.1em;
-	color: #333;
-	border: 1px solid #CCC;
-}
-
-ul#main_menu {
-	float: left;
-	list-style-type: none;
-	padding: 0px;
-	margin-top: 10px;
-}
-
-ul#main_menu li {
-	font-family: Arial, Helvetica, Verdana, sans-serif;
-	margin-left: 0;
-	margin-top: 0;
-	margin-right: 10px;
-	padding: 0;
-	float: left;
-	width: auto;
-	text-align: left;
-	font-size: 90%;
-}
-
-ul#main_menu li a {
-	color: #20557B;
-}
-
-ul#main_menu li > a:hover {
-	  background-color: transparent;
-	  color: #cc6600;
-}
-
-ul#options_menu {
-	float: left;
-	list-style-type: none;
-	padding: 0px;
-	margin-top: 0px;
-}
-
-ul#options_menu li {
-    margin-top: 0;
-    padding: 0;
-    float: left;
-    width: auto;
-    text-align: left;
-    font-size: 0.8em; 
+ul.menu li input {
+	font-weight: bold;
+	border: none;
+	border-bottom: 2px solid #CCC;
+	background-color: transparent;
 }
 
 ul.menu form#form_logout input[type=submit] {
     background-color: transparent;
     border: none;
-    font-family: Arial, Helvetica, Verdana, sans-serif;
+    font-family: Verdana, Arial, Helvetica, sans-serif;
     font-size: inherit;
     padding: inherit;
     font-weight: inherit;
@@ -1364,23 +1251,21 @@ ul.menu form#form_logout input[type=submit] {
 }
 
 ul#dashboard {
-	border: none;
-	background-color: #556;
-	float: left;
+	position: absolute;
+	top: 0;
+	right: 0;
+	padding: 0 5px 0 5px;
+	background-color: #633;
+	color: #ECC;
+	font-size: 85%;
 	list-style-type: none;
-	padding: 0px;
-	margin-top: 0px;
-	width: 850px;
 }
 
 ul#dashboard li {
-	font-family: Arial, Helvetica, Verdana, sans-serif;
-	margin: 0 0 0 10px;
-	padding: 0;
 	float: left;
 	width: auto;
-	text-align: left;
-	font-size: 90%;
+	text-align: left; 
+	padding: 0 2pt;
 }
 
 ul#dashboard li a {
@@ -1388,8 +1273,12 @@ ul#dashboard li a {
 }
 
 ul#dashboard li > a:hover {
-	background-color: transparent;
-	color: #FF9933;
+	  background-color: transparent;
+	  color: #ECC;
+}
+
+ul#dashboard li+li:before {
+	content: " :: ";
 }
 
 ul#breadcrumb {
@@ -1405,7 +1294,6 @@ ul#breadcrumb li {
 	border-style: dotted;
 	border-width: 1px;
 	border-color: #bbb;
-	font-family: Arial, Helvetica, Verdana, sans-serif;
 	margin: 0 0 0 10px;
 	padding: 0;
 	float: left;

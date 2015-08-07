@@ -5,7 +5,7 @@
  * This is the main formatting engine used by Wikka to parse wiki markup and render valid XHTML.
  * 
  * @package		Formatters
- * @version		$Id: wakka.php 1368 2009-06-08 20:18:28Z BrianKoontz $
+ * @version		$Id: html.php,v 1.6 2009/06/08 20:27:21 brian Exp brian $
  * @license		http://www.gnu.org/copyleft/gpl.html GNU General Public License
  * @filesource
  *
@@ -75,7 +75,83 @@ if (!defined('PATTERN_CLOSE_A_ALONE')) define('PATTERN_CLOSE_A_ALONE', '</a>(?!<
  */
 if (!defined('PATTERN_START_OF_STRING_ALONE')) define('PATTERN_START_OF_STRING_ALONE', '^(?!<a )');
 
+// @@@	is this condition handy? would prevent generating IDs on a page fragment
+//		- unless formatter is called on those with an explicit foprmat option!
+if (isset($format_option) && preg_match(PATTERN_MATCH_PAGE_FORMATOPTION, $format_option))
+{
+	if (!function_exists('wakka3callback'))
+	{
+		/**
+		 * "Afterburner" formatting: extra handling of already-generated XHTML code.
+		 *
+		 * 1. For headings:
+		 * a) Use heading to derive a document title
+		 * b) Ensure every heading has an id, either specified or generated. (May be
+		 * extended to generate section TOC data.)
+		 * If an id is already specified, that is used without any modification.
+		 * If no id is specified, it is generated on the basis of the heading context:
+		 * - any image tag is replaced by its alt text (if specified)
+		 * - all tags are stripped
+		 * - all characters that are not valid in an ID are stripped (except whitespace)
+		 * - the resulting string is then used by makedId() to generate an id out of it
+		 *
+		 * @access	private
+		 * @uses	Wakka::HasPageTitle()
+		 * @uses	Wakka::SetPageTitle()
+		 * @uses	Wakka::CleanTextNode()
+		 * @uses	Wakka::makeId()
+		 *
+		 * @param	array	$things	required: matches of the regex in the preg_replace_callback
+		 * @return	string	heading with an id attribute
+		 */
+		function wakka3callback($things)
+		{
+			global $wakka;
+			$thing = $things[1];
 
+			// heading
+			if (preg_match(PATTERN_MATCH_HEADINGS, $thing, $matches))
+			{
+				list($h_element, $h_tagname, $h_attribs, $h_heading) = $matches;
+				// @@@ apply nodeToTextOnly() on $h_heading so stored title is always valid
+				if ((!$wakka->HasPageTitle()) && ('h5' > $h_tagname))
+				{
+					$wakka->SetPageTitle($h_heading);
+				}
+
+				if (preg_match(PATTERN_MATCH_ID_ATTRIBUTES, $h_attribs))
+				{
+					// existing id attribute: nothing to do (assume already treated as embedded code)
+					// @@@ we *may* want to gather ids and heading text for a TOC here ...
+					// heading text should then get partly the same treatment as when we're creating ids:
+					// at least replace images and strip tags - we can leave entities etc. alone - so we end up with
+					// plain text-only
+					// do this if we have a condition set to generate a TOC
+					return $h_element;
+				}
+				else
+				{
+					// no id: we'll have to create one
+					$headingtext = $wakka->CleanTextNode($h_heading);		// @@@ replace with headingToTextOnly()
+					// now create id based on resulting heading text
+					$h_id = $wakka->makeId('hn', $headingtext);
+
+					#503 - The text of a heading is now becoming a link to this heading, allowing an easy way to copy link to clipboard.
+					// For this, we take the textNode child of a heading, and if it is not enclosed in <a...></a>, we enclose it in 
+					// $opening_anchor and $closing_anchor.
+					$opening_anchor = '<a class="heading" href="#'.$h_id.'">';
+					$closing_anchor = '</a>';
+					$h_heading = preg_replace('@('.PATTERN_OPEN_A_ALONE. '|'.PATTERN_END_OF_STRING_ALONE.  ')@', $closing_anchor.'\\0', $h_heading);
+					$h_heading = preg_replace('@('.PATTERN_CLOSE_A_ALONE.'|'.PATTERN_START_OF_STRING_ALONE.')@', '\\0'.$opening_anchor, $h_heading);
+
+					// rebuild element, adding id
+					return '<'.$h_tagname.$h_attribs.' id="'.$h_id.'">'.$h_heading.'</'.$h_tagname.'>';
+				}
+			}
+			// other elements to be treated go here (tables, images, code sections...)
+		}
+	}
+}
 // Note: all possible formatting tags have to be in a single regular expression for this to work correctly.
 
 if (!function_exists("wakka2callback")) # DotMG [many lines] : Unclosed tags fix!
@@ -89,9 +165,9 @@ if (!function_exists("wakka2callback")) # DotMG [many lines] : Unclosed tags fix
 		$valid_filename = '';
 		
 		static $oldIndentLevel = 0;
+		static $oldIndentLength= 0;
 		static $indentClosers = array();
-		static $curIndentType;
-		static $li = 0;
+		static $newIndentSpace= array();
 		static $br = 1;
 		static $trigger_table = 0;
 		static $trigger_rowgroup = 0;
@@ -112,6 +188,7 @@ if (!function_exists("wakka2callback")) # DotMG [many lines] : Unclosed tags fix
 		static $trigger_l = array(-1, 0, 0, 0, 0, 0);
 		static $output = '';
 		static $invalid = '';
+		static $curIndentType;
 
 		global $wakka;
 
@@ -212,7 +289,7 @@ if (!function_exists("wakka2callback")) # DotMG [many lines] : Unclosed tags fix
 		}
 
 		// $matches[1] is element, $matches[2] is attributes, $matches[3] is styles and $matches[4] is linebreak
-		elseif ( preg_match("/^\|([^\|])?\|(\(.*?\))?(\{.*?\})?(\n)?$/u", $thing, $matches) )
+		elseif ( preg_match("/^\|([^\|])?\|(\(.*?\))?(\{.*?\})?(\n)?$/", $thing, $matches) )
 		{
 			for ( $i = 1; $i < 5; $i++ ) #38
 			{
@@ -370,7 +447,7 @@ if (!function_exists("wakka2callback")) # DotMG [many lines] : Unclosed tags fix
 			}
 
 			//If attributes...
-			if ( preg_match("/\((.*)\)/u", $matches[2], $attribs ) )
+			if ( preg_match("/\((.*)\)/", $matches[2], $attribs ) )
 			{
 //				$hints = array('core' => 'core', 'i18n' => 'i18n');
 				$hints = array();
@@ -387,7 +464,7 @@ if (!function_exists("wakka2callback")) # DotMG [many lines] : Unclosed tags fix
 			}
 
 			//If styles, just make attribute of it and parse again.
-			if ( preg_match("/\{(.*)\}/u", $matches[3], $attribs ) )
+			if ( preg_match("/\{(.*)\}/", $matches[3], $attribs ) )
 			{
 				$attribs = "s:".$attribs[1];
 				$open_part .= parse_attributes($attribs, array() );
@@ -482,12 +559,12 @@ if (!function_exists("wakka2callback")) # DotMG [many lines] : Unclosed tags fix
 			return (++$trigger_strike % 2 ? "<span class=\"strikethrough\">" : "</span>");
 		}
 		// additions
-		elseif (($thing == "&pound;&pound;") || ('Â£Â£' == $thing))
+		elseif ($thing == "&pound;&pound;")
 		{
 			return (++$trigger_inserted % 2 ? "<ins>" : "</ins>");
 		}
 		// deletions
-		elseif (($thing == "&yen;&yen;") || ('Â¥Â¥' == $thing))
+		elseif ($thing == "&yen;&yen;")
 		{
 			return (++$trigger_deleted % 2 ? "<del>" : "</del>");
 		}
@@ -497,7 +574,7 @@ if (!function_exists("wakka2callback")) # DotMG [many lines] : Unclosed tags fix
 			return (++$trigger_center % 2 ? "<div class=\"center\">\n" : "\n</div>\n");
 		}
 		// urls (see RFC 1738 <http://www.ietf.org/rfc/rfc1738.txt>)
-		elseif (preg_match("/^([[:lower:]]+:\/\/[[:alnum:]\/?;:@%&=\._-]+[[:alnum:]\/])(.*)$/", $thing, $matches))
+		elseif (preg_match("/^([a-z]+:\/\/[[:alnum:]\/?;:@&=\.]+[[:alnum:]\/])(.*)$/", $thing, $matches))
 		{
 			$url = $matches[1];
 			/* Inline images are disabled for security reason, use {{image action}} #142
@@ -547,7 +624,7 @@ if (!function_exists("wakka2callback")) # DotMG [many lines] : Unclosed tags fix
 			return "<br />";
 		}
 		// escaped text
-		elseif (preg_match("/^\"\"(.*)\"\"$/su", $thing, $matches))
+		elseif (preg_match("/^\"\"(.*)\"\"$/s", $thing, $matches))
 		{
 			$ddquotes_policy = $wakka->GetConfigValue("double_doublequote_html");
 			$embedded = $matches[1];
@@ -555,7 +632,7 @@ if (!function_exists("wakka2callback")) # DotMG [many lines] : Unclosed tags fix
 			{
 				// get tags with id attributes
 				# use backref to match both single and double quotes
-				$patTagWithId = '((<[a-z][^>]*)((?<=\\s)id=("|\')(.*?)\\4)(.*?>))';	// @@@ #34 The next <?php is just to unbreak syntax highlighting in my editor
+				$patTagWithId = '((<[a-z][^>]*)((?<=\\s)id=("|\')(.*?)\\4)(.*?>))';	// @@@ #34
 				// with PREG_SET_ORDER we get an array for each match: easy to use with list()!
 				// we do the match case-insensitive so we catch uppercase HTML as well;
 				// SafeHTML will treat this but 'raw' may end up with invalid code!
@@ -586,32 +663,19 @@ if (!function_exists("wakka2callback")) # DotMG [many lines] : Unclosed tags fix
 					return $wakka->htmlspecialchars_ent($embedded);	# display only
 			}
 		}
-		// Elided content (eliminates trailing ws)
-		elseif(preg_match("/^\/\*(.*?)\*\/[\s]*$/su", $thing, $matches))
-		{
-			return null;
-		}
-		// Elided content (preserves trailing ws)
-		elseif(preg_match("/^``(.*?)``$/su", $thing, $matches))
-		{
-			return null;
-		}
 		// code text
-		elseif (preg_match("/^%%(.*?)%%$/su", $thing, $matches))
+		elseif (preg_match("/^%%(.*?)%%$/s", $thing, $matches))
 		{
 			/*
-			* Note: this routine is rewritten such that (new) language
-			* formatters will automatically be found, whether they are
-			* GeSHi language config files or "internal" Wikka
-			* formatters.  Path to GeSHi language files and Wikka
-			* formatters MUST be defined in config.  For line
-			* numbering (GeSHi only) a starting line can be specified
-			* after the language code, separated by a ; e.g.,
-			* %%(php;27)....%%.  Specifying >= 1 turns on line
-			* numbering if this is enabled in the configuration.  An
-			* optional filename can be specified as well, e.g.
-			* %%(php;27;myfile.php)....%% This filename will be used
-			* by the grabcode handler.			
+			* Note: this routine is rewritten such that (new) language formatters
+			* will automatically be found, whether they are GeSHi language config files
+			* or "internal" Wikka formatters.
+			* Path to GeSHi language files and Wikka formatters MUST be defined in config.
+			* For line numbering (GeSHi only) a starting line can be specified after the language
+			* code, separated by a ; e.g., %%(php;27)....%%.
+			* Specifying >= 1 turns on line numbering if this is enabled in the configuration.
+			* An optional filename can be specified as well, e.g. %%(php;27;myfile.php)....%%
+			* This filename will be used by the grabcode handler.			
 			*/
 			$output = ''; //reinitialize variables 
 			$filename = '';
@@ -622,14 +686,12 @@ if (!function_exists("wakka2callback")) # DotMG [many lines] : Unclosed tags fix
 			$geshi_hi_path = isset($wakka->config['geshi_languages_path']) ? $wakka->config['geshi_languages_path'] : '/:/';
 			$wikka_hi_path = isset($wakka->config['wikka_highlighters_path']) ? $wakka->config['wikka_highlighters_path'] : '/:/';
 			// check if a language (and an optional starting line or filename) has been specified
-			if (preg_match('/^'.PATTERN_OPEN_BRACKET.PATTERN_FORMATTER.PATTERN_LINE_NUMBER.PATTERN_FILENAME.PATTERN_CLOSE_BRACKET.PATTERN_CODE.'$/su', $code, $matches))
+			if (preg_match('/^'.PATTERN_OPEN_BRACKET.PATTERN_FORMATTER.PATTERN_LINE_NUMBER.PATTERN_FILENAME.PATTERN_CLOSE_BRACKET.PATTERN_CODE.'$/s', $code, $matches))
 			{
 				list(, $language, , $start, , $filename, $invalid, $code) = $matches;
 			}
-			// get rid of newlines at start and end (and
-			// preceding/following whitespace) Note: unlike trim(),
-			// this preserves any tabs at the start of the first
-			// "real" line
+			// get rid of newlines at start and end (and preceding/following whitespace)
+			// Note: unlike trim(), this preserves any tabs at the start of the first "real" line
 			$code = preg_replace('/^\s*\n+|\n+\s*$/','',$code);
 
 			// check if GeSHi path is set and we have a GeSHi highlighter for this language
@@ -681,7 +743,7 @@ if (!function_exists("wakka2callback")) # DotMG [many lines] : Unclosed tags fix
 			{
 				$output .= $wakka->FormOpen("grabcode");
 				// build form
-				$output .= '<input type="submit" class="grabcode" name="save" value="'.T_("Grab").'" title="'.rtrim(sprintf(T_("Download %s"), $valid_filename)).'" />';
+				$output .= '<input type="submit" class="grabcode" name="save" value="'.GRABCODE_BUTTON.'" title="'.rtrim(sprintf(GRABCODE_BUTTON_TITLE, $valid_filename)).'" />';
 				$output .= '<input type="hidden" name="filename" value="'.urlencode($valid_filename).'" />';
 				$output .= '<input type="hidden" name="code" value="'.urlencode($code).'" />';
 				$output .= $wakka->FormClose();
@@ -689,180 +751,103 @@ if (!function_exists("wakka2callback")) # DotMG [many lines] : Unclosed tags fix
 			// output
 			return $output;
 		}
-
 		// forced links
 		// \S : any character that is not a whitespace character
 		// \s : any whitespace character
-		else if(preg_match("/^\[\[\s*(.*?)\s*\]\]$/su", $thing, $matches))
+		// @@@ regex accepts NO non-whitespace before whitespace, surely not correct? [[  something]]
+		else if (preg_match("/^\[\[([\S|\.|\/]*)(\s+(.+))?\]\]$/s", $thing, $matches))      # recognize forced links across lines
 		{
-			$contents = $matches[1];
-			if(empty($contents) || !isset($contents))
-				return "";
-
-			// Case 1: Interwiki link followed by | separator
-			if(preg_match("/^\s*([[:upper:]][[:alpha:]]+[:].*?)\s*\|\s*(.*?)\s*$/su", $contents, $matches))
-			{
-				$url = $matches[1];
-				$text = $matches[2];
-			}
-
-			// Case 2: Deprecated...(interwiki link followed by
-			// whitespace separator)
-			else if(preg_match("/^([[:upper:]][[:alpha:]]+[:]\S*)\s+(.*)$/su", $contents, $matches))
-			{
-				$url = $matches[1];
-				$text = $matches[2];
-			}
-
-			// Case 3: Deprecated...(first part is a URL followed by
-			// one or more whitespaces)
-			else if (preg_match("/^((http|https|ftp|news|irc|gopher):\/\/([^\|\\s\"<>]+))\s+([^\|]+)$/su", $contents, $matches))		# recognize forced links across lines
-			{
-				if (!isset($matches[1])) $matches[1] = ''; #38
-				if (!isset($matches[4])) $matches[4] = ''; #38
-				$url = $matches[1];
-				$text = $matches[4];
-			}
-
-			// Case 4: Deprecated...(first part is a string
-			// followed by one or more whitespaces)
-            // Removed 1.3.7 as it broke page names with embedded ws 
-
-			// Case 5: If no "|" exists in $contents, assume the match
-			// refers to an internal page
-			else if(preg_match("/^\s*([^\|]+)\s*$/s", $contents, $matches))
-			{
-				$url = $matches[1];
-				$text = $matches[1];
-			}
-
-			// Case 6: If a "|" symbol exists, assume two parts, a URL and
-			// text
-			else if(preg_match("/^\s*(.*?)\s*\|\s*(.*?)\s*$/su", $contents, $matches))
-			{
-				if (!isset($matches[1])) $matches[1] = '';
-				if (!isset($matches[2])) $matches[2] = '';
-				$url = $matches[1];
-				$text = $matches[2];
-			}
-
+			if (!isset($matches[1])) $matches[1] = ''; #38
+			if (!isset($matches[3])) $matches[3] = ''; #38
+			list (, $url, , $text) = $matches;
 			if ($url)
 			{
 				//if ($url!=($url=(preg_replace("/@@|&pound;&pound;||\[\[/","",$url))))$result="</span>";
-				if (!$text) $text = $url;
-				//$text=preg_replace("/@@|&pound;&pound;|\[\[/","",$text);
-				return $result.$wakka->Link($url, "", $text, TRUE, TRUE, '', '', FALSE);
+				$link = $wakka->Link($url, "", $text);
+				// Hack to handle relative URIs (i.e., links to files            // in the same directory)
+				if(strstr($link, "http://.") || strstr($link, "http:///"))
+					$link = preg_replace("/^(.*)http:\/\/(.*)$/",
+										 "\${1}\${2}",
+										 $link);
+				return $result.$link;
 			}
 			else
 			{
 				return "";
 			}
 		}
-
 		// indented text
-		elseif (preg_match("/(^|\n)([\t~]+)(-|&|([[:alnum:]]+)\))?(\n|$)/su", $thing, $matches))
+		elseif (preg_match("/(^|\n)([\t~]+)(-|&|([0-9a-zA-Z]+)\))?(\n|$)/s", $thing, $matches))
 		{
-			// find out which indent type we want
-			$newIndentType = $matches[3];
-			$newIndentLevel = strlen($matches[2]);
-
-			//Close indent or list element
-			if ( $li == 2 && $curIndentType != '.' ) $result .= '</li>';
-			if ( $li == 2 ) $result .= ($br ? "<br />\n" : "\n");
-			$li = 0;
+			// new line
+			$result .= ($br ? "<br />\n" : "\n");
 
 			// we definitely want no line break in this one.
 			$br = 0;
 
+			// find out which indent type we want
+			$newIndentType = $matches[3];
+			
 			if (!$newIndentType)
 			{
-				$br = 1;
-				$newIndentType = '.';
+				$opener = "<div class=\"indent\">";
+				$closer = "</div>"; $br = 1;
+			}
+			elseif ($newIndentType == "-")
+			{
+				$opener = "<ul><li>";
+				$closer = "</li></ul>";
 				$li = 1;
 			}
+			elseif ($newIndentType == "&")
+			{
+				$opener = "<ul class=\"thread\"><li>";
+				$closer = "</li></ul>";
+				$li = 1;
+			} #inline comments
 			else
 			{
-				if (preg_match('/[[:digit:]]/u', $newIndentType[0])) { $newIndentType = '1'; }
-				elseif (preg_match('/[IVX]/', $newIndentType[0])) { $newIndentType = 'I'; }
-				elseif (preg_match('/[ivx]/', $newIndentType[0])) { $newIndentType = 'i'; }
-				elseif (preg_match('/[[:upper:]]/u', $newIndentType[0])) { $newIndentType = 'A'; }
-				elseif (preg_match('/[[:lower:]]/u', $newIndentType[0])) { $newIndentType = 'a'; }
+				if (preg_match('[0-9]', $newIndentType[0])) { $newIndentType = '1'; }
+				elseif (preg_match('[IVX]', $newIndentType[0])) { $newIndentType = 'I'; }
+				elseif (preg_match('[ivx]', $newIndentType[0])) { $newIndentType = 'i'; }
+				elseif (preg_match('[A-Z]', $newIndentType[0])) { $newIndentType = 'A'; }
+				elseif (preg_match('[a-z]', $newIndentType[0])) { $newIndentType = 'a'; }
 
+				$opener = '<ol type="'.$newIndentType.'"><li>';
+				$closer = '</li></ol>';
 				$li = 1;
 			}
 
-			if ($newIndentLevel < $oldIndentLevel)
+			// get new indent level
+			$newIndentLevel = strlen($matches[2]);
+			if (($newIndentType != $curIndentType) && ($oldIndentLevel > 0))
 			{
-				for (; $newIndentLevel < $oldIndentLevel; $oldIndentLevel--) {
-					$curIndentType = array_pop($indentClosers);
-					if ($oldIndentLevel > 1) $result .= str_repeat("\t", $oldIndentLevel -1);
-					if ($curIndentType == '.') {
-						$result .= '</div>';
-					} else if ( $curIndentType == '-' || $curIndentType == '&' ) {
-						$result .= '</ul>';
-					} else {
-						$result .= '</ol>';
-					}
-					$result .= "\n";
-				}
-			}
-			if ( $oldIndentLevel == $newIndentLevel )
-			{
-				$curIndentType = array_pop($indentClosers);
-				if ( $newIndentType != $curIndentType )
+				for (; $oldIndentLevel > 0; $oldIndentLevel--)
 				{
-					if ($oldIndentLevel > 1) $result .= str_repeat("\t", $oldIndentLevel -1);
-					if ($curIndentType == '.')
-					{
-						$result .= '</div>';
-					}
-					else if ( $curIndentType == '-' || $curIndentType == '&' )
-					{
-						$result .= '</ul>';
-					}
-					else
-					{
-						$result .= '</ol>';
-					}
-					$oldIndentLevel = $newIndentLevel - 1;
-					$result .= "\n";
-				}
-				else
-				{
-					array_push($indentClosers, $curIndentType);
+					$result .= array_pop($indentClosers);
 				}
 			}
 			if ($newIndentLevel > $oldIndentLevel)
 			{
-				for (; $newIndentLevel > $oldIndentLevel; $oldIndentLevel++)
+				for ($i = 0; $i < $newIndentLevel - $oldIndentLevel; $i++)
 				{
-					$result .= str_repeat("\t", $oldIndentLevel);
-					if ($newIndentType == '.')
-					{
-						$result .= '<div class="indent">';
-					}
-					else if ( $newIndentType == '-' || $newIndentType == '&' )
-					{
-						$result .= '<ul';
-						if ( $newIndentType == '&' ) $result .= ' class="thread"';
-						$result .= '>';
-					}
-					else
-					{
-						$result .= '<ol type="'.$newIndentType.'">';
-					}
-					$result .= "\n";
-					array_push($indentClosers, $newIndentType);
+					$result .= $opener;
+					array_push($indentClosers, $closer);
+				}
+			}
+			elseif ($newIndentLevel < $oldIndentLevel)
+			{
+				for ($i = 0; $i < $oldIndentLevel - $newIndentLevel; $i++)
+				{
+					$result .= array_pop($indentClosers);
 				}
 			}
 
 			$oldIndentLevel = $newIndentLevel;
-			
-			$result .= str_repeat("\t", $oldIndentLevel);
-			if ( $li == 1 )
+
+			if (isset($li) && !preg_match("/".str_replace(")", "\)", $opener)."$/", $result))
 			{
-				if ( $newIndentType != '.' ) $result .= '<li>';
-				$li = 2;
+				$result .= "</li><li>";
 			}
 
 			$curIndentType = $newIndentType;
@@ -871,42 +856,23 @@ if (!function_exists("wakka2callback")) # DotMG [many lines] : Unclosed tags fix
 		// new lines
 		else if ($thing == "\n")
 		{
-			//Close lines in indents and list elements
-			if ( $li == 2 )
+			// if we got here, there was no tab in the next line; this means that we can close all open indents.
+			$c = count($indentClosers);
+			for ($i = 0; $i < $c; $i++)
 			{
-				if ( $curIndentType != '.' ) $result .= '</li>';
-				else $result .= '<br/>';
-				$result .= "\n";
-				$li = 0;
-			}
-			// if we got here, there was no tab in the next line; this means that we can close all open indents and lists.
-			for (; 0 < $oldIndentLevel; $oldIndentLevel--)
-			{
-				$curIndentType = array_pop($indentClosers);
-				if ($oldIndentLevel > 1) $result .= str_repeat("\t", $oldIndentLevel -1 );
-				if ($curIndentType == '.')
-				{
-					$result .= '</div>';
-				}
-				else if ( $curIndentType == '-' || $curIndentType == '&' )
-				{
-					$result .= '</ul>';
-				}
-				else
-				{
-					$result .= '</ol>';
-				}
-				$result .= "\n";
+				$result .= array_pop($indentClosers);
 				$br = 0;
 			}
 			$oldIndentLevel = 0;
+			$oldIndentLength= 0;
+			$newIndentSpace=array();
 
 			$result .= ($br ? "<br />\n" : "\n");
 			$br = 1;
 			return $result;
 		}
 		// Actions
-		elseif (preg_match("/^\{\{(.*?)\}\}$/su", $thing, $matches))
+		elseif (preg_match("/^\{\{(.*?)\}\}$/s", $thing, $matches))
 		{
 			if ($matches[1])
 			{
@@ -918,15 +884,14 @@ if (!function_exists("wakka2callback")) # DotMG [many lines] : Unclosed tags fix
 			}
 		}
 		// interwiki links!
-		// Deprecated; use forced links with | separator instead
-		elseif (preg_match("/^[[:upper:]][[:lower:]]+[:]\S*$/su", $thing))
+		elseif (preg_match("/^[A-ZÄÖÜ][A-Za-zÄÖÜßäöü]+[:]\S*$/s", $thing))
 		{
 			return $wakka->Link($thing);
 		}
 		// wiki links!
-		elseif (preg_match("/^[[:upper:]]+[[:lower:]]+[[:upper:][:digit:]][[:alnum:]]*$/su", $thing))
+		elseif (preg_match("/^[A-ZÄÖÜ]+[a-zßäöü]+[A-Z0-9ÄÖÜ][A-Za-z0-9ÄÖÜßäöü]*$/s", $thing))
 		{
-			return $wakka->Link($thing,'','',TRUE,TRUE,'','',FALSE);
+			return $wakka->Link($thing);
 		}
 		// separators
 		elseif (preg_match("/-{4,}/", $thing, $matches))
@@ -947,107 +912,6 @@ if (!function_exists("wakka2callback")) # DotMG [many lines] : Unclosed tags fix
 		}
 		// if we reach this point, it must have been an accident.
 		return $thing;
-	}
-}
-
-if (!function_exists('wakka3callback'))
-{
-	/**
-	 * "Afterburner" formatting: extra handling of already-generated XHTML code.
-	 *
-	 * 1. For headings:
-	 * a) Use heading to derive a document title
-	 * b) Ensure every heading has an id, either specified or generated. (May be
-	 * extended to generate section TOC data.)
-	 * If an id is already specified, that is used without any modification.
-	 * If no id is specified, it is generated on the basis of the heading context:
-	 * - any image tag is replaced by its alt text (if specified)
-	 * - all tags are stripped
-	 * - all characters that are not valid in an ID are stripped (except whitespace)
-	 * - the resulting string is then used by makedId() to generate an id out of it
-	 *
-	 * @access	private
-	 * @uses	Wakka::HasPageTitle()
-	 * @uses	Wakka::SetPageTitle()
-	 * @uses	Wakka::CleanTextNode()
-	 * @uses	Wakka::makeId()
-	 *
-	 * @param	array	$things	required: matches of the regex in the preg_replace_callback
-	 * @return	string	heading with an id attribute
-	 */
-	function wakka3callback($things)
-	{
-		global $wakka;
-		$thing = $things[1];
-
-		// heading
-		if (preg_match(PATTERN_MATCH_HEADINGS, $thing, $matches))
-		{
-			list($h_element, $h_tagname, $h_attribs, $h_heading) = $matches;
-			// @@@ apply nodeToTextOnly() on $h_heading so stored title is always valid
-			if ((!$wakka->HasPageTitle()) && ('h5' > $h_tagname))
-			{
-				// Strip all HTML/PHP tags first
-				$h_heading_stripped = strip_tags($h_heading);
-				$wakka->SetPageTitle($h_heading_stripped);
-			}
-
-			if (preg_match(PATTERN_MATCH_ID_ATTRIBUTES, $h_attribs))
-			{
-				// existing id attribute: nothing to do (assume already treated as embedded code)
-				// @@@ we *may* want to gather ids and heading text for a TOC here ...
-				// heading text should then get partly the same treatment as when we're creating ids:
-				// at least replace images and strip tags - we can leave entities etc. alone - so we end up with
-				// plain text-only
-				// do this if we have a condition set to generate a TOC
-				return $h_element;
-			}
-			else
-			{
-				// no id: we'll have to create one
-				$headingtext = $wakka->CleanTextNode($h_heading);		// @@@ replace with headingToTextOnly()
-				// now create id based on resulting heading text
-				$h_id = $wakka->makeId('hn', $headingtext);
-
-				#503 - The text of a heading is now becoming a link to this heading, allowing an easy way to copy link to clipboard.
-				// For this, we take the textNode child of a heading, and if it is not enclosed in <a...></a>, we enclose it in 
-				// $opening_anchor and $closing_anchor.
-#				$opening_anchor = '<a class="heading" href="'.$wakka->Href().'#'.$h_id.'">';
-				$opening_anchor = '<a class="heading" href="'.$wakka->Href().'#">';
-				$closing_anchor = '</a>';
-				$h_heading = preg_replace('@('.PATTERN_OPEN_A_ALONE. '|'.PATTERN_END_OF_STRING_ALONE.  ')@', $closing_anchor.'\\0', $h_heading);
-				$h_heading = preg_replace('@('.PATTERN_CLOSE_A_ALONE.'|'.PATTERN_START_OF_STRING_ALONE.')@', '\\0'.$opening_anchor, $h_heading);
-				// rebuild element, adding id
-				return '<'.$h_tagname.$h_attribs.' id="'.$h_id.'">'.$h_heading.'</'.$h_tagname.'>';
-			}
-		}
-		// other elements to be treated go here (tables, images, code sections...)
-	}
-}
-
-if (isset($format_option) && preg_match(PATTERN_MATCH_PAGE_FORMATOPTION, $format_option))
-{
-	if (!function_exists('wakka4callback'))
-	{
-		function wakka4callback($things)
-		{
-			global $wakka;
-			$thing = $things[1];
-
-
-			if(preg_match('/^\{\{\{(.*?)\}\}\}$/su', $thing, $matches)) 
-			{
-				if ($matches[1])
-				{
-					return $wakka->Action($matches[1]);
-				}
-				else
-				{
-					return "{{{}}}";
-				}
-			}
-			// other elements to be treated go here (tables, images, code sections...)
-		}
 	}
 }
 
@@ -1076,19 +940,16 @@ if (!function_exists('parse_attributes'))
 			foreach ( $hints as $hint )
 			{
 				$temp = $attributes[$hint];
-				if(isset($temp) && isset($temp[$key]))
-				{
-					$a = $temp[$key];
-					break;
-				}
+				if ($temp) $a = $temp[$key];
+				if ($a) break;
 			}
 	
-			if (!isset($a))
+			if (!$a)
 			{
 				//This attribute isn't allowed here / is wrong.
 				// WARNING: JS vulnerability: two minus signs are not allowed in a comment, so we replace any occurence of them by underscore.
 				// Consider the code ||(p--><font size=1px><a href=...<!--:blabla
-				// When migrating to UTF-8, we could use str_replace('--', 'Ã¢ÂˆÂ’Ã¢ÂˆÂ’', $key) to make things more pretty. //TODO garbled ... mdash?
+				// When migrating to UTF-8, we could use str_replace('--', 'âˆ’âˆ’', $key) to make things more pretty. //TODO garbled ... mdash?
 				echo '<!--Cannot find attribute for key "'.str_replace('--', '__', $key).'" from hints given.-->'."\n";	#i18n
 			}
 			else
@@ -1107,70 +968,41 @@ $text = str_replace("\r\n", "\n", $text);
 // replace 4 consecutive spaces at the beginning of a line with tab character
 // $text = preg_replace("/\n[ ]{4}/", "\n\t", $text); // moved to edit.php
 
-if ($this->GetHandler() == "show") $mind_map_pattern = "<map.*?<\/map>|"; else $mind_map_pattern = "";
+if ($this->handler == "show") $mind_map_pattern = "<map.*?<\/map>|"; else $mind_map_pattern = "";
 
 $text = preg_replace_callback(
 	"/".
-	# code
-	"%%.*?%%|".
-	# elided content (eliminates trailing ws)
-	"\/\*.*?\*\/[\s]*|".
-	# elided content (preserves trailing ws)
-	"``.*?``|".
-	# literal
-	"\"\".*?\"\"|".
+	"%%.*?%%|".																				# code
+	"\"\".*?\"\"|".																			# literal
 	$mind_map_pattern.
-	# forced link
-	"\[\[[^\[]*?\]\]|".
-	# forced linebreak and hr
-	"-{3,}|".  
-	# URL
-	"\b[a-z]+:\/\/[[:alnum:]\/?;:@%&=\._-]+[[:alnum:]\/]|".
-	# Wiki markup
-	"\*\*|\'\'|\#\#|\#\%|@@|::c::|\>\>|\<\<|Â£Â£|Â¥Â¥|&pound;&pound;|&yen;&yen;|\+\+|__|<|>|\/\/|".
-	# headings
-	"======|=====|====|===|==|".
-	# indents and lists
-	"(^|\n)[\t~]+(-(?!-)|&|([0-9]+|[a-zA-Z]+)\))?|".
-	# Simple Tables	
-	"\|(?:[^\|])?\|(?:\(.*?\))?(?:\{[^\{\}]*?\})?(?:\n)?|".
-	# action
-	"(?<!\{)\{\{[^\{|\}]*?\}\}(?!\})|".
-	# InterWiki link (deprecated, as pagenames may now contain spaces)
-	# Use forced links with a | separator instead
-	"\b[[:upper:]][[:alpha:]]+[:](?![=_#])\S*\b|".
-	# CamelWords
-	"\b([[:upper:]]+[[:lower:]]+[[:upper:][:digit:]][[:alnum:]]*)\b|".
-	#ampersands! Track single ampersands or any htmlentity-like (&...;)
-	'\\&([#a-zA-Z0-9]+;)?|'. 	
-	# newline
-	"\n".
-	"/msu", "wakka2callback", $text."\n"); #append \n (#444)
+	"\[\[[^\[]*?\]\]|".																		# forced link
+	"-{3,}|".																				# forced linebreak and hr
+	"\b[a-z]+:\/\/\S+|".																	# URL
+	"\*\*|\'\'|\#\#|\#\%|@@|::c::|\>\>|\<\<|&pound;&pound;|&yen;&yen;|\+\+|__|<|>|\/\/|".	# Wiki markup
+	"======|=====|====|===|==|".															# headings
+	"(^|\n)[\t~]+(-(?!-)|&|([0-9]+|[a-zA-Z]+)\))?|".										# indents and lists
+	"\|(?:[^\|])?\|(?:\(.*?\))?(?:\{[^\{\}]*?\})?(?:\n)?|".									# Simple Tables	
+	"\{\{.*?\}\}|".																			# action
+	# "\b[A-ZÄÖÜ][A-Za-zÄÖÜßäöü]+[:](?![=_])\S*\b|".											# InterWiki link
+	# "\b([A-ZÄÖÜ]+[a-zßäöü]+[A-Z0-9ÄÖÜ][A-Za-z0-9ÄÖÜßäöü]*)\b|".								# CamelWords
+	'\\&([#a-zA-Z0-9]+;)?|'. #ampersands! Track single ampersands or any htmlentity-like (&...;)
+	"\n".																					# new line
+	"/ms", "wakka2callback", $text."\n"); #append \n (#444)
 
 // we're cutting the last <br />
 $text = preg_replace("/<br \/>$/","", $text);
 
-# wakka3callback
-$text .= wakka2callback('closetags');	// attempt close open tags @@@ may be needed for more than whole page!
-$text = preg_replace_callback(
-	"#(".
-	"<h[1-6](.*?)>.*?</h[1-6]>".
-	// other elements to be treated go here
-	')#ms','wakka3callback', $text);
-
 // @@@ don't report generation time unless some "debug mode" is on
 if (isset($format_option) && preg_match(PATTERN_MATCH_PAGE_FORMATOPTION, $format_option))
 {
-	# wakka4callback
+	$text .= wakka2callback('closetags');	// attempt close open tags @@@ may be needed for more than whole page!
 	$idstart = getmicrotime(TRUE);
-	$this->config['text'] = $text;
 	$text = preg_replace_callback(
-		"#(".
-		"\{\{\{.*?\}\}\}".
+		'#('.
+		'<h[1-6].*?>.*?</h[1-6]>'.
 		// other elements to be treated go here
-		')#ms','wakka4callback', $text);
+		')#ms','wakka3callback', $text);
 	printf('<!-- Header ID generation took %.6f seconds -->', (getmicrotime(TRUE) - $idstart));	#i18n
 }
-
 echo $text;
 ?>
