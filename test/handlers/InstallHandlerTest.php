@@ -18,6 +18,7 @@ require_once('libs/Wakka.class.php');
 require_once('version.php');
 require_once('handlers/install.php');
 require_once('models/base.php');
+require_once('wikka/web_service.php');
 
 
 class InstallHandlerTest extends PHPUnit_Framework_TestCase {
@@ -38,7 +39,7 @@ class InstallHandlerTest extends PHPUnit_Framework_TestCase {
     }
 
     public function tearDown() {
-        $this->show_handler = NULL;
+        $this->install_handler = NULL;
         $this->wikka = NULL;
     }
 
@@ -60,10 +61,29 @@ class InstallHandlerTest extends PHPUnit_Framework_TestCase {
         $_GET = array();
     }
 
+    private function mockWebService() {
+        $webservice = new WikkaWebService();
+        $webservice->disable_magic_quotes_if_enabled();
+        $webservice->prepare_request();
+        $webservice->start_session();
+        $webservice->authenticate_if_locked();
+        $webservice->enforce_csrf_token();
+        return $webservice;
+    }
+
 
     /**
      * Tests
      */
+    public function testShouldLoadIntroStage() {
+        $this->mockWebService();
+        $response = $this->install_handler->handle();
+        $this->assertEquals($response->status, 200);
+        $this->assertContains('<title>Wikka Installation</title>', $response->body);
+        $this->assertContains('<div class="intro">', $response->body);
+        $this->assertContains('This installer will try to write some', $response->body);
+    }
+
     public function testHandlerInstantiation() {
         $this->assertInstanceOf('InstallHandler', $this->install_handler);
         $this->assertEquals($this->install_handler->content_type, 'text/html; charset=utf-8');

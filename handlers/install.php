@@ -1081,6 +1081,76 @@ XHTML;
         return sprintf($conclusion_f, WIKKA_BASE_URL);
     }
 
+    protected function open_form($page_tag, $handler='', $method='post', $options=null) {
+        /*
+         * Overrides base method to excise PageMethod which requires database connection.
+         */
+        $attr_dict = array();
+        $hidden_fields = array();
+
+        # Optional args
+        $id = ( isset($options['id']) ) ? $options['id'] : '';
+        $class = ( isset($options['class']) ) ? $options['class'] : '';
+        $anchor = ( isset($options['anchor']) ) ? $options['anchor'] : '';
+
+        # Set action attr
+        $attr_dict['action'] = $this->href($page_tag, $handler);
+        $attr_dict['method'] = strtolower($method);
+        $attr_dict['id'] = $id;
+
+        # Add anchor
+        if ( $anchor ) {
+            $attr_dict['action'] = sprintf('%s#%s', $attr_dict['action'], $anchor);
+        }
+
+        # If rewrite mode off, must add hidden field with page tag
+        if ( ! WikkaRegistry::get_config('rewrite_mode') ) {
+            $fs = ( $handler ) ? '/' : '';
+            $hidden_fields['wakka'] = $page_tag . $fs . $handler;
+        }
+
+        # If id blank, generate an ID
+        if ( ! $attr_dict['id'] ) {
+            $md5 = md5($handler.$page_tag.$method.$class);
+            $id = substr($md5, 0, ID_LENGTH);
+            $attr_dict['id'] = generate_wikka_form_id('form', $id);
+        }
+
+        if ( $class ) {
+            $attr_dict['class'] = $class;
+        }
+
+        # If POST form, add hidden field for CSRF token
+        if ( $attr_dict['method'] == 'post' ) {
+            $hidden_fields['CSRFToken'] = $_SESSION['CSRFToken'];
+        }
+
+        # Build attrs
+        $attr_list = array();
+        foreach ( $attr_dict as $attr => $value ) {
+            $attr_list[] = sprintf('%s="%s"', $attr,
+                str_replace('"', '\"', $value));
+        }
+        $attrs = sprintf(' %s', implode(' ', $attr_list));
+
+        # Build hidden fieldset
+        if ( $hidden_fields ) {
+            $format = '<input type="hidden" name="%s" value="%s" />';
+            $hidden_field_elements = array('<fieldset class="hidden">');
+            foreach ( $hidden_fields as $name => $value ) {
+                $element = sprintf($format, $name, $value);
+                $hidden_field_elements[] = $element;
+            }
+            $hidden_field_elements[] = '</fieldset>';
+            $hidden_fieldset = sprintf("\n%s", implode("\n", $hidden_field_elements));
+        }
+        else {
+            $hidden_fieldset = '';
+        }
+
+        return sprintf("<form%s>%s", $attrs, $hidden_fieldset);
+    }
+
     /*
      * Format Helpers
      */
