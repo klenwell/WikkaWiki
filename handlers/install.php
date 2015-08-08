@@ -123,8 +123,6 @@ HTML;
      */
     public function __construct($request) {
         parent::__construct($request);
-        $this->page = $this->load_page($request);
-        $this->user = UserModel::load();
     }
 
     /*
